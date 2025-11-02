@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rolladex</title>
+<style>
+body{font-family:Arial;background:white;color:#222;margin:0;padding:2rem}
+h1{text-align:center}
+.recipe{border:1px solid #ccc;border-radius:10px;padding:1rem;margin:1rem 0}
+input,textarea,button{width:100%;padding:.5rem;margin:.3rem 0;font-size:1rem;border-radius:8px;border:1px solid #ddd}
+button{background:#007bff;color:white;cursor:pointer}
+button:hover{background:#005fcc}
+img{max-width:100%;border-radius:10px;margin-top:.5rem}
+#storeList{border:1px solid #ddd;padding:1rem;border-radius:10px;background:#f9f9f9}
+</style>
+</head>
+<body>
+<h1>🍳 Rolladex</h1>
+<div>
+<input id="recipeName" placeholder="Recipe name">
+<textarea id="recipeDesc" placeholder="Recipe description"></textarea>
+<input type="file" id="recipeImage" accept="image/*">
+<input id="ingredient" placeholder="Ingredient (e.g. flour)">
+<input id="amount" placeholder="Amount (e.g. 2 cups)">
+<button onclick="addIngredient()">Add Ingredient</button>
+<button onclick="saveRecipe()">Save Recipe</button>
+</div>
+<h2>Your Recipes</h2>
+<div id="recipes"></div>
+<h2>🛒 Store List</h2>
+<div id="storeList"></div>
+<script>
+let currentIngredients=[],recipes=[];
+function addIngredient(){
+ const n=document.getElementById("ingredient").value.trim();
+ const a=document.getElementById("amount").value.trim();
+ if(!n||!a){alert("Enter both name and amount");return;}
+ currentIngredients.push({name:n,amount:a});
+ document.getElementById("ingredient").value="";
+ document.getElementById("amount").value="";
+}
+function saveRecipe(){
+ const n=document.getElementById("recipeName").value.trim();
+ const d=document.getElementById("recipeDesc").value.trim();
+ const f=document.getElementById("recipeImage").files[0];
+ if(!n){alert("Recipe needs a name");return;}
+ const r={name:n,desc:d,ingredients:[...currentIngredients],image:""};
+ if(f){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    r.image=e.target.result;
+    recipes.push(r);
+    renderRecipes();updateStoreList();
+  };
+  reader.readAsDataURL(f);
+ }else{
+  recipes.push(r);renderRecipes();updateStoreList();
+ }
+ document.getElementById("recipeName").value="";
+ document.getElementById("recipeDesc").value="";
+ document.getElementById("recipeImage").value="";
+ currentIngredients=[];
+}
+function renderRecipes(){
+ const c=document.getElementById("recipes");
+ c.innerHTML="";
+ recipes.forEach(r=>{
+  const div=document.createElement("div");
+  div.className="recipe";
+  div.innerHTML="<h3>"+r.name+"</h3>"+(r.image?"<img src=+r.image+>":"")+"<p>"+r.desc+"</p><ul>"+r.ingredients.map(i=>"<li>"+i.amount+" "+i.name+"</li>").join("")+"</ul>";
+  c.appendChild(div);
+ });
+}
+function updateStoreList(){
+ const list={};
+ recipes.forEach(r=>{
+  r.ingredients.forEach(i=>{
+   if(!list[i.name])list[i.name]=[];
+   list[i.name].push(i.amount);
+  });
+ });
+ const out=Object.entries(list).map(([n,a])=>"<li>"+n+": "+a.join(", ")+"</li>").join("");
+ document.getElementById("storeList").innerHTML="<ul>"+out+"</ul>";
+}
+</script>
+</body>
+</html>
