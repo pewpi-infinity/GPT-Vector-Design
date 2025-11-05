@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Vector Design - AI-Powered Design Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 GPT Vector Design</h1>
+            <p>AI-Powered Vector Design Tool</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="tool-section">
+                    <h3>Drawing Tools</h3>
+                    <div class="tool-buttons">
+                        <button class="tool-btn active" data-tool="pen" title="Pen Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                                <path d="M2 2l7.586 7.586"></path>
+                            </svg>
+                            <span>Pen</span>
+                        </button>
+                        <button class="tool-btn" data-tool="line" title="Line Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <line x1="5" y1="19" x2="19" y2="5" stroke-width="2"></line>
+                            </svg>
+                            <span>Line</span>
+                        </button>
+                        <button class="tool-btn" data-tool="rectangle" title="Rectangle Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <rect x="3" y="3" width="18" height="18" stroke-width="2"></rect>
+                            </svg>
+                            <span>Rectangle</span>
+                        </button>
+                        <button class="tool-btn" data-tool="circle" title="Circle Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+                            </svg>
+                            <span>Circle</span>
+                        </button>
+                        <button class="tool-btn" data-tool="triangle" title="Triangle Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 3 L21 21 L3 21 Z" stroke-width="2"></path>
+                            </svg>
+                            <span>Triangle</span>
+                        </button>
+                        <button class="tool-btn" data-tool="eraser" title="Eraser Tool">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 20H7L3 16L11 8L19 16L15 20Z" stroke-width="2"></path>
+                            </svg>
+                            <span>Eraser</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Properties</h3>
+                    <div class="property-controls">
+                        <div class="control-group">
+                            <label for="strokeColor">Stroke Color:</label>
+                            <input type="color" id="strokeColor" value="#000000">
+                        </div>
+                        <div class="control-group">
+                            <label for="fillColor">Fill Color:</label>
+                            <input type="color" id="fillColor" value="#ffffff">
+                        </div>
+                        <div class="control-group">
+                            <label for="strokeWidth">Stroke Width:</label>
+                            <input type="range" id="strokeWidth" min="1" max="20" value="2">
+                            <span id="strokeWidthValue">2</span>px
+                        </div>
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="fillEnabled" checked>
+                                Enable Fill
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>Actions</h3>
+                    <div class="action-buttons">
+                        <button class="action-btn" id="clearCanvas" title="Clear Canvas">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Clear Canvas
+                        </button>
+                        <button class="action-btn" id="undoBtn" title="Undo">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M3 7v6h6"></path>
+                                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+                            </svg>
+                            Undo
+                        </button>
+                        <button class="action-btn" id="redoBtn" title="Redo">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 7v6h-6"></path>
+                                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
+                            </svg>
+                            Redo
+                        </button>
+                        <button class="action-btn" id="exportSVG" title="Export as SVG">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export SVG
+                        </button>
+                        <button class="action-btn" id="exportPNG" title="Export as PNG">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            Export PNG
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-section gpt-section">
+                    <h3>🤖 GPT Assistant</h3>
+                    <div class="gpt-controls">
+                        <textarea id="gptPrompt" placeholder="Ask GPT for design suggestions, color schemes, or drawing tips..."></textarea>
+                        <button class="action-btn gpt-btn" id="askGPT">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            </svg>
+                            Ask GPT
+                        </button>
+                        <div id="gptResponse" class="gpt-response"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="canvas-container">
+                <canvas id="drawingCanvas"></canvas>
+                <div class="canvas-info">
+                    <span id="cursorPos">X: 0, Y: 0</span>
+                    <span id="canvasSize">Canvas: 800 x 600</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>GPT Vector Design Tool - Create amazing vector graphics with AI assistance</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="gpt-integration.js"></script>
+</body>
+</html>

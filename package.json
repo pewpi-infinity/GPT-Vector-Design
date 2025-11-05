@@ -1,0 +1,31 @@
+{
+  "name": "gpt-vector-design",
+  "version": "1.0.0",
+  "description": "An AI-powered vector design tool with GPT-based design assistance",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000 || python3 -m http.server 8000",
+    "dev": "python -m http.server 8000 || python3 -m http.server 8000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pewpi-infinity/GPT-Vector-Design.git"
+  },
+  "keywords": [
+    "vector",
+    "design",
+    "graphics",
+    "gpt",
+    "ai",
+    "drawing",
+    "canvas",
+    "svg",
+    "illustration"
+  ],
+  "author": "pewpi-infinity",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pewpi-infinity/GPT-Vector-Design/issues"
+  },
+  "homepage": "https://github.com/pewpi-infinity/GPT-Vector-Design#readme"
+}
