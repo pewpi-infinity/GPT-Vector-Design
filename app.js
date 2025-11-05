@@ -161,6 +161,12 @@ function draw(e) {
 function stopDrawing(e) {
     if (!app.isDrawing) return;
     
+    // Handle case when mouse leaves canvas (e may be null)
+    if (!e || !e.clientX || !e.clientY) {
+        app.isDrawing = false;
+        return;
+    }
+    
     const rect = app.canvas.getBoundingClientRect();
     const endX = e.clientX - rect.left;
     const endY = e.clientY - rect.top;
