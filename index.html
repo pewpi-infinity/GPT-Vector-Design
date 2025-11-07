@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinity Portal - Dashboard</title>
+  <!-- [Full CSS as in your code above, omitted here for brevity] -->
+</head>
+<body>
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-text">INFINITY</div>
+      <span class="ai-badge">AI Shadow Agent Active</span>
+    </div>
+    <div class="user-info">
+      <div class="user-name">👤 <span id="username"></span></div>
+      <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="welcome-card">
+      <h1>Welcome back, <span id="welcome-username"></span>! 🚀</h1>
+      <p class="welcome-subtitle">Your secure Infinity Portal is protected by PewPi AI-to-AI encryption</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Activities</div>
+          <div class="stat-value" id="total-activities">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Session Status</div>
+          <div class="stat-value" style="color: var(--success-color);">Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Security Level</div>
+          <div class="stat-value">Maximum</div>
+        </div>
+      </div>
+    </div>
+    <div class="activity-section">
+      <div class="activity-header">
+        <h2>
+          Activity Timeline
+          <span class="ai-badge">Live Narration</span>
+        </h2>
+        <button class="clear-btn" onclick="clearActivityLog()">Clear History</button>
+      </div>
+      <div class="activity-log" id="activity-log">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <p>No activities yet. Your AI shadow agent will narrate your journey here.</p>
+        </div>
+      </div>
+    </div>
+    <div class="quick-actions">
+      <a href="pewpi-about.html" class="action-card">
+        <div class="action-icon">🔐</div>
+        <div class="action-title">PewPi Security</div>
+        <div class="action-desc">Learn about your AI-to-AI encryption protection</div>
+      </a>
+      <a href="infinity-portal-unified.html" class="action-card">
+        <div class="action-icon">🌐</div>
+        <div class="action-title">Infinity Portal</div>
+        <div class="action-desc">Access the main unified portal</div>
+      </a>
+      <div class="action-card" onclick="testActivity()">
+        <div class="action-icon">⚡</div>
+        <div class="action-title">Test Activity</div>
+        <div class="action-desc">Generate a test activity log entry</div>
+      </div>
+    </div>
+  </div>
+  <!-- [Javascript: session management, activity log, initialization, as above] -->
+</body>
+</html>
