@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Infinity Vector App - UNIFIED RIG (v4.1 - Bot Fix)</title>
+  <title>Infinity Vector App - UNIFIED RIG (v4.2 - Connection Fix)</title>
   <style>
-    /* === BASE STYLES & LAYOUT === */
+    /* (Styles remain the same for clarity and brevity) */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
         --primary-color: #6366f1;
@@ -28,20 +28,17 @@
         min-height: 100vh;
         overflow-x: hidden;
     }
-    /* === MODAL STYLES === */
     .modal {
         display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
         background-color: var(--modal-overlay); align-items: center; justify-content: center;
         animation: fadeIn 0.3s ease-in;
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .modal-content {
         background: linear-gradient(135deg, var(--background-light) 0%, #2d3548 100%);
         padding: 3rem 2.5rem; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         text-align: center; max-width: 450px; width: 90%; border: 1px solid var(--border-color);
         animation: slideUp 0.4s ease-out;
     }
-    @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .infinity-logo { font-size: 5rem; color: var(--primary-color); margin-bottom: 1rem; text-shadow: 0 0 30px rgba(99, 102, 241, 0.5); }
     #signInForm input {
         width: 100%; padding: 1rem; margin-bottom: 1rem; border: 2px solid var(--border-color);
@@ -58,9 +55,7 @@
         padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;
         display: none; 
     }
-    /* === APP CONTAINER === */
     .app-container { display: none; flex-direction: column; min-height: 100vh; }
-    /* Header & Nav */
     .app-header {
         background: var(--background-light); padding: 1.5rem 2rem; display: flex;
         justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color);
@@ -76,7 +71,6 @@
         background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
         border-color: var(--accent-color);
     }
-    /* === QUANTUM DRAWER STYLES === */
     .quantum-drawer {
         position: fixed; top: 0; right: 0; height: 100%; width: 320px;
         background: var(--drawer-bg); z-index: 999; 
@@ -108,395 +102,11 @@
         display: none; padding-left: 10px; margin-bottom: 10px;
         border-left: 2px solid var(--secondary-color);
     }
-    /* === SERVER STATUS BADGE === */
     #serverStatusBadge {
         font-size: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600;
         margin-right: 1rem;
     }
     .server-ready { background-color: var(--success-color); color: var(--background-dark); }
     .server-down { background-color: var(--error-color); color: var(--text-primary); }
-    /* Policy Violation Content */
     .policy-violation {
-        text-align: center; padding: 4rem; color: var(--error-color);
-    }
-  </style>
-</head>
-<body>
-
-<div id="signInModal" class="modal">
-    <div class="modal-content">
-        <div class="infinity-logo">∞</div>
-        <h2>Vector Access</h2>
-        <div class="modal-subtitle">Local-first, encrypted session required.</div>
-        <form id="signInForm">
-            <div id="authError" class="auth-error"></div>
-            <input type="password" id="passphrase" placeholder="Enter Secure Passphrase" required autocomplete="off">
-            <button type="button" id="signInBtn">ACCESS VECTOR SPACE</button>
-        </form>
-    </div>
-</div>
-
-<div id="app" class="app-container">
-    <header class="app-header">
-        <div class="header-left">
-            <span class="infinity-icon">∞</span>
-            <h1>Infinity Vector App</h1>
-        </div>
-        <div class="header-right">
-            <span id="serverStatusBadge" class="server-down">SERVER STATUS: CHECKING...</span>
-            <span id="userStatus">STATUS: VECTOR READY</span>
-            <button class="sign-out-btn" id="signOutBtn">Sign Out</button>
-        </div>
-    </header>
-
-    <nav class="vector-nav">
-        <div class="vector-container" id="vectorContainer">
-            </div>
-    </nav>
-
-    <main class="main-content">
-        <div class="zone-container">
-            <div id="activeZone" class="zone-placeholder">
-                </div>
-        </div>
-    </main>
-</div>
-
-<button class="drawer-toggle-btn" onclick="document.getElementById('quantumDrawer').classList.toggle('open')">
-    App Drawer ☰
-</button>
-<div id="quantumDrawer" class="quantum-drawer">
-    <div class="drawer-content">
-        <h3 style="margin-top: 0;">🌐 Core Systems</h3>
-        <a href="http://127.0.0.1:8080" target="_blank" class="drawer-link">
-            🧠 Rogers AI Console (LIVE:8080)
-        </a>
-        <a href="https://pi.marvaseater.workers.dev/" target="_blank" class="drawer-link">
-            🎵 Pi Singer Generator (Working)
-        </a>
-
-        <h3>🛠️ Dev & Bot Farms (Requires Server 5000)</h3>
-        <button class="drawer-group-toggle" onclick="toggleDrawerGroup(this)">
-            ▶️ Bot Farm Tools
-        </button>
-        <div class="drawer-group-links">
-            <a href="#" class="drawer-link" 
-               onclick="window.infinityApp.triggerBotDuty('cleaner_bot', 'Optimization Cycle', 'low'); return false;">
-                🧹 Cleaner Bot UI
-            </a>
-            <a href="#" class="drawer-link" 
-               onclick="window.infinityApp.triggerBotDuty('app_builder_bot', 'New App: VectorUI', 'high'); return false;">
-                ⚙️ App Builder Bot (High Token)
-            </a>
-        </div>
-
-        <h3>📈 Market & POS</h3>
-        <button class="drawer-group-toggle" onclick="toggleDrawerGroup(this)">
-            ▶️ POS & Commerce
-        </button>
-        <div class="drawer-group-links">
-            <a href="#" class="drawer-link" 
-                onclick="window.infinityApp.triggerBotDuty('commerce_bot', 'POS Transaction', 'medium'); return false;">
-                💰 POS Terminal
-            </a>
-            <a href="#" class="drawer-link" 
-                onclick="window.infinityApp.triggerBotDuty('ad_bot', 'Ad Vector Design', 'high'); return false;">
-                📢 Ad Vector Designer
-            </a>
-        </div>
-    </div>
-</div>
-
-<script>
-// --- HELPER FUNCTION: Toggle Drawer Group ---
-function toggleDrawerGroup(button) {
-    const group = button.nextElementSibling;
-    if (group.style.display === "block") {
-        group.style.display = "none";
-        button.innerHTML = "▶️ " + button.innerHTML.substring(4);
-    } else {
-        group.style.display = "block";
-        button.innerHTML = "▼ " + button.innerHTML.substring(4);
-    }
-}
-
-// --- INFINITY VECTOR APP CLASS (UNIFIED v4.1) ---
-class InfinityVectorApp {
-    constructor() {
-        this.isAuthenticated = false;
-        this.isServerUp = false; 
-        this.flaskServerURL = 'http://127.0.0.1:5000'; // Target for server.py
-        this.userName = 'Kris';
-        this.currentZone = 'home';
-        
-        this.vectorNodes = [
-            { id: 'home', label: 'Home', icon: '🏠' },
-            { id: 'projects', label: 'Projects', icon: '📁' },
-            { id: 'security', label: 'Security', icon: '🔒' },
-            { id: 'data', label: 'Data', icon: '📊' },
-            { id: 'tools', label: 'Tools', icon: '🔧' },
-            { id: 'settings', label: 'Settings', icon: '⚙️' }
-        ];
-
-        this.init();
-    }
-
-    async init() {
-        await this.checkServerStatus(); 
-        this.checkAuthentication();
-        this.setupEventListeners();
-        this.initializeVectorNav();
-        setInterval(() => this.checkServerStatus(), 30000); 
-    }
-    
-    // --- SERVER STATUS CHECK (Port 5000) ---
-    async checkServerStatus() {
-        const badge = document.getElementById('serverStatusBadge');
-        let status = false;
-        try {
-            const response = await fetch(this.flaskServerURL + '/api/status', { method: 'GET', signal: AbortSignal.timeout(3000) });
-            status = response.ok;
-        } catch (e) {
-            status = false;
-        }
-        
-        this.isServerUp = status;
-        
-        if (this.isServerUp) {
-            badge.textContent = 'SERVER READY (5000)';
-            badge.className = 'server-ready';
-        } else {
-            badge.textContent = 'SERVER DOWN (5000)';
-            badge.className = 'server-down';
-        }
-        
-        this.updateUIForServerStatus(); 
-    }
-
-    updateUIForServerStatus() {
-        if (!this.isAuthenticated) return; 
-
-        const activeZone = document.getElementById('activeZone');
-        const drawer = document.getElementById('quantumDrawer');
-        
-        if (!this.isServerUp) {
-            // Block sensitive zones and show policy violation
-            document.querySelectorAll('.vector-node').forEach(node => {
-                if (['projects', 'data'].includes(node.dataset.zone)) {
-                    node.style.pointerEvents = 'none'; 
-                    node.style.opacity = '0.5';
-                } else {
-                    node.style.pointerEvents = 'auto'; 
-                    node.style.opacity = '1';
-                }
-            });
-            activeZone.innerHTML = this.getPolicyViolationContent(); 
-            drawer.style.display = 'none'; 
-        } else {
-            // Restore functionality
-            document.querySelectorAll('.vector-node').forEach(node => {
-                node.style.pointerEvents = 'auto';
-                node.style.opacity = '1';
-            });
-            drawer.style.display = 'block'; 
-            if (activeZone.innerHTML.includes('🛑 CORE POLICY VIOLATION')) {
-                 this.loadZone(this.currentZone || 'home'); 
-            }
-        }
-    }
-
-    getPolicyViolationContent() {
-        return `
-            <div class="policy-violation">
-                <h2>🛑 CORE POLICY VIOLATION: Server Down</h2>
-                <p style="color: var(--text-secondary); margin-top: 1.5rem;">
-                    The **Data Persistence Layer (Port 5000)** is not active. 
-                </p>
-            </div>
-        `;
-    }
-
-    // --- AUTHENTICATION LOGIC (Rest of Auth remains same) ---
-    setupEventListeners() {
-        document.getElementById('signInBtn').addEventListener('click', () => this.handleSignIn());
-        document.getElementById('passphrase').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') { this.handleSignIn(); }
-        });
-        document.getElementById('signOutBtn').addEventListener('click', () => this.handleSignOut());
-    }
-
-    async handleSignIn() {
-        if (!this.isServerUp) {
-            this.showError('SERVER DOWN (5000): Cannot sign in. System control requires the server.');
-            return;
-        }
-        
-        const passphrase = document.getElementById('passphrase').value;
-        if (!passphrase || passphrase.length < 8) {
-            this.showError('Please enter a passphrase (minimum 8 characters)');
-            return;
-        }
-        try {
-            const hashedData = await this.hashPassphrase(passphrase);
-            localStorage.setItem('infinity_auth', hashedData);
-            this.clearError();
-            this.authenticate();
-        } catch (error) {
-            this.showError('Authentication failed. Please try again.');
-        }
-    }
-
-    async hashPassphrase(passphrase) {
-        const data = new TextEncoder().encode(passphrase);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    checkAuthentication() {
-        if (localStorage.getItem('infinity_auth')) {
-            this.authenticate();
-        } else {
-            this.showSignInModal();
-        }
-    }
-
-    authenticate() {
-        this.isAuthenticated = true;
-        document.getElementById('signInModal').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        this.logVectorAction('Initial Dashboard Access', 'low', false);
-        this.loadZone(this.currentZone);
-    }
-
-    showSignInModal() {
-         document.getElementById('signInModal').style.display = 'flex';
-         document.getElementById('app').style.display = 'none';
-    }
-
-    handleSignOut() {
-        this.logVectorAction('Session Log Out', 'low', false);
-        localStorage.removeItem('infinity_auth');
-        this.isAuthenticated = false;
-        this.showSignInModal();
-    }
-    
-    showError(message) {
-        const errorDiv = document.getElementById('authError');
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
-
-    clearError() {
-        const errorDiv = document.getElementById('authError');
-        if (errorDiv) { errorDiv.style.display = 'none'; }
-    }
-    
-    // --- UI/NAVIGATION LOGIC (Remains same) ---
-    initializeVectorNav() {
-        const container = document.getElementById('vectorContainer');
-        container.innerHTML = '';
-        this.vectorNodes.forEach(node => {
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'vector-node';
-            nodeElement.dataset.zone = node.id;
-            nodeElement.innerHTML = `${node.icon} ${node.label}`;
-            nodeElement.addEventListener('click', () => this.loadZone(node.id));
-            container.appendChild(nodeElement);
-        });
-    }
-
-    loadZone(zoneId) {
-        this.currentZone = zoneId;
-        document.querySelectorAll('.vector-node').forEach(node => {
-            node.classList.remove('active');
-            if (node.dataset.zone === zoneId) {
-                node.classList.add('active');
-            }
-        });
-        
-        if (this.isAuthenticated) {
-            this.logVectorAction(`View Zone: ${zoneId}`, 'low', false); 
-        }
-
-        document.getElementById('activeZone').innerHTML = this.getZoneContent(zoneId);
-        
-        if (zoneId === 'security') {
-             this.renderActivityTimeline();
-        }
-        
-        this.updateUIForServerStatus(); 
-    }
-    
-    // --- BOT TRIGGER AND LOGGING ---
-    logVectorAction(actionName, complexity, isAutomated) {
-        // ... (logging logic remains the same)
-        const now = new Date();
-        let tokensUsed = complexity === 'high' ? 1500 : complexity === 'medium' ? 75 : 5;
-        
-        const logEntry = {
-            time: now.toLocaleTimeString() + ' ' + now.toLocaleDateString(),
-            action: actionName,
-            tokens: tokensUsed,
-            agent: isAutomated ? 'Bot' : this.userName,
-            message: `Activity logged: ${actionName} (${tokensUsed} tokens consumed).`
-        };
-        
-        let log = JSON.parse(localStorage.getItem('shadowAgentLog') || '[]');
-        log.unshift(logEntry);
-        localStorage.setItem('shadowAgentLog', JSON.stringify(log.slice(0, 50)));
-        this.updateWatcherStatus(tokensUsed);
-    }
-
-    updateWatcherStatus(lastTokensUsed) {
-        document.getElementById('userStatus').innerHTML = `STATUS: Watcher Active (${lastTokensUsed} TKN)`;
-    }
-    
-    // --- Server-Side Bot Trigger (Calls Port 5000) ---
-    async triggerBotDuty(botId, dutyName, complexity) {
-        if (!this.isServerUp) {
-            alert(`❌ FAILED: Server (Port 5000) is down. Bot ${botId} duty blocked.`);
-            this.logVectorAction(`Bot Blocked: ${botId}`, 'low', true);
-            return;
-        }
-
-        this.logVectorAction(`Bot Trigger Request: ${botId}/${dutyName}`, complexity, true); 
-        alert(`Initiating Bot Duty: ${botId} for '${dutyName}'. Please wait for server confirmation...`);
-
-        const payload = {
-            bot_id: botId,
-            duty: dutyName,
-            user_data: { user: this.userName, complexity: complexity }
-        };
-
-        try {
-            const response = await fetch(this.flaskServerURL + '/api/bot/execute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server Error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            alert(`✅ SUCCESS: Bot ${botId} duty completed! Server Status: ${data.commit_status.status}.`);
-
-        } catch (error) {
-            console.error("Bot Execution Failed:", error);
-            alert(`⚠️ FAILED: Bot execution error. Check Flask Console (Port 5000) and ensure 'requests' is installed. Error: ${error.message}`);
-        }
-    }
-
-    // --- ZONE CONTENT GENERATION (Remains same) ---
-    getZoneContent(zoneId) {
-        const zoneConfigs = {
-            home: {
-                title: 'Home Dashboard',
-                description: 'Welcome. Use the App Drawer (right) to launch bots.',
-                content: `(Content placeholders here)`
-            },
-            projects: {
-                title: 'Projects',
-                description: 'Requires Serv
+        text-align: center; padding: 4rem; color: var
