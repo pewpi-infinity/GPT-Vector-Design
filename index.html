@@ -1,173 +1,283 @@
-<script>
-    const SERVER_IP = "http://100.118.99.166:5000";
-    const statusElement = document.getElementById('status');
-    const chatWindow = document.getElementById('chat-window');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const serverUrlEl = document.getElementById('server-url');
-
-    // Display the server URL in the page (so it always matches)
-    if (serverUrlEl) serverUrlEl.textContent = SERVER_IP;
-
-    // Track server availability in a single place
-    let isServerOnline = false;
-
-    // --- UI UTILITIES ---
-    function addMessage(role, text) {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'rogers-message');
-
-        // Use textContent to avoid unexpected HTML rendering / injection
-        msgDiv.textContent = text;
-
-        if (role === 'user') msgDiv.style.textAlign = 'right';
-        chatWindow.appendChild(msgDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rogers AI Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    html,body { height:100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
+    .container {
+      width: 100%;
+      max-width: 768px;
+      background: #161b22;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+    }
+    #chat-window {
+      height: 60vh;
+      overflow-y: auto;
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid #30363d;
+    }
+    .message { margin-bottom:10px; padding:8px 12px; border-radius:8px; max-width:80%; word-wrap:break-word; }
+    .user-message { background-color:#21262d; margin-left:auto; border:1px solid #30363d; }
+    .rogers-message { background-color:#0d1117; border:1px solid #30363d; }
+    .status-indicator { padding:6px 12px; border-radius:9999px; font-weight:700; font-size:0.875rem; text-align:center; }
+    .status-offline { background-color:#da3633; color:#fff; }
+    .status-online { background-color:#3fb950; color:#000; }
 
-    function setStatus(isOnline, message) {
-        // Keep the single source of truth
-        isServerOnline = !!isOnline;
+    /* Error overlay to make JS failures visible instead of a white page */
+    .error-overlay {
+      position: fixed;
+      inset: 12px;
+      z-index: 9999;
+      background: rgba(10,10,10,0.95);
+      color: #fff;
+      border: 2px solid #ff6b6b;
+      padding: 16px;
+      font-family: monospace;
+      overflow:auto;
+      max-height:calc(100vh - 24px);
+      display:none;
+      white-space: pre-wrap;
+    }
+    .error-overlay h2 { margin:0 0 8px 0; color:#ff9b9b; }
+    .test-row { display:flex; gap:8px; align-items:center; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app-root">
+    <div class="flex justify-between items-center border-b pb-3 border-[#30363d]">
+      <h1 class="text-2xl font-bold text-blue-400">Rogers AI Console</h1>
+      <div id="status" class="status-indicator status-offline">OFFLINE (Connecting...)</div>
+    </div>
 
-        // Update text and classes
-        statusElement.textContent = message;
-        statusElement.className = 'status-indicator'; // reset classes
-        statusElement.classList.add(isOnline ? 'status-online' : 'status-offline');
+    <div id="chat-window" class="flex flex-col gap-2">
+      <!-- Messages appear here -->
+    </div>
 
-        // Enable/disable UI based on server state
-        userInput.disabled = !isServerOnline;
-        sendButton.disabled = !isServerOnline;
+    <div class="flex gap-3">
+      <input type="text" id="user-input" placeholder="Type your message..." disabled
+             class="flex-grow p-3 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm disabled:opacity-50" />
+      <button id="send-button" disabled
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out disabled:opacity-30">
+        Send
+      </button>
+    </div>
 
-        if (isServerOnline) {
-            userInput.focus();
+    <div class="text-xs text-gray-500">
+      Attempting to contact server at: <code id="server-url">http://100.118.99.166:5000</code>
+    </div>
+
+    <div class="test-row">
+      <button id="manual-check" class="mt-2 bg-gray-700 text-white py-2 px-3 rounded">Manual status check</button>
+      <div id="manual-result" class="text-xs text-gray-400 ml-2"></div>
+    </div>
+  </div>
+
+  <div id="error-overlay" class="error-overlay" role="alert" aria-live="assertive">
+    <h2>JavaScript Error</h2>
+    <div id="error-content"></div>
+  </div>
+
+  <script>
+    (function() {
+      // Defensive startup to prevent a thrown error turning the page white.
+      try {
+        const SERVER_IP = "http://100.118.99.166:5000";
+        const statusElement = document.getElementById('status');
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const serverUrlEl = document.getElementById('server-url');
+        const manualCheck = document.getElementById('manual-check');
+        const manualResult = document.getElementById('manual-result');
+
+        if (serverUrlEl) serverUrlEl.textContent = SERVER_IP;
+
+        let isServerOnline = false;
+
+        function showErrorOverlay(msg) {
+          try {
+            const overlay = document.getElementById('error-overlay');
+            const content = document.getElementById('error-content');
+            if (content) content.textContent = msg;
+            if (overlay) overlay.style.display = 'block';
+            console.error('Displayed error overlay:', msg);
+          } catch (e) {
+            // last resort: log to console
+            console.error('Failed to show error overlay', e, msg);
+          }
         }
-    }
 
-    // --- SERVER CONNECTION CHECK ---
-    async function checkServerStatus() {
-        // Quick UI feedback that we're attempting a connection
-        setStatus(false, 'Connecting...');
+        // Global error handler -> show overlay
+        window.addEventListener('error', function(ev) {
+          const msg = (ev && ev.error && ev.error.stack) ? ev.error.stack : (ev.message || String(ev));
+          showErrorOverlay(msg);
+        });
 
-        try {
-            const resp = await fetch(`${SERVER_IP}/api/status`, {
-                method: 'GET',
-                cache: 'no-store',
-                mode: 'cors' // explicit CORS mode
-            });
+        window.addEventListener('unhandledrejection', function(ev) {
+          const msg = ev && ev.reason ? (ev.reason.stack || ev.reason) : String(ev);
+          showErrorOverlay('Unhandled Promise Rejection: ' + msg);
+        });
 
+        function addMessage(role, text) {
+          if (!chatWindow) return;
+          const msgDiv = document.createElement('div');
+          msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'rogers-message');
+          msgDiv.textContent = String(text);
+          if (role === 'user') msgDiv.style.textAlign = 'right';
+          chatWindow.appendChild(msgDiv);
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function setStatus(isOnline, message) {
+          isServerOnline = !!isOnline;
+          if (!statusElement) return;
+          statusElement.textContent = message || (isOnline ? 'ONLINE' : 'OFFLINE');
+          statusElement.className = 'status-indicator';
+          statusElement.classList.add(isOnline ? 'status-online' : 'status-offline');
+          if (userInput) userInput.disabled = !isServerOnline;
+          if (sendButton) sendButton.disabled = !isServerOnline;
+          if (isServerOnline && userInput) userInput.focus();
+        }
+
+        async function checkServerStatus() {
+          setStatus(false, 'Connecting...');
+          try {
+            const resp = await fetch(`${SERVER_IP}/api/status`, { method: 'GET', cache: 'no-store', mode: 'cors' });
             if (!resp.ok) {
-                // HTTP error (404, 500, etc.)
-                setStatus(false, `OFFLINE (HTTP ${resp.status})`);
-                console.warn('Status check HTTP error', resp.status);
-                return false;
+              setStatus(false, `OFFLINE (HTTP ${resp.status})`);
+              if (manualResult) manualResult.textContent = `HTTP ${resp.status}`;
+              return false;
             }
-
-            // Try to parse JSON safely
-            let data;
-            try {
-                data = await resp.json();
-            } catch (parseErr) {
-                console.error('Failed to parse /api/status JSON', parseErr);
-                setStatus(false, 'OFFLINE (Bad JSON)');
-                return false;
+            const data = await resp.json().catch(() => null);
+            if (!data) {
+              setStatus(false, 'OFFLINE (Bad JSON)');
+              if (manualResult) manualResult.textContent = 'Bad JSON';
+              return false;
             }
-
-            // The server's payload is expected to include { status: 'ready' }
-            if (data && data.status === 'ready') {
-                // Server ready -> enable UI
-                setStatus(true, 'ONLINE');
-                addMessage('rogers', 'System: Rogers AI Console is online and ready.');
-                return true;
+            if (data.status === 'ready') {
+              setStatus(true, 'ONLINE');
+              addMessage('rogers', 'System: Rogers AI Console is online and ready.');
+              if (manualResult) manualResult.textContent = 'OK';
+              return true;
             } else {
-                setStatus(false, 'OFFLINE (Bad Status)');
-                console.warn('/api/status returned unexpected payload', data);
-                return false;
+              setStatus(false, 'OFFLINE (Bad Status)');
+              if (manualResult) manualResult.textContent = 'Bad Status';
+              return false;
             }
-        } catch (err) {
-            // Network / CORS / other fetch errors
-            console.error('Network error while checking server status', err);
+          } catch (err) {
             setStatus(false, 'OFFLINE (Network Error)');
+            if (manualResult) manualResult.textContent = 'Network Error';
+            console.error('Status check failed', err);
             return false;
-        }
-    }
-
-    // Run an initial check, then poll every 5s (adjust interval as needed)
-    async function startStatusPolling() {
-        await checkServerStatus();
-        setInterval(checkServerStatus, 5000);
-    }
-
-    // --- MESSAGE SENDING ---
-    async function sendMessage() {
-        const query = userInput.value.trim();
-        if (!query) return;
-
-        // Do not attempt to send if server is known offline
-        if (!isServerOnline) {
-            addMessage('rogers', 'Cannot send: server is offline.');
-            return;
+          }
         }
 
-        // Show the user's message
-        addMessage('user', query);
-        userInput.value = '';
-
-        // Give user feedback while the request is in flight
-        setStatus(false, 'Sending...');
-
-        try {
+        async function sendMessage() {
+          try {
+            const query = userInput ? userInput.value.trim() : '';
+            if (!query) return;
+            if (!isServerOnline) {
+              addMessage('rogers', 'Cannot send: server is offline.');
+              return;
+            }
+            addMessage('user', query);
+            if (userInput) userInput.value = '';
+            setStatus(false, 'Sending...');
             const response = await fetch(`${SERVER_IP}/api/bot/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query }),
-                cache: 'no-store',
-                mode: 'cors'
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query }),
+              cache: 'no-store',
+              mode: 'cors'
             });
-
             if (!response.ok) {
-                addMessage('rogers', `Critical Error: Server returned ${response.status}.`);
-                // Re-check status right away; maybe server went down mid-request
-                await checkServerStatus();
-                return;
+              addMessage('rogers', `Critical Error: Server returned ${response.status}.`);
+              await checkServerStatus();
+              return;
             }
-
-            let result;
-            try {
-                result = await response.json();
-            } catch (err) {
-                console.error('Failed to parse response from /api/bot/execute', err);
-                addMessage('rogers', 'Error: Bad JSON response from server.');
-                return;
-            }
-
+            const result = await response.json().catch(() => null);
             if (result && result.ok && result.response) {
-                addMessage('rogers', result.response);
+              addMessage('rogers', result.response);
             } else {
-                addMessage('rogers', `Error: Bot failed. ${result && result.message ? result.message : 'Unknown error.'}`);
+              addMessage('rogers', `Error: ${result && result.message ? result.message : 'Unknown error.'}`);
             }
-
-            // If everything succeeded, ensure the UI reflects the server still being online
-            if (await checkServerStatus()) {
-                setStatus(true, 'ONLINE');
-            }
-        } catch (error) {
-            console.error('Network error while sending message', error);
-            addMessage('rogers', 'Critical Network Failure: Could not execute bot.');
-            // re-check server status
+            // refresh status
             await checkServerStatus();
+          } catch (err) {
+            console.error('Send failed', err);
+            addMessage('rogers', 'Critical Network Failure: Could not execute bot.');
+            await checkServerStatus();
+          }
         }
-    }
 
-    // Event listeners
-    userInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !userInput.disabled) {
-            sendMessage();
+        if (sendButton) {
+          sendButton.addEventListener('click', function() {
+            sendMessage().catch(e => { throw e; });
+          });
         }
-    });
 
-    // Start polling after DOM is ready
-    document.addEventListener('DOMContentLoaded', startStatusPolling);
+        if (userInput) {
+          userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !userInput.disabled) {
+              sendMessage().catch(err => { throw err; });
+            }
+          });
+        }
 
-    // expose function for inline onclick (if you keep it)
-    window.sendMessage = sendMessage;
-</script>
+        if (manualCheck) {
+          manualCheck.addEventListener('click', () => {
+            checkServerStatus().catch(err => console.error(err));
+          });
+        }
+
+        // Start initial check and poll
+        (function init() {
+          // Delay a tick to ensure DOM is stable
+          setTimeout(() => {
+            checkServerStatus().catch(err => {
+              console.error('Initial status check failed', err);
+            });
+            // Poll every 5 seconds
+            setInterval(() => checkServerStatus().catch(() => {}), 5000);
+          }, 50);
+        })();
+
+        // Expose for debugging in console if needed
+        window._rogers_debug = { checkServerStatus, sendMessage, setStatus };
+
+      } catch (startupErr) {
+        // If anything goes wrong during startup, display it so the page isn't blank
+        const msg = (startupErr && startupErr.stack) ? startupErr.stack : String(startupErr);
+        try {
+          document.getElementById('error-content').textContent = 'Startup error: ' + msg;
+          document.getElementById('error-overlay').style.display = 'block';
+        } catch (e) {
+          console.error('Fatal startup error', startupErr, e);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
