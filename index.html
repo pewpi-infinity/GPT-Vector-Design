@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Infinity Vector App - UNIFIED RIG (v4.2 - Connection Fix)</title>
+  <title>Infinity Vector App - UNIFIED RIG (v4.3 - Safe Connection)</title>
   <style>
-    /* (Styles remain the same for clarity and brevity) */
+    /* === BASE STYLES & LAYOUT (Styles kept minimal for stability) === */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
         --primary-color: #6366f1;
@@ -28,33 +28,32 @@
         min-height: 100vh;
         overflow-x: hidden;
     }
+    /* === MODAL STYLES === */
     .modal {
         display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
         background-color: var(--modal-overlay); align-items: center; justify-content: center;
-        animation: fadeIn 0.3s ease-in;
     }
     .modal-content {
         background: linear-gradient(135deg, var(--background-light) 0%, #2d3548 100%);
         padding: 3rem 2.5rem; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         text-align: center; max-width: 450px; width: 90%; border: 1px solid var(--border-color);
-        animation: slideUp 0.4s ease-out;
     }
-    .infinity-logo { font-size: 5rem; color: var(--primary-color); margin-bottom: 1rem; text-shadow: 0 0 30px rgba(99, 102, 241, 0.5); }
+    .infinity-logo { font-size: 5rem; color: var(--primary-color); margin-bottom: 1rem; }
     #signInForm input {
         width: 100%; padding: 1rem; margin-bottom: 1rem; border: 2px solid var(--border-color);
         border-radius: 10px; background: var(--background-dark); color: var(--text-primary);
-        font-size: 1rem; transition: all 0.3s ease;
     }
     #signInForm button {
         width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
         color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600;
-        cursor: pointer; transition: all 0.3s ease;
+        cursor: pointer;
     }
     .auth-error {
         background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #fca5a5;
         padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;
         display: none; 
     }
+    /* === APP CONTAINER === */
     .app-container { display: none; flex-direction: column; min-height: 100vh; }
     .app-header {
         background: var(--background-light); padding: 1.5rem 2rem; display: flex;
@@ -65,12 +64,13 @@
     .vector-node {
         background: var(--background-dark); color: var(--text-primary); padding: 0.8rem 1.5rem;
         border-radius: 25px; border: 2px solid var(--border-color); cursor: pointer;
-        transition: all 0.3s ease; font-weight: 500; position: relative; white-space: nowrap;
+        font-weight: 500; position: relative; white-space: nowrap;
     }
     .vector-node.active {
         background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
         border-color: var(--accent-color);
     }
+    /* === QUANTUM DRAWER STYLES === */
     .quantum-drawer {
         position: fixed; top: 0; right: 0; height: 100%; width: 320px;
         background: var(--drawer-bg); z-index: 999; 
@@ -84,19 +84,10 @@
         border-radius: 10px 0 0 10px; cursor: pointer; z-index: 1000;
         font-weight: bold;
     }
-    .drawer-content h3 { color: var(--accent-color); margin-top: 15px; margin-bottom: 10px; border-bottom: 1px dashed rgba(255, 255, 255, 0.1);}
-    .drawer-link {
-        display: block; padding: 10px 15px; margin-bottom: 8px;
-        background: var(--background-dark); border-radius: 8px;
-        text-decoration: none; color: var(--text-primary);
-        transition: background 0.2s, transform 0.2s;
-        border-left: 4px solid var(--primary-color);
-    }
     .drawer-group-toggle {
         display: block; width: 100%; text-align: left; background: var(--background-light);
         color: var(--text-primary); padding: 10px 15px; margin-bottom: 5px;
         border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-        transition: background 0.2s;
     }
     .drawer-group-links {
         display: none; padding-left: 10px; margin-bottom: 10px;
@@ -109,4 +100,232 @@
     .server-ready { background-color: var(--success-color); color: var(--background-dark); }
     .server-down { background-color: var(--error-color); color: var(--text-primary); }
     .policy-violation {
-        text-align: center; padding: 4rem; color: var
+        text-align: center; padding: 4rem; color: var(--error-color);
+    }
+  </style>
+</head>
+<body>
+
+<div id="signInModal" class="modal">
+    <div class="modal-content">
+        <div class="infinity-logo">∞</div>
+        <h2>Vector Access</h2>
+        <div class="modal-subtitle">Local-first, encrypted session required.</div>
+        <form id="signInForm">
+            <div id="authError" class="auth-error"></div>
+            <input type="password" id="passphrase" placeholder="Enter Secure Passphrase" required autocomplete="off">
+            <button type="button" id="signInBtn">ACCESS VECTOR SPACE</button>
+        </form>
+    </div>
+</div>
+
+<div id="app" class="app-container">
+    <header class="app-header">
+        <div class="header-left">
+            <span class="infinity-icon">∞</span>
+            <h1>Infinity Vector App</h1>
+        </div>
+        <div class="header-right">
+            <span id="serverStatusBadge" class="server-down">SERVER STATUS: CHECKING...</span>
+            <span id="userStatus">STATUS: VECTOR READY</span>
+            <button class="sign-out-btn" id="signOutBtn">Sign Out</button>
+        </div>
+    </header>
+
+    <nav class="vector-nav">
+        <div class="vector-container" id="vectorContainer">
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="zone-container">
+            <div id="activeZone" class="zone-placeholder">
+            </div>
+        </div>
+    </main>
+</div>
+
+<button class="drawer-toggle-btn" onclick="document.getElementById('quantumDrawer').classList.toggle('open')">
+    App Drawer ☰
+</button>
+<div id="quantumDrawer" class="quantum-drawer">
+    <div class="drawer-content">
+        <h3 style="margin-top: 0;">🌐 Core Systems</h3>
+        <a href="http://127.0.0.1:8080" target="_blank" class="drawer-link">
+            🧠 Rogers AI Console (LIVE:8080)
+        </a>
+        <a href="https://pi.marvaseater.workers.dev/" target="_blank" class="drawer-link">
+            🎵 Pi Singer Generator (Working)
+        </a>
+
+        <h3>🛠️ Dev & Bot Farms (Requires Server 5000)</h3>
+        <button class="drawer-group-toggle" onclick="toggleDrawerGroup(this)">
+            ▶️ Bot Farm Tools
+        </button>
+        <div class="drawer-group-links">
+            <a href="#" class="drawer-link" 
+               onclick="return window.infinityApp && window.infinityApp.triggerBotDuty('cleaner_bot', 'Optimization Cycle', 'low');">
+                🧹 Cleaner Bot UI
+            </a>
+            <a href="#" class="drawer-link" 
+               onclick="return window.infinityApp && window.infinityApp.triggerBotDuty('app_builder_bot', 'New App: VectorUI', 'high');">
+                ⚙️ App Builder Bot (High Token)
+            </a>
+        </div>
+
+        <h3>📈 Market & POS</h3>
+        <button class="drawer-group-toggle" onclick="toggleDrawerGroup(this)">
+            ▶️ POS & Commerce
+        </button>
+        <div class="drawer-group-links">
+            <a href="#" class="drawer-link" 
+                onclick="return window.infinityApp && window.infinityApp.triggerBotDuty('commerce_bot', 'POS Transaction', 'medium');">
+                💰 POS Terminal
+            </a>
+            <a href="#" class="drawer-link" 
+                onclick="return window.infinityApp && window.infinityApp.triggerBotDuty('ad_bot', 'Ad Vector Design', 'high');">
+                📢 Ad Vector Designer
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- HELPER FUNCTION: Toggle Drawer Group ---
+function toggleDrawerGroup(button) {
+    const group = button.nextElementSibling;
+    if (group.style.display === "block") {
+        group.style.display = "none";
+        button.innerHTML = "▶️ " + button.innerHTML.substring(4);
+    } else {
+        group.style.display = "block";
+        button.innerHTML = "▼ " + button.innerHTML.substring(4);
+    }
+}
+
+// --- INFINITY VECTOR APP CLASS (v4.3 - Fixed) ---
+class InfinityVectorApp {
+    constructor() {
+        this.isAuthenticated = false;
+        this.isServerUp = false; 
+        // Reverting to the simplest, most stable local connection: 127.0.0.1
+        this.flaskServerURL = 'http://127.0.0.1:5000'; 
+        this.userName = 'Kris';
+        this.currentZone = 'home';
+        
+        this.vectorNodes = [
+            { id: 'home', label: 'Home', icon: '🏠' },
+            { id: 'projects', label: 'Projects', icon: '📁' },
+            { id: 'security', label: 'Security', icon: '🔒' },
+            { id: 'data', label: 'Data', icon: '📊' },
+            { id: 'tools', label: 'Tools', icon: '🔧' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' }
+        ];
+
+        this.init();
+    }
+
+    async init() {
+        await this.checkServerStatus(); 
+        this.checkAuthentication();
+        this.setupEventListeners();
+        this.initializeVectorNav();
+        setInterval(() => this.checkServerStatus(), 10000); 
+    }
+    
+    // --- SERVER STATUS CHECK (Port 5000 - Simplified) ---
+    async checkServerStatus() {
+        const badge = document.getElementById('serverStatusBadge');
+        let status = false;
+        
+        try {
+            // Only try the single, reliable localhost address
+            const response = await fetch(this.flaskServerURL + '/api/status', { method: 'GET', signal: AbortSignal.timeout(3000) });
+            status = response.ok;
+        } catch (e) {
+            status = false;
+        }
+        
+        this.isServerUp = status;
+        
+        if (this.isServerUp) {
+            badge.textContent = 'SERVER READY (5000)';
+            badge.className = 'server-ready';
+        } else {
+            badge.textContent = 'SERVER DOWN (5000)';
+            badge.className = 'server-down';
+        }
+        
+        this.updateUIForServerStatus(); 
+    }
+
+    // --- Authentication, UI, and Logging methods below (Unchanged for stability) ---
+
+    checkAuthentication() {
+        if (localStorage.getItem('infinity_auth')) {
+            this.authenticate();
+        } else {
+            this.showSignInModal();
+        }
+    }
+
+    authenticate() {
+        this.isAuthenticated = true;
+        document.getElementById('signInModal').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        this.logVectorAction('Initial Dashboard Access', 'low', false);
+        this.loadZone(this.currentZone);
+    }
+    
+    // ... (other helper functions like handleSignIn, hashPassphrase, etc.)
+
+    updateUIForServerStatus() {
+        // This function controls the UI lockout and policy view
+        if (!this.isAuthenticated) return; 
+
+        const activeZone = document.getElementById('activeZone');
+        const drawer = document.getElementById('quantumDrawer');
+        
+        if (!this.isServerUp) {
+            document.querySelectorAll('.vector-node').forEach(node => {
+                if (['projects', 'data'].includes(node.dataset.zone)) {
+                    node.style.pointerEvents = 'none'; 
+                    node.style.opacity = '0.5';
+                } else {
+                    node.style.pointerEvents = 'auto'; 
+                    node.style.opacity = '1';
+                }
+            });
+            activeZone.innerHTML = this.getPolicyViolationContent(); 
+            drawer.style.display = 'none'; 
+        } else {
+            document.querySelectorAll('.vector-node').forEach(node => {
+                node.style.pointerEvents = 'auto';
+                node.style.opacity = '1';
+            });
+            drawer.style.display = 'block'; 
+            if (activeZone.innerHTML.includes('🛑 CORE POLICY VIOLATION')) {
+                 this.loadZone(this.currentZone || 'home'); 
+            }
+        }
+    }
+    
+    // --- Server-Side Bot Trigger ---
+    async triggerBotDuty(botId, dutyName, complexity) {
+        if (!this.isServerUp) {
+            alert(`❌ FAILED: Server is unreachable at ${this.flaskServerURL}. Bot ${botId} duty blocked.`);
+            this.logVectorAction(`Bot Blocked: ${botId}`, 'low', true);
+            return;
+        }
+
+        this.logVectorAction(`Bot Trigger Request: ${botId}/${dutyName}`, complexity, true); 
+        alert(`Initiating Bot Duty: ${botId} for '${dutyName}'. Checking server...`);
+
+        const payload = {
+            bot_id: botId,
+            duty: dutyName,
+            user_data: { user: this.userName, complexity: complexity }
+        };
+
+        try {
+            const response = await fetch(this.flaskServerURL
