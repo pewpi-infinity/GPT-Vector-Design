@@ -1,95 +1,274 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Infinity Launcher · All-in-One Portal</title>
-  <meta name="color-scheme" content="light dark"/>
-  <style>
-    /* *** PASTE THE FULL <STYLE> BLOCK FROM THE INFINITY LAUNCHER SCRIPT HERE ***
-    */
-    :root {
-      --blue-1: #003087;
-      --blue-2: #0b5fd7;
-      --bg: #fff;
-      --panel: #f8fafc;
-      --muted: #637083;
-      --radius: 12px;
-      font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
-    }
-    html, body { margin:0; padding:0; background:var(--bg); color:#051426; min-height:100vh;}
-    /* ... (rest of the CSS) ... */
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>INFINITY · PewPi Secure Portal</title>
+<meta name="color-scheme" content="dark"/>
+<style>
+/* === BASE STYLES FROM YOUR SCRIPT === */
+:root {
+  --bg: radial-gradient(circle at top, #0f172a 0%, #030712 50%, #000 100%);
+  --panel: rgba(15,23,42,.35);
+  --border: rgba(148,163,184,.12);
+  --accent: #38bdf8;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --success: #6EE7B7; /* Added for link hover */
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);}
+.hidden{display:none!important;}
+
+/* === LOGIN SCREEN STYLES === */
+#loginScreen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:35px 12px 45px;gap:18px;}
+.login-card{background:radial-gradient(circle,rgba(4,21,43,.7),rgba(1,3,7,.6));backdrop-filter:blur(14px);border:1px solid rgba(18,181,255,.1);border-top:1px solid rgba(18,181,255,.3);max-width:460px;width:100%;border-radius:20px;padding:22px 19px 26px;box-shadow:0 18px 48px rgba(0,0,0,.28);}
+.brandTitle{font-size:36px;font-weight:800;letter-spacing:.24em;text-align:center;background:linear-gradient(120deg,#23b0ff,#8a7cff 60%,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.subtitle-center{text-align:center;color:var(--muted);font-size:14px;margin-bottom:18px;}
+.badge-inline{display:inline-flex;align-items:center;gap:8px;background:rgba(1,110,146,.32);border:1px solid rgba(2,219,255,.28);color:#e2f3ff;border-radius:999px;padding:6px 13px;font-weight:600;font-size:13px;margin:0 auto 12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+label{font-size:13px;color:var(--muted);font-weight:500;}
+input{background:rgba(0,0,0,.38);border:1px solid rgba(13,148,136,.25);border-radius:12px;padding:10px 12px;font-size:14.5px;color:var(--text);outline:none;}
+input:focus{border-color:rgba(18,181,255,.8);box-shadow:0 0 0 1px rgba(18,181,255,.4);}
+.btn-primary{width:100%;background:linear-gradient(115deg,#47c3ff 0%,#6062ff 70%);border:none;color:#fff;font-weight:700;border-radius:999px;padding:11px 18px;font-size:15px;cursor:pointer;margin-top:10px;box-shadow:0 16px 40px rgba(96,98,255,.35);}
+.tiny-link{margin-top:12px;text-align:center;font-size:13.5px;color:var(--muted);}
+.tiny-link button{background:none;border:none;color:#5fd4ff;font-weight:600;cursor:pointer;}
+
+/* === DASHBOARD/LAUNCHER STYLES === */
+#dashboard{min-height:100vh;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(3,6,18,.65);border-bottom:1px solid rgba(16,185,232,.1);backdrop-filter:blur(18px);}
+.logo-main{font-weight:700;letter-spacing:.22em;font-size:22px;background:linear-gradient(112deg,#23b0ff 0%,#b1c7ff 82%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.user-controls{display:flex;gap:8px;align-items:center;}
+.btn-small{background:rgba(15,118,178,.16);border:1px solid rgba(56,189,248,.3);color:#fff;border-radius:12px;padding:6px 14px 5px;font-size:13px;cursor:pointer;}
+.content-wrap{display:flex;flex-direction:column;gap:16px;padding:12px 14px 65px;}
+.hero-card{background:rgba(1,11,21,.68);border:1px solid rgba(18,181,255,.09);border-radius:20px;padding:18px;box-shadow:0 16px 46px rgba(0,0,0,.2);}
+.hero-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+.hero-stats{display:flex;gap:14px;flex-wrap:wrap;}
+.stat-box{background:rgba(0,0,0,.14);border:1px solid rgba(18,181,255,.07);border-left:2px solid rgba(82,124,254,.9);border-radius:15px;padding:10px 12px;flex:1 1 120px;min-width:124px;}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.stat-value{font-size:25px;font-weight:700;}
+/* --- LAUNCHER GRID (Enhanced) --- */
+.portal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;max-width:1000px;margin:0 auto;}
+.portal-card{
+    background:rgba(2,13,26,.42);
+    border:1px solid rgba(148,163,184,.06);
+    border-left:4px solid var(--accent); /* Unified look */
+    border-radius:18px;
+    padding:16px;
+    transition: background-color .2s, border-color .2s;
+    text-decoration: none; /* Make card a proper link */
+    color: var(--text);
+    display: block;
+}
+.portal-card h3{margin:0 0 4px;font-size:18px;display:flex;align-items:center;gap:8px;}
+.portal-card p{margin:4px 0 0;font-size:13px;color:var(--muted);}
+.portal-card:hover{
+    background:rgba(4,30,60,.7);
+    border-left-color: var(--success);
+}
+.status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-left: auto;
+    letter-spacing: .5px;
+}
+.live-status { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
+.local-status { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+/* === ROGERS CHAT BUBBLE === */
+#rogersBubble{position:fixed;bottom:20px;right:20px;width:58px;height:58px;background:linear-gradient(135deg,#38bdf8,#6366f1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;box-shadow:0 0 20px rgba(59,130,246,.4);cursor:pointer;z-index:9999;}
+#rogersPanel{
+    position:fixed;bottom:90px;right:20px;width:340px;max-width:90vw;
+    background:rgba(1,9,18,.97);border:1px solid rgba(18,181,255,.3);
+    border-radius:16px;padding:12px;color:#e0f2fe;z-index:9999;
+}
+#rogersIn{
+    width:100%;border-radius:8px;padding:8px;font-size:14px;color:var(--text);
+    background: rgba(0,0,0,.5); border: 1px solid rgba(18,181,255,.1); outline: none;
+    resize: none; min-height: 40px;
+}
+#rogersSend{
+    margin-top:8px;background:linear-gradient(90deg, #38bdf8, #6366f1);
+    border:none;color:white;padding:8px 15px;border-radius:8px;font-weight:700;
+    cursor:pointer;
+}
+#rogersOut{
+    max-height:180px;overflow-y:auto;margin-bottom:10px;font-size:13.5px;
+    color:#cbd5e1;padding-right: 5px;
+}
+#rogersOut div{margin-bottom: 5px;}
+#rogersOut b{color: #93c5fd;}
+</style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <span class="logoText">INFINITY</span>
-      <nav class="nav">
-        <a href="#" class="active" onclick="showPanel('main')">Home</a>
-        <a href="#" onclick="showPanel('dev')">Dev Tools</a>
-      </nav>
-    </header>
-    <main id="mainPanel">
-      <div class="card">
-        <h2>Infinity All-in-One Launcher</h2>
-        <div class="sub" style="margin-bottom:13px;">All your tools, AI, and projects—one page, mobile ready.</div>
-        <div class="apps">
-          
-          <div class="app-link">
-            <a href="infinity-dashboard.html" target="_blank">Portal UI (Dashboard)</a>
-            <div class="desc">Day-to-day secure dashboard, activity log</div>
-            <span class="live">HTML File</span>
-          </div>
-          
-          <div class="app-link">
-            <a href="http://127.0.0.1:5050" target="_blank">Rogers AI Chat (Backend)</a>
-            <div class="desc">Conversational AI, dev chat, steering wheel</div>
-            <span class="live">LIVE on :5050</span>
-          </div>
-          
-          <div class="app-link">
-            <a href="http://127.0.0.1:8000" target="_blank">Socializer (Demo)</a>
-            <div class="desc">Community chat, channels, games (edit URL as needed)</div>
-            <span class="live">:8000 (if running)</span>
-          </div>
-          <div class="app-link">
-            <a href="pi_singer.html" target="_blank">Pi Singer</a>
-            <div class="desc">Digit-to-music generator (your code, local HTML file)</div>
-          </div>
-          </div>
-      </div>
-      <div class="card">
-        <h2>Quick Actions & Resources</h2>
-        <ul style="margin-left:18px;">
-          <li>**Sidebar:** Access all settings, dev tools, saved sessions</li>
-          <li>Floating **Rogers AI:** Chat anytime **R**</li>
-          <li>Visit each app, then bookmark for fast access</li>
-        </ul>
-      </div>
-    </main>
-    
-    <div class="panel" id="devPanel" onclick="closePanel(event)">
-      </div>
-    
-    <button class="sidebarBtn" onclick="toggleSidebar()">☰</button>
-    <aside class="sidebar" id="sidebar">
-      </aside>
-    
-    <div class="rogersDock">
-      <button class="rogBtn" id="rogBtn" title="Rogers AI">R</button>
+
+<section id="loginScreen">
+  <div class="login-card" id="loginCard">
+    <div class="brandTitle">INFINITY</div>
+    <div class="subtitle-center">SECURE PORTAL ACCESS</div>
+    <div class="badge-inline">🔐 PewPi AI-to-AI Encryption Active</div>
+    <div class="form-group">
+      <label>Username</label>
+      <input id="loginUser" placeholder="Enter your username">
     </div>
-    <div class="chatBox" id="chatBox">
-      </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Enter your password">
+    </div>
+    <button class="btn-primary" onclick="login()">SIGN IN SECURELY</button>
+    <div class="tiny-link">Don't have an account? <button onclick="showCreate()">Request access</button></div>
+    <div id="loginMsg" class="tiny-link" style="color:#fca5a5; font-weight: 600;"></div>
   </div>
+</section>
+
+<section id="dashboard" class="hidden">
+  <header class="topbar">
+    <div class="logo-main">PEWPI · INFINITY</div>
+    <div class="user-controls">
+      <button class="btn-small" onclick="logout()">Logout</button>
+    </div>
+  </header>
+  <main class="content-wrap">
+    <div class="hero-card">
+      <div class="hero-title" id="welcomeTitle">Welcome back, Agent!</div>
+      <div class="hero-stats">
+        <div class="stat-box"><div class="stat-label">TOKEN BALANCE</div><div class="stat-value" id="tokenCount">4.2M</div></div>
+        <div class="stat-box"><div class="stat-label">ACTIVITIES</div><div class="stat-value" id="actCount">12</div></div>
+        <div class="stat-box"><div class="stat-label">STATUS</div><div class="stat-value" style="color: var(--success);" id="sessionStatus">SECURE</div></div>
+      </div>
+    </div>
+    
+    <h2 style="color: var(--accent); margin: 0 0 5px 0;">🌐 Portal Applications</h2>
+    <div class="portal-grid">
+        <a href="http://127.0.0.1:8080" target="_blank" class="portal-card">
+            <h3>🌐 Portal UI <span class="status-badge live-status">LIVE :8080</span></h3>
+            <p>Day-to-day dashboard, core navigation, and tools access.</p>
+        </a>
+        <a href="http://127.0.0.1:5050" target="_blank" class="portal-card">
+            <h3>🧠 Rogers AI Chat <span class="status-badge live-status">LIVE :5050</span></h3>
+            <p>Conversational AI, dev chat interface, and steering wheel.</p>
+        </a>
+        <a href="pi_singer.html" target="_blank" class="portal-card">
+            <h3>🎵 Pi Singer <span class="status-badge local-status">LOCAL</span></h3>
+            <p>Digit-to-music generator (Your local HTML file).</p>
+        </a>
+        <a href="http://127.0.0.1:8000" target="_blank" class="portal-card">
+            <h3>💬 Socializer (Demo) <span class="status-badge live-status">LIVE :8000</span></h3>
+            <p>Community chat, channels, games (edit URL as needed).</p>
+        </a>
+        <div class="portal-card">
+            <h3>⚡ Signal Generator</h3>
+            <p>AI-controlled tone & frequency tools. (Local or API link here)</p>
+        </div>
+        <div class="portal-card">
+            <h3>🔭 Hydrogen Portal</h3>
+            <p>Quantum visualization & gateway tools. (Local or API link here)</p>
+        </div>
+    </div>
+  </main>
+</section>
+
+<div id="rogersBubble" onclick="toggleRogers()">🧠</div>
+<script>
+// NOTE: Login credentials are hardcoded as a demo (Kris / Kris).
+// In a real application, replace this with a secure backend check.
+const VALID_USERNAME = "Kris";
+const VALID_PASSWORD = "Kris";
+
+/** Shows a disabled feature alert. */
+function showCreate(){
+  alert("Account creation is currently handled by the mainframe. Request access via contact.");
+}
+
+/** Handles login logic. */
+function login(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  const msgElement = document.getElementById('loginMsg');
+
+  if(u === VALID_USERNAME && p === VALID_PASSWORD){
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('username', u);
+    showDashboard(u);
+  } else {
+    msgElement.textContent = "Invalid credentials. Try Kris / Kris.";
+    setTimeout(() => msgElement.textContent = '', 3000);
+  }
+}
+
+/** Hides login and shows dashboard, updating welcome text. */
+function showDashboard(u){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('welcomeTitle').textContent = `Welcome back, ${u}! 🚀`;
+}
+
+/** Clears session and reloads page to show login. */
+function logout(){
+  localStorage.removeItem('isAuthenticated');
+  localStorage.removeItem('username');
+  location.reload();
+}
+
+/** Checks for session on load. */
+window.onload = function() {
+  if (localStorage.getItem('isAuthenticated') === 'true') {
+    const username = localStorage.getItem('username');
+    showDashboard(username);
+  }
+};
+
+
+// === ROGERS AI CHAT WIDGET LOGIC ===
+function toggleRogers(){
+  let panel=document.getElementById('rogersPanel');
+  if(panel){panel.remove();return;}
   
-  <script>
-    // --- Panel logic ---
-    function showPanel(name){
-      document.getElementById('mainPanel').style.display = (name==='main')?'block':'none';
-      document.getElementById('devPanel').style.display = (name==='dev')?'flex':'none';
+  panel=document.createElement('div');
+  panel.id='rogersPanel';
+  // Use innerHTML from style block to keep formatting
+  panel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong>Rogers AI</strong>
+        <button onclick="toggleRogers()" style="background:none;border:none;color:#38bdf8;font-size:18px;cursor:pointer;">×</button>
+    </div>
+    <div id="rogersOut"></div>
+    <textarea id="rogersIn" placeholder="Ask Infinity..." rows="2"></textarea>
+    <button id="rogersSend">Send</button>
+  `;
+  document.body.appendChild(panel);
+  
+  const rogersOut = panel.querySelector('#rogersOut');
+  // Initial message
+  rogersOut.insertAdjacentHTML('beforeend',`<div style="color:#6EE7B7;"><b>Rogers:</b> Infinity AI Assistant online. How may I steer your mission?</div>`);
+
+  panel.querySelector('#rogersSend').onclick=async()=>{
+    const q=panel.querySelector('#rogersIn').value.trim();
+    if(!q)return;
+    
+    rogersOut.insertAdjacentHTML('beforeend',`<div><b>You:</b> ${q}</div>`);
+    panel.querySelector('#rogersIn').value='';
+    
+    // Simple AI demo response logic
+    let reply = "Processing command... (Demo response: Backend connection required for live data/control.)";
+    if (/help|what can you do/i.test(q)) {
+        reply = "I can offer navigation, check status, and route your dev commands. Try asking about a 'LIVE :port' link.";
+    } else if (/token|balance/i.test(q)) {
+        reply = "Your current token balance is **4.2M**. Maximum security level active.";
+    } else if (/live/i.test(q)) {
+        reply = "The Portal UI on **:8080** and Rogers Chat on **:5050** are LIVE. Routing systems confirmed operational.";
     }
-    // ... (rest of the JavaScript functions) ...
-  </script>
+    
+    // Simulate AI delay
+    setTimeout(() => {
+        rogersOut.insertAdjacentHTML('beforeend',`<div style="color:#93c5fd;"><b>Rogers:</b> ${reply}</div>`);
+        rogersOut.scrollTop = rogersOut.scrollHeight; // Scroll to bottom
+    }, 800);
+  };
+}
+</script>
 </body>
 </html>
