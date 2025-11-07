@@ -9,25 +9,25 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117; 
-            color: #c9d1d9; 
+            background-color: #0d1117;
+            color: #c9d1d9;
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 20px;
         }
         .container {
             width: 100%;
             max-width: 768px;
-            margin: 20px;
-            padding: 20px;
             background: #161b22;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
             gap: 16px;
+            padding: 20px;
         }
         #chat-window {
             height: 60vh;
@@ -45,14 +45,13 @@
             word-wrap: break-word;
         }
         .user-message {
-            background-color: #21262d; 
+            background-color: #21262d;
             margin-left: auto;
             border: 1px solid #30363d;
         }
         .rogers-message {
-            background-color: #0d1117; 
+            background-color: #0d1117;
             border: 1px solid #30363d;
-            animation: fadeIn 0.3s ease-out;
         }
         .status-indicator {
             padding: 6px 12px;
@@ -62,16 +61,12 @@
             text-align: center;
         }
         .status-offline {
-            background-color: #da3633; 
+            background-color: #da3633;
             color: #fff;
         }
         .status-online {
-            background-color: #3fb950; 
+            background-color: #3fb950;
             color: #000;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
     </style>
 </head>
@@ -98,7 +93,7 @@
         </div>
 
         <div class="text-xs text-gray-500">
-            Attempting to contact server at: <code id="server-url">http://100.118.99.166:5000/api/status</code>
+            Attempting to contact server at: <code id="server-url">http://100.118.99.166:5000</code>
         </div>
     </div>
 
@@ -113,83 +108,62 @@
 
         function addMessage(role, text) {
             const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message');
+            msgDiv.classList.add('message', role === 'user' ? 'user-message' : 'rogers-message');
             msgDiv.innerHTML = text; 
-
-            if (role === 'user') {
-                msgDiv.classList.add('user-message');
-                msgDiv.style.textAlign = 'right';
-            } else {
-                msgDiv.classList.add('rogers-message');
-            }
+            if (role === 'user') msgDiv.style.textAlign = 'right';
             chatWindow.appendChild(msgDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
         function setStatus(isOnline, message) {
             statusElement.textContent = message;
-            statusElement.classList.remove('status-offline', 'status-online');
+            statusElement.className = 'status-indicator'; // Reset classes
             
             if (isOnline) {
                 statusElement.classList.add('status-online');
-                // Explicitly enable input/button
+                // *** CRITICAL FIX: Ensure controls are enabled on success ***
                 userInput.disabled = false;
                 sendButton.disabled = false;
                 userInput.focus();
             } else {
                 statusElement.classList.add('status-offline');
-                // Explicitly disable input/button
                 userInput.disabled = true;
                 sendButton.disabled = true;
             }
         }
 
         // --- SERVER CONNECTION CHECK ---
-
         async function checkServerStatus() {
             setStatus(false, 'Connecting...');
             try {
-                // Fetch uses the server's response headers (CORS)
-                const response = await fetch(`${SERVER_IP}/api/status`, {
-                    method: 'GET',
-                    cache: 'no-store'
-                });
+                const response = await fetch(`${SERVER_IP}/api/status`, { method: 'GET', cache: 'no-store' });
                 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.status === 'ready') {
-                        // Success path: Server running, CORS confirmed by browser
                         setStatus(true, 'ONLINE');
-                        addMessage('system', 'System: **Rogers AI Console** is online and ready for commands.');
+                        addMessage('system', 'System: **Rogers AI Console** is online and ready.');
                     } else {
                         setStatus(false, 'OFFLINE (Bad Status)');
-                        console.error("Server returned an unexpected status:", data);
                     }
                 } else {
-                    // Server responded, but with a non-200 code
                     setStatus(false, `OFFLINE (HTTP Error: ${response.status})`);
                 }
-
             } catch (error) {
-                // Network failure or CORS error blocked by browser
                 setStatus(false, 'OFFLINE (Network Error)');
-                console.error("Connection failed. Check Termux server status and IP.", error);
             }
         }
 
         // --- MESSAGE SENDING ---
-
         async function sendMessage() {
             const query = userInput.value.trim();
-            // Check if the input is currently enabled (which means online)
             if (!query || userInput.disabled) return; 
 
             addMessage('user', query);
             userInput.value = '';
             
-            // Disable input while waiting for bot
-            userInput.disabled = true;
-            sendButton.disabled = true;
+            // Temporarily disable input while waiting
+            setStatus(false, 'Sending...');
 
             try {
                 const response = await fetch(`${SERVER_IP}/api/bot/execute`, {
@@ -204,18 +178,16 @@
                     if (result.ok && result.response) {
                         addMessage('rogers', result.response);
                     } else {
-                        addMessage('rogers', `Error: Bot failed to execute. Message: ${result.message || 'Unknown server error.'}`);
+                        addMessage('rogers', `Error: Bot failed. ${result.message || 'Unknown error.'}`);
                     }
                 } else {
-                    addMessage('rogers', `Critical Error: Server returned status ${response.status} during bot execution.`);
+                    addMessage('rogers', `Critical Error: Server returned ${response.status}.`);
                 }
             } catch (error) {
-                addMessage('rogers', 'Critical Network Failure: Could not reach the server to execute the bot.');
-                console.error("Bot execution network error:", error);
+                addMessage('rogers', 'Critical Network Failure: Could not execute bot.');
             } finally {
-                // Re-enable input
-                setStatus(true, 'ONLINE'); // Re-set the status to ONLINE, re-enabling controls
-                userInput.focus();
+                // Re-enable and reset status to ONLINE
+                setStatus(true, 'ONLINE'); 
             }
         }
 
@@ -226,9 +198,10 @@
             }
         });
 
-        // Use DOMContentLoaded for reliable script execution
         document.addEventListener('DOMContentLoaded', checkServerStatus);
 
+        // Required for the button to work:
+        window.sendMessage = sendMessage;
     </script>
 </body>
 </html>
