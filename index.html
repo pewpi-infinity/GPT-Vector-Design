@@ -1,274 +1,384 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>INFINITY · PewPi Secure Portal</title>
-<meta name="color-scheme" content="dark"/>
-<style>
-/* === BASE STYLES FROM YOUR SCRIPT === */
-:root {
-  --bg: radial-gradient(circle at top, #0f172a 0%, #030712 50%, #000 100%);
-  --panel: rgba(15,23,42,.35);
-  --border: rgba(148,163,184,.12);
-  --accent: #38bdf8;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --success: #6EE7B7; /* Added for link hover */
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-*{box-sizing:border-box;}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);}
-.hidden{display:none!important;}
-
-/* === LOGIN SCREEN STYLES === */
-#loginScreen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:35px 12px 45px;gap:18px;}
-.login-card{background:radial-gradient(circle,rgba(4,21,43,.7),rgba(1,3,7,.6));backdrop-filter:blur(14px);border:1px solid rgba(18,181,255,.1);border-top:1px solid rgba(18,181,255,.3);max-width:460px;width:100%;border-radius:20px;padding:22px 19px 26px;box-shadow:0 18px 48px rgba(0,0,0,.28);}
-.brandTitle{font-size:36px;font-weight:800;letter-spacing:.24em;text-align:center;background:linear-gradient(120deg,#23b0ff,#8a7cff 60%,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
-.subtitle-center{text-align:center;color:var(--muted);font-size:14px;margin-bottom:18px;}
-.badge-inline{display:inline-flex;align-items:center;gap:8px;background:rgba(1,110,146,.32);border:1px solid rgba(2,219,255,.28);color:#e2f3ff;border-radius:999px;padding:6px 13px;font-weight:600;font-size:13px;margin:0 auto 12px;}
-.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
-label{font-size:13px;color:var(--muted);font-weight:500;}
-input{background:rgba(0,0,0,.38);border:1px solid rgba(13,148,136,.25);border-radius:12px;padding:10px 12px;font-size:14.5px;color:var(--text);outline:none;}
-input:focus{border-color:rgba(18,181,255,.8);box-shadow:0 0 0 1px rgba(18,181,255,.4);}
-.btn-primary{width:100%;background:linear-gradient(115deg,#47c3ff 0%,#6062ff 70%);border:none;color:#fff;font-weight:700;border-radius:999px;padding:11px 18px;font-size:15px;cursor:pointer;margin-top:10px;box-shadow:0 16px 40px rgba(96,98,255,.35);}
-.tiny-link{margin-top:12px;text-align:center;font-size:13.5px;color:var(--muted);}
-.tiny-link button{background:none;border:none;color:#5fd4ff;font-weight:600;cursor:pointer;}
-
-/* === DASHBOARD/LAUNCHER STYLES === */
-#dashboard{min-height:100vh;display:flex;flex-direction:column;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(3,6,18,.65);border-bottom:1px solid rgba(16,185,232,.1);backdrop-filter:blur(18px);}
-.logo-main{font-weight:700;letter-spacing:.22em;font-size:22px;background:linear-gradient(112deg,#23b0ff 0%,#b1c7ff 82%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.user-controls{display:flex;gap:8px;align-items:center;}
-.btn-small{background:rgba(15,118,178,.16);border:1px solid rgba(56,189,248,.3);color:#fff;border-radius:12px;padding:6px 14px 5px;font-size:13px;cursor:pointer;}
-.content-wrap{display:flex;flex-direction:column;gap:16px;padding:12px 14px 65px;}
-.hero-card{background:rgba(1,11,21,.68);border:1px solid rgba(18,181,255,.09);border-radius:20px;padding:18px;box-shadow:0 16px 46px rgba(0,0,0,.2);}
-.hero-title{font-size:22px;font-weight:700;margin-bottom:4px;}
-.hero-stats{display:flex;gap:14px;flex-wrap:wrap;}
-.stat-box{background:rgba(0,0,0,.14);border:1px solid rgba(18,181,255,.07);border-left:2px solid rgba(82,124,254,.9);border-radius:15px;padding:10px 12px;flex:1 1 120px;min-width:124px;}
-.stat-label{font-size:12px;color:var(--muted);margin-bottom:4px;}
-.stat-value{font-size:25px;font-weight:700;}
-/* --- LAUNCHER GRID (Enhanced) --- */
-.portal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;max-width:1000px;margin:0 auto;}
-.portal-card{
-    background:rgba(2,13,26,.42);
-    border:1px solid rgba(148,163,184,.06);
-    border-left:4px solid var(--accent); /* Unified look */
-    border-radius:18px;
-    padding:16px;
-    transition: background-color .2s, border-color .2s;
-    text-decoration: none; /* Make card a proper link */
-    color: var(--text);
-    display: block;
-}
-.portal-card h3{margin:0 0 4px;font-size:18px;display:flex;align-items:center;gap:8px;}
-.portal-card p{margin:4px 0 0;font-size:13px;color:var(--muted);}
-.portal-card:hover{
-    background:rgba(4,30,60,.7);
-    border-left-color: var(--success);
-}
-.status-badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 6px;
-    margin-left: auto;
-    letter-spacing: .5px;
-}
-.live-status { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
-.local-status { background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); }
-
-/* === ROGERS CHAT BUBBLE === */
-#rogersBubble{position:fixed;bottom:20px;right:20px;width:58px;height:58px;background:linear-gradient(135deg,#38bdf8,#6366f1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;box-shadow:0 0 20px rgba(59,130,246,.4);cursor:pointer;z-index:9999;}
-#rogersPanel{
-    position:fixed;bottom:90px;right:20px;width:340px;max-width:90vw;
-    background:rgba(1,9,18,.97);border:1px solid rgba(18,181,255,.3);
-    border-radius:16px;padding:12px;color:#e0f2fe;z-index:9999;
-}
-#rogersIn{
-    width:100%;border-radius:8px;padding:8px;font-size:14px;color:var(--text);
-    background: rgba(0,0,0,.5); border: 1px solid rgba(18,181,255,.1); outline: none;
-    resize: none; min-height: 40px;
-}
-#rogersSend{
-    margin-top:8px;background:linear-gradient(90deg, #38bdf8, #6366f1);
-    border:none;color:white;padding:8px 15px;border-radius:8px;font-weight:700;
-    cursor:pointer;
-}
-#rogersOut{
-    max-height:180px;overflow-y:auto;margin-bottom:10px;font-size:13.5px;
-    color:#cbd5e1;padding-right: 5px;
-}
-#rogersOut div{margin-bottom: 5px;}
-#rogersOut b{color: #93c5fd;}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Infinity Portal · All-In-One System</title>
+  <style>
+    /* === MERGED MODERN CSS STYLES === */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    :root {
+        --primary-color: #6786df; /* Adjusted for existing buttons */
+        --secondary-color: #3546b0;
+        --background-dark: #171531; /* Darkest background */
+        --background-light: #202a67; /* Card/Panel background */
+        --text-primary: #e0f2fe;
+        --text-secondary: #b5daf8;
+        --accent-color: #50e2a0; /* Main accent green */
+        --success-color: #50e2a0;
+        --error-color: #ff7892;
+        --border-color: #333;
+        --panel-shadow: 0 6px 32px rgba(39, 41, 65, 0.4);
+    }
+    body{
+        font-family:"Segoe UI",ui-sans-serif,system-ui;
+        background:linear-gradient(135deg,var(--background-dark) 0%,var(--secondary-color) 100%);
+        min-height:100vh;
+        color:var(--text-primary);
+        padding: 20px;
+    }
+    .panel{
+        max-width:900px;
+        margin:5vh auto 0;
+        background:var(--background-light);
+        border-radius:23px;
+        box-shadow:var(--panel-shadow);
+        padding:2.5em;
+        display:none;
+        border: 1px solid rgba(103, 134, 223, 0.2);
+        animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .show{display:block;}
+    h1{
+        font-size:2.2em;
+        margin:0 0 1.2em 0;
+        text-align:center;
+        background:linear-gradient(90deg,var(--accent-color),var(--primary-color));
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        font-weight: 800;
+    }
+    label{display:block;margin-top:1.16em;font-weight:600;color:var(--text-secondary);text-align:left;}
+    input[type="text"],input[type="password"],input[type="email"],textarea{
+        width:100%;font-size:1.09em;padding:0.72em;margin-top:0.08em;
+        border-radius:8px;border:1px solid var(--border-color);
+        background:#181a29;color:#fff;box-sizing:border-box;
+    }
+    button{
+        margin-top:1.05em;width:96%;padding:0.89em 0;font-size:1.13em;
+        font-weight:bold;background:linear-gradient(90deg,var(--accent-color),var(--primary-color));
+        color:#fff;border:none;border-radius:12px;
+        box-shadow:0 1px 7px rgba(80, 226, 160, 0.27);cursor:pointer;transition:.2s;
+    }
+    button:hover{opacity:0.9;}
+    .error-msg{color:var(--error-color);font-size:1em;margin-bottom:0.5em;}
+    nav{display:flex;justify-content:center;gap:10px;margin-top:18px;flex-wrap: wrap;}
+    .nav-btn{
+        background:#222b5a;padding:10px 18px;color:var(--text-primary);
+        font-size:1em;border:none;border-radius:10px;box-shadow:0 1.5px 8px rgba(45, 176, 176, 0.07);
+        cursor:pointer;transition:.2s;
+    }
+    .nav-btn.active{background:var(--accent-color);color:#121c28;font-weight: 700;}
+    .card{
+        background:rgba(0, 0, 0, 0.2);
+        color:#fff;border-radius:15px;padding:1.5em;margin:1.5em 0;
+        box-shadow:0 2px 9px rgba(48, 94, 214, 0.53);
+    }
+    .card h2 { color: var(--accent-color); margin-bottom: 0.5em; font-size: 1.5em;}
+    .repo-list{margin-top:14px;font-size:1em;}
+    .repo-badge{
+        background:#753aeb;color:#fff;padding:7px 15px;border-radius:10px;
+        margin:0 7px 8px 0;display:inline-block;transition:.2s;
+    }
+    .repo-badge:hover { opacity: 0.8; }
+    .bot-list{margin:1em 0; display: flex; flex-wrap: wrap; gap: 10px;}
+    .bot-bubble{
+        background:var(--accent-color);color:#121c28;border-radius:14px;
+        display:inline-block;padding:0.9em 1.2em;font-weight:600;
+        box-shadow:0 2px 8px rgba(80, 226, 160, 0.27);
+    }
+    .vault-list{margin:1.5em 0;}
+    .vault-item{
+        background:#7432e2;color:#fff;padding:14px 20px;border-radius:9px;
+        margin:8px 0;font-size:1.04em;
+        word-break: break-all;
+    }
+    .admin-actions{margin-top:16px; display: flex; flex-wrap: wrap; gap: 10px;}
+    .admin-btn{
+        background:#e050b8;padding:11px 20px;color:#fff;font-weight:700;
+        border:none;border-radius:9px;font-size:1.0em;margin:0;cursor:pointer;
+        width: auto;
+    }
+    .logout{
+        background:#f44f91;color:#fff;padding:9px 19px;border-radius:10px;
+        margin-top:21px;font-size:1em;font-weight:700;
+        width: auto;
+    }
+    /* Specific styles for Kris's Admin status */
+    .admin-status { color: #50e2a0; font-weight: 700; }
+  </style>
 </head>
 <body>
 
-<section id="loginScreen">
-  <div class="login-card" id="loginCard">
-    <div class="brandTitle">INFINITY</div>
-    <div class="subtitle-center">SECURE PORTAL ACCESS</div>
-    <div class="badge-inline">🔐 PewPi AI-to-AI Encryption Active</div>
-    <div class="form-group">
-      <label>Username</label>
-      <input id="loginUser" placeholder="Enter your username">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input id="loginPass" type="password" placeholder="Enter your password">
-    </div>
-    <button class="btn-primary" onclick="login()">SIGN IN SECURELY</button>
-    <div class="tiny-link">Don't have an account? <button onclick="showCreate()">Request access</button></div>
-    <div id="loginMsg" class="tiny-link" style="color:#fca5a5; font-weight: 600;"></div>
+<div class="panel show" id="loginPanel">
+  <h1>Infinity Portal Login</h1>
+  <form id="loginForm" autocomplete="off">
+    <div class="error-msg" id="errorMsg"></div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" autocomplete="off"/>
+    <label for="password">Password:</label>
+    <input type="password" id="password" autocomplete="off"/>
+    <label for="email">Email:</label>
+    <input type="email" id="email" autocomplete="off"/>
+    <button type="submit">Sign In</button>
+  </form>
+  <div class="card" style="margin-top: 30px; font-size: 0.9em; padding: 1em;">
+    <p>💡 **Admin Credentials:** Use **Kris** / any **4+ char password** / **marvaseater@gmail.com**</p>
+    <p>Standard users only need a valid email and 6+ char password.</p>
   </div>
-</section>
+</div>
 
-<section id="dashboard" class="hidden">
-  <header class="topbar">
-    <div class="logo-main">PEWPI · INFINITY</div>
-    <div class="user-controls">
-      <button class="btn-small" onclick="logout()">Logout</button>
-    </div>
-  </header>
-  <main class="content-wrap">
-    <div class="hero-card">
-      <div class="hero-title" id="welcomeTitle">Welcome back, Agent!</div>
-      <div class="hero-stats">
-        <div class="stat-box"><div class="stat-label">TOKEN BALANCE</div><div class="stat-value" id="tokenCount">4.2M</div></div>
-        <div class="stat-box"><div class="stat-label">ACTIVITIES</div><div class="stat-value" id="actCount">12</div></div>
-        <div class="stat-box"><div class="stat-label">STATUS</div><div class="stat-value" style="color: var(--success);" id="sessionStatus">SECURE</div></div>
-      </div>
-    </div>
-    
-    <h2 style="color: var(--accent); margin: 0 0 5px 0;">🌐 Portal Applications</h2>
-    <div class="portal-grid">
-        <a href="http://127.0.0.1:8080" target="_blank" class="portal-card">
-            <h3>🌐 Portal UI <span class="status-badge live-status">LIVE :8080</span></h3>
-            <p>Day-to-day dashboard, core navigation, and tools access.</p>
-        </a>
-        <a href="http://127.0.0.1:5050" target="_blank" class="portal-card">
-            <h3>🧠 Rogers AI Chat <span class="status-badge live-status">LIVE :5050</span></h3>
-            <p>Conversational AI, dev chat interface, and steering wheel.</p>
-        </a>
-        <a href="pi_singer.html" target="_blank" class="portal-card">
-            <h3>🎵 Pi Singer <span class="status-badge local-status">LOCAL</span></h3>
-            <p>Digit-to-music generator (Your local HTML file).</p>
-        </a>
-        <a href="http://127.0.0.1:8000" target="_blank" class="portal-card">
-            <h3>💬 Socializer (Demo) <span class="status-badge live-status">LIVE :8000</span></h3>
-            <p>Community chat, channels, games (edit URL as needed).</p>
-        </a>
-        <div class="portal-card">
-            <h3>⚡ Signal Generator</h3>
-            <p>AI-controlled tone & frequency tools. (Local or API link here)</p>
-        </div>
-        <div class="portal-card">
-            <h3>🔭 Hydrogen Portal</h3>
-            <p>Quantum visualization & gateway tools. (Local or API link here)</p>
-        </div>
-    </div>
-  </main>
-</section>
+<div class="panel" id="dashboardPanel">
+  <h1>Dashboard</h1>
+  <nav id="dashboardNav">
+    </nav>
+  <div class="card">
+    <h2>Welcome, <span id="dashUser"></span>! <span id="adminBadge" class="admin-status"></span></h2>
+    <p>Session status: <span id="dashStatus" class="admin-status">Active</span></p>
+    <div class="repo-list" id="repoList"></div>
+  </div>
+</div>
 
-<div id="rogersBubble" onclick="toggleRogers()">🧠</div>
+<div class="panel" id="portalPanel">
+  <h1>Portal & Bot Farm</h1>
+  <nav id="portalNav">
+    </nav>
+  <div class="card">
+    <h2>Bot Farm</h2>
+    <p>Last 12 bot actions:</p>
+    <div class="bot-list" id="botList"></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
+        <button onclick="spawnBot('Cleaner')">🧹 Cleaner Bot</button>
+        <button onclick="spawnBot('Syncer')">🔄 Syncer Bot</button>
+        <button onclick="spawnBot('ScriptRunner')">⚡ ScriptRunner</button>
+        <button onclick="spawnBot('ErrorBot')">⚠️ ErrorBot</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="adminPanel">
+  <h1>Admin Room</h1>
+  <nav id="adminNav">
+    </nav>
+  <div class="card">
+    <h2>Admin Actions & Bot Control</h2>
+    <p>WARNING: These actions affect all local session data.</p>
+    <div class="admin-actions">
+      <button class="admin-btn" onclick="resetBots()">Reset All Bots</button>
+      <button class="admin-btn" onclick="clearVault()">Clear Vault</button>
+      <button class="admin-btn" onclick="resetSession()">Reset Session Data (Logout)</button>
+      <button class="admin-btn" onclick="simulateAdminCommit()">Simulate Commit/Build Script</button>
+    </div>
+    <p style="margin-top: 15px; color: var(--text-secondary);">Simulated actions trigger client-side changes only.</p>
+  </div>
+</div>
+
+<div class="panel" id="vaultPanel">
+  <h1>Vault / Secret Store</h1>
+  <nav id="vaultNav">
+    </nav>
+  <div class="card">
+    <h2>Secrets (PATs, API Keys, Bot Passwords)</h2>
+    <p>Stored data is **hidden** and saved only in your browser's session storage (local).</p>
+    <div>
+      <form id="vaultForm">
+        <label for="vaultKey">Name (ex: github_pat, openai_key):</label>
+        <input type="text" id="vaultKey" autocomplete="off"/>
+        <label for="vaultValue">Value (the secret):</label>
+        <textarea id="vaultValue"></textarea>
+        <button type="submit">Store Secret</button>
+      </form>
+    </div>
+    <div class="vault-list" id="vaultList"></div>
+  </div>
+</div>
+
 <script>
-// NOTE: Login credentials are hardcoded as a demo (Kris / Kris).
-// In a real application, replace this with a secure backend check.
-const VALID_USERNAME = "Kris";
-const VALID_PASSWORD = "Kris";
+let currentPanel = 'login', 
+    sessionInfo = null, 
+    bots = [], 
+    botID = 1001, 
+    vault = {};
 
-/** Shows a disabled feature alert. */
-function showCreate(){
-  alert("Account creation is currently handled by the mainframe. Request access via contact.");
+// --- Configuration and Data ---
+const ADMIN_USER = "Kris";
+const ADMIN_EMAIL = "marvaseater@gmail.com";
+const infinityRepos = [
+  {name:"infinity-portal"}, {name:"Vector"}, {name:"Utopia"}, {name:"Vector-API"}, {name:"Infinity-"}, {name:"Joe"}, {name:"GPT-Vector-Design"}
+];
+
+// --- Navigation and Session ---
+const NAV_BUTTONS = `
+    <button class="nav-btn" onclick="switchPanel('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="switchPanel('portal')">Portal</button>
+    <button class="nav-btn" onclick="switchPanel('admin')">Admin</button>
+    <button class="nav-btn" onclick="switchPanel('vault')">Vault</button>
+    <button class="logout" onclick="logOut()">Log Out</button>
+`;
+
+function switchPanel(panel){
+    // Update active class for all navs
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`#${panel}Nav .nav-btn[onclick*="'${panel}'"]`).classList.add('active');
+
+    document.getElementById("loginPanel").classList.remove('show');
+    document.getElementById("dashboardPanel").classList.remove('show');
+    document.getElementById("portalPanel").classList.remove('show');
+    document.getElementById("adminPanel").classList.remove('show');
+    document.getElementById("vaultPanel").classList.remove('show');
+    
+    document.getElementById(panel + 'Panel').classList.add('show');
+    drawPanel(panel);
 }
 
-/** Handles login logic. */
-function login(){
-  const u=document.getElementById('loginUser').value.trim();
-  const p=document.getElementById('loginPass').value.trim();
-  const msgElement = document.getElementById('loginMsg');
+function populateNavs(activePanel) {
+    document.getElementById('dashboardNav').innerHTML = NAV_BUTTONS.replace(`onclick="switchPanel('${activePanel}')"`, `onclick="switchPanel('${activePanel}')" class="active"`);
+    document.getElementById('portalNav').innerHTML = NAV_BUTTONS.replace(`onclick="switchPanel('${activePanel}')"`, `onclick="switchPanel('${activePanel}')" class="active"`);
+    document.getElementById('adminNav').innerHTML = NAV_BUTTONS.replace(`onclick="switchPanel('${activePanel}')"`, `onclick="switchPanel('${activePanel}')" class="active"`);
+    document.getElementById('vaultNav').innerHTML = NAV_BUTTONS.replace(`onclick="switchPanel('${activePanel}')"`, `onclick="switchPanel('${activePanel}')" class="active"`);
+}
 
-  if(u === VALID_USERNAME && p === VALID_PASSWORD){
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('username', u);
-    showDashboard(u);
+
+function storeSession(){ sessionStorage.setItem("infinitySession",JSON.stringify(sessionInfo)); }
+function loadSession(){
+  let dat = sessionStorage.getItem("infinitySession");
+  if(dat){ sessionInfo = JSON.parse(dat);}
+}
+function clearSession(){ sessionInfo = null; sessionStorage.removeItem("infinitySession"); }
+function resetSession(){ clearSession(); vault={}; bots=[]; storeVault(); storeBots(); switchPanel('login'); }
+function logOut(){ resetSession(); }
+
+function drawPanel(panel){
+  if(sessionInfo.isAdmin) {
+      document.getElementById("adminBadge").textContent = "(ADMIN)";
   } else {
-    msgElement.textContent = "Invalid credentials. Try Kris / Kris.";
-    setTimeout(() => msgElement.textContent = '', 3000);
+      document.getElementById("adminBadge").textContent = "";
   }
-}
-
-/** Hides login and shows dashboard, updating welcome text. */
-function showDashboard(u){
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
-  document.getElementById('welcomeTitle').textContent = `Welcome back, ${u}! 🚀`;
-}
-
-/** Clears session and reloads page to show login. */
-function logout(){
-  localStorage.removeItem('isAuthenticated');
-  localStorage.removeItem('username');
-  location.reload();
-}
-
-/** Checks for session on load. */
-window.onload = function() {
-  if (localStorage.getItem('isAuthenticated') === 'true') {
-    const username = localStorage.getItem('username');
-    showDashboard(username);
+  
+  if(panel==='dashboard'){
+    document.getElementById("dashUser").textContent = sessionInfo ? sessionInfo.username : "";
+    document.getElementById("dashStatus").textContent = sessionInfo ? "SECURE" : "Unknown";
+    showRepos();
   }
-};
+  if(panel==='portal'){ renderBots();}
+  if(panel==='vault'){ renderVault();}
+}
 
+// --- Login Logic (Combined) ---
+document.getElementById("loginForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  const username = document.getElementById("username").value.trim(),
+        password = document.getElementById("password").value,
+        email = document.getElementById("email").value.trim(),
+        errorMsg = document.getElementById("errorMsg");
+        
+  errorMsg.textContent = "";
 
-// === ROGERS AI CHAT WIDGET LOGIC ===
-function toggleRogers(){
-  let panel=document.getElementById('rogersPanel');
-  if(panel){panel.remove();return;}
-  
-  panel=document.createElement('div');
-  panel.id='rogersPanel';
-  // Use innerHTML from style block to keep formatting
-  panel.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <strong>Rogers AI</strong>
-        <button onclick="toggleRogers()" style="background:none;border:none;color:#38bdf8;font-size:18px;cursor:pointer;">×</button>
-    </div>
-    <div id="rogersOut"></div>
-    <textarea id="rogersIn" placeholder="Ask Infinity..." rows="2"></textarea>
-    <button id="rogersSend">Send</button>
-  `;
-  document.body.appendChild(panel);
-  
-  const rogersOut = panel.querySelector('#rogersOut');
-  // Initial message
-  rogersOut.insertAdjacentHTML('beforeend',`<div style="color:#6EE7B7;"><b>Rogers:</b> Infinity AI Assistant online. How may I steer your mission?</div>`);
+  // Check for Kris Admin Access
+  const isKrisAdmin = (username === ADMIN_USER && password.length >= 4 && email === ADMIN_EMAIL);
+  // Check for Standard User Access
+  const isStandardUser = (password.length >= 6 && /\S+@\S+\.\S+/.test(email));
 
-  panel.querySelector('#rogersSend').onclick=async()=>{
-    const q=panel.querySelector('#rogersIn').value.trim();
-    if(!q)return;
-    
-    rogersOut.insertAdjacentHTML('beforeend',`<div><b>You:</b> ${q}</div>`);
-    panel.querySelector('#rogersIn').value='';
-    
-    // Simple AI demo response logic
-    let reply = "Processing command... (Demo response: Backend connection required for live data/control.)";
-    if (/help|what can you do/i.test(q)) {
-        reply = "I can offer navigation, check status, and route your dev commands. Try asking about a 'LIVE :port' link.";
-    } else if (/token|balance/i.test(q)) {
-        reply = "Your current token balance is **4.2M**. Maximum security level active.";
-    } else if (/live/i.test(q)) {
-        reply = "The Portal UI on **:8080** and Rogers Chat on **:5050** are LIVE. Routing systems confirmed operational.";
+  if (isKrisAdmin || isStandardUser) {
+    sessionInfo = {
+        username,
+        email,
+        loginTime: Date.now(),
+        isAdmin: isKrisAdmin // Set admin flag
+    };
+    storeSession();
+    populateNavs('dashboard'); // Initialize navs
+    switchPanel('dashboard');
+  } else {
+    errorMsg.textContent = "Invalid credentials. Admin requires specific fields; others need 6+ char password & valid email.";
+  }
+});
+
+function showRepos(){
+  let html = "Repos:&nbsp;"+infinityRepos.map(repo=>`<span class="repo-badge"><a href="https://github.com/pewpi-infinity/${repo.name}" target="_blank" style="color:#fff;text-decoration:none;">${repo.name}</a></span>`).join('');
+  document.getElementById("repoList").innerHTML = html;
+}
+
+// --- Admin Simulation Action ---
+function simulateAdminCommit() {
+    if (!sessionInfo.isAdmin) {
+        alert("Access Denied: Only Kris (ADMIN) can run this simulated action.");
+        return;
     }
-    
-    // Simulate AI delay
+    // *SECURITY NOTE: This is a safe client-side simulation.
+    // The original code's fetch() call to a backend has been removed to comply with safety guidelines.*
+    alert(`ADMIN ACTION SIMULATED: Build script triggered for data lookup and commit by ${sessionInfo.username}. (No actual backend comms occurred.)`);
+    document.getElementById("dashStatus").textContent = "BUILDING...";
     setTimeout(() => {
-        rogersOut.insertAdjacentHTML('beforeend',`<div style="color:#93c5fd;"><b>Rogers:</b> ${reply}</div>`);
-        rogersOut.scrollTop = rogersOut.scrollHeight; // Scroll to bottom
-    }, 800);
-  };
+        document.getElementById("dashStatus").textContent = "SECURE";
+        drawPanel('dashboard'); // Redraw to update status
+    }, 2000);
 }
+
+
+// --- Bot farm logic ---
+function storeBots(){ sessionStorage.setItem("infinityBots",JSON.stringify(bots)); }
+function loadBots(){ let dat=sessionStorage.getItem("infinityBots"); if(dat)bots=JSON.parse(dat); }
+function resetBots(){ bots=[]; storeBots(); renderBots(); alert("All bots reset."); }
+function spawnBot(type){
+  botID++;
+  let bot = {id:botID,type,status:"Busy",created:Date.now(),log:[]};
+  setTimeout(()=>{ 
+    bot.status="Done"; 
+    bot.log.push(type+" complete at "+new Date().toLocaleTimeString());
+    storeBots();
+    renderBots();
+    if(type === 'ErrorBot') alert(`⚠️ ErrorBot ID:${bot.id} finished with simulated error.`);
+  }, 650 + Math.random() * 1050); // Randomize completion time
+  bots.push(bot);storeBots();renderBots();
+}
+function renderBots(){
+  loadBots();
+  let html = "";
+  bots.slice(-12).forEach(bot => {
+    html += `<span class="bot-bubble">${bot.type} Bot (ID:${bot.id})<br>Status: <span style="color:${bot.status==='Done'?"#121c28":"#ffd43b"}">${bot.status}</span></span>`;
+  });
+  document.getElementById("botList").innerHTML = html || "<i>No bots running.</i>";
+}
+
+// --- Vault logic ---
+function storeVault(){ sessionStorage.setItem("infinityVault",JSON.stringify(vault)); }
+function loadVault(){ let dat=sessionStorage.getItem("infinityVault"); if(dat)vault=JSON.parse(dat); }
+function clearVault(){ vault={}; storeVault();renderVault(); alert("Vault cleared."); }
+document.getElementById("vaultForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  const k = document.getElementById("vaultKey").value.trim(),
+        v = document.getElementById("vaultValue").value.trim();
+  if(!k||!v){alert("Key and Value cannot be empty."); return;}
+  vault[k]=v; storeVault(); renderVault();
+  document.getElementById("vaultKey").value="";
+  document.getElementById("vaultValue").value="";
+  alert(`Secret "${k}" stored successfully.`);
+});
+function renderVault(){
+  loadVault();
+  let html="";
+  for(const k in vault){
+    html+=`<div class="vault-item"><b>${k}:</b><br>${vault[k].replace(/./g,"•")}</div>`;
+  }
+  document.getElementById("vaultList").innerHTML = html || "<i>No secrets stored.</i>";
+}
+
+// --- Initial load ---
+(function(){
+  loadSession(); loadBots(); loadVault();
+  if(sessionInfo) {
+    populateNavs('dashboard');
+    switchPanel('dashboard');
+  } else {
+    populateNavs('login');
+  }
+})();
 </script>
 </body>
 </html>
