@@ -9,8 +9,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117; /* Dark background */
-            color: #c9d1d9; /* Light text */
+            background-color: #0d1117; 
+            color: #c9d1d9; 
             margin: 0;
             display: flex;
             justify-content: center;
@@ -22,7 +22,7 @@
             max-width: 768px;
             margin: 20px;
             padding: 20px;
-            background: #161b22; /* Card background */
+            background: #161b22;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             display: flex;
@@ -45,12 +45,12 @@
             word-wrap: break-word;
         }
         .user-message {
-            background-color: #21262d; /* User color */
+            background-color: #21262d; 
             margin-left: auto;
             border: 1px solid #30363d;
         }
         .rogers-message {
-            background-color: #0d1117; /* Bot color (darker) */
+            background-color: #0d1117; 
             border: 1px solid #30363d;
             animation: fadeIn 0.3s ease-out;
         }
@@ -62,11 +62,11 @@
             text-align: center;
         }
         .status-offline {
-            background-color: #da3633; /* Red */
+            background-color: #da3633; 
             color: #fff;
         }
         .status-online {
-            background-color: #3fb950; /* Green */
+            background-color: #3fb950; 
             color: #000;
         }
         @keyframes fadeIn {
@@ -114,7 +114,7 @@
         function addMessage(role, text) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message');
-            msgDiv.innerHTML = text; // Allows for Markdown/HTML content from the bot
+            msgDiv.innerHTML = text; 
 
             if (role === 'user') {
                 msgDiv.classList.add('user-message');
@@ -132,22 +132,24 @@
             
             if (isOnline) {
                 statusElement.classList.add('status-online');
+                // Explicitly enable input/button
                 userInput.disabled = false;
                 sendButton.disabled = false;
                 userInput.focus();
             } else {
                 statusElement.classList.add('status-offline');
+                // Explicitly disable input/button
                 userInput.disabled = true;
                 sendButton.disabled = true;
             }
         }
 
-        // --- SERVER CONNECTION ---
+        // --- SERVER CONNECTION CHECK ---
 
         async function checkServerStatus() {
             setStatus(false, 'Connecting...');
             try {
-                // Fetch the /api/status endpoint
+                // Fetch uses the server's response headers (CORS)
                 const response = await fetch(`${SERVER_IP}/api/status`, {
                     method: 'GET',
                     cache: 'no-store'
@@ -156,21 +158,20 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.status === 'ready') {
-                        // SUCCESS! The server is running and CORS is working.
+                        // Success path: Server running, CORS confirmed by browser
                         setStatus(true, 'ONLINE');
                         addMessage('system', 'System: **Rogers AI Console** is online and ready for commands.');
                     } else {
-                        // Unexpected response structure
                         setStatus(false, 'OFFLINE (Bad Status)');
                         console.error("Server returned an unexpected status:", data);
                     }
                 } else {
-                    // Server responded, but with an error code (e.g., 500)
+                    // Server responded, but with a non-200 code
                     setStatus(false, `OFFLINE (HTTP Error: ${response.status})`);
                 }
 
             } catch (error) {
-                // Failed to fetch (Network error, CORS blocking, or server is down)
+                // Network failure or CORS error blocked by browser
                 setStatus(false, 'OFFLINE (Network Error)');
                 console.error("Connection failed. Check Termux server status and IP.", error);
             }
@@ -180,9 +181,9 @@
 
         async function sendMessage() {
             const query = userInput.value.trim();
-            if (!query || !userInput.disabled) return; 
+            // Check if the input is currently enabled (which means online)
+            if (!query || userInput.disabled) return; 
 
-            // Add user message to chat window
             addMessage('user', query);
             userInput.value = '';
             
@@ -213,8 +214,7 @@
                 console.error("Bot execution network error:", error);
             } finally {
                 // Re-enable input
-                userInput.disabled = false;
-                sendButton.disabled = false;
+                setStatus(true, 'ONLINE'); // Re-set the status to ONLINE, re-enabling controls
                 userInput.focus();
             }
         }
@@ -226,10 +226,9 @@
             }
         });
 
-        // Initialize connection check on page load
-        window.onload = () => {
-            checkServerStatus();
-        };
+        // Use DOMContentLoaded for reliable script execution
+        document.addEventListener('DOMContentLoaded', checkServerStatus);
+
     </script>
 </body>
 </html>
