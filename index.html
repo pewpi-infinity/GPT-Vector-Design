@@ -1,184 +1,236 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Rogers Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rogers AI Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Base Styling */
-        body { font-family: system-ui, Arial; background: #0b0f14; color: #e7f1ff; margin: 0; }
-        .wrap { max-width: 860px; margin: 24px auto; padding: 12px; }
-        
-        /* Chat Box */
-        .box { 
-            background: #101723; 
-            border: 1px solid #1e2a3a; 
-            border-radius: 18px; 
-            padding: 12px; 
-            height: 60vh; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background */
+            color: #c9d1d9; /* Light text */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        
-        /* Messages */
-        .msg { margin: 10px 0; padding: 10px 12px; border-radius: 12px; max-width: 88%; font-size: 14px; }
-        .u { background: #17324d; margin-left: auto; align-self: flex-end; }
-        .a { background: #162235; border: 1px solid #223146; align-self: flex-start; }
-        .a strong { color: #5e9ff0; }
-        
-        /* Input Row */
-        .row { display: flex; gap: 8px; margin-top: 10px; }
-        input { flex: 1; padding: 14px; border-radius: 14px; border: 1px solid #25354b; background: #0f1722; color: #e7f1ff; }
-        button { 
-            padding: 14px 16px; 
-            border-radius: 14px; 
-            border: 1px solid #2a3a50; 
-            background: #142033; 
-            color: #e7f1ff; 
-            font-weight: 600;
-            transition: background 0.2s;
+        .container {
+            width: 100%;
+            max-width: 768px;
+            margin: 20px;
+            padding: 20px;
+            background: #161b22; /* Card background */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
-        button:hover:not(:disabled) { background: #1f3049; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        /* Hints & Status */
-        .hint { opacity: .7; font-size: 12px; margin-top: 8px; }
-        .status-offline { color: #e53e3e; } /* Red */
-        .status-online { color: #38a169; } /* Green */
+        #chat-window {
+            height: 60vh;
+            overflow-y: auto;
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #30363d;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #21262d; /* User color */
+            margin-left: auto;
+            border: 1px solid #30363d;
+        }
+        .rogers-message {
+            background-color: #0d1117; /* Bot color (darker) */
+            border: 1px solid #30363d;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .status-indicator {
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        .status-offline {
+            background-color: #da3633; /* Red */
+            color: #fff;
+        }
+        .status-online {
+            background-color: #3fb950; /* Green */
+            color: #000;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
-<body id="body">
-<div class=wrap>
-  <h1 class="text-xl">Rogers AI Console (<span id="status-display">Checking...</span>)</h1>
-  <div id=box class=box></div>
-  <div class=row>
-    <input id=q placeholder="Ask anything… (no keys, basic web lookup)" disabled>
-    <button id="send-button" onclick="send()" disabled>Send</button>
-  </div>
-  <div class=hint>Uses DuckDuckGo HTML and a local summarizer. Server IP: http://100.118.99.166:5000</div>
-</div>
+<body>
+    <div class="container">
+        <div class="flex justify-between items-center border-b pb-3 border-[#30363d]">
+            <h1 class="text-2xl font-bold text-blue-400">Rogers AI Console</h1>
+            <div id="status" class="status-indicator status-offline">
+                OFFLINE (Connecting...)
+            </div>
+        </div>
 
-<script>
-    // --- CONFIG ---
-    // THIS IS YOUR TERMUX SERVER IP. DO NOT CHANGE THIS.
-    const FLASK_SERVER_URL = "http://100.118.99.166:5000"; 
-    
-    // --- DOM ELEMENTS ---
-    const box = document.getElementById('box');
-    const q = document.getElementById('q');
-    const sendButton = document.getElementById('send-button');
-    const statusDisplay = document.getElementById('status-display');
-    let isServerReady = false;
+        <div id="chat-window" class="flex flex-col gap-2">
+            <!-- Messages appear here -->
+        </div>
 
-    // --- UTILITIES ---
+        <div class="flex gap-3">
+            <input type="text" id="user-input" placeholder="Type your message..." disabled
+                   class="flex-grow p-3 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm disabled:opacity-50">
+            <button id="send-button" onclick="sendMessage()" disabled
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-150 ease-in-out disabled:opacity-30">
+                Send
+            </button>
+        </div>
 
-    function updateStatus(ready) {
-        isServerReady = ready;
-        q.disabled = !ready;
-        sendButton.disabled = !ready;
-        
-        if (ready) {
-            statusDisplay.textContent = 'ONLINE';
-            statusDisplay.className = 'status-online';
-        } else {
-            statusDisplay.textContent = 'OFFLINE (Network Error)';
-            statusDisplay.className = 'status-offline';
-        }
-    }
+        <div class="text-xs text-gray-500">
+            Attempting to contact server at: <code id="server-url">http://100.118.99.166:5000/api/status</code>
+        </div>
+    </div>
 
-    async function checkServerStatus() {
-        try {
-            // Check the status endpoint on your Termux server
-            const response = await fetch(FLASK_SERVER_URL + '/api/status');
-            updateStatus(response.ok);
-        } catch (e) {
-            // If the network request fails entirely (CORS/connection block)
-            updateStatus(false);
-            console.error("Server check failed (Network error):", e);
-        }
-    }
+    <script>
+        const SERVER_IP = "http://100.118.99.166:5000";
+        const statusElement = document.getElementById('status');
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
 
-    function add(role, text) {
-        const msg = document.createElement('div');
-        msg.className = `msg ${role}`;
-        
-        if (role === 'a') {
-            // Bot messages are styled with a bold name
-            msg.innerHTML = `<strong>Rogers:</strong> ${text}`;
-        } else {
-            // User messages are plain text
-            msg.textContent = text;
-        }
-        
-        box.appendChild(msg);
-        // Scroll to the bottom of the chat
-        box.scrollTop = box.scrollHeight;
-    }
+        // --- UI UTILITIES ---
 
-    // --- MAIN LOGIC ---
+        function addMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.innerHTML = text; // Allows for Markdown/HTML content from the bot
 
-    async function send() {
-        const query = q.value.trim();
-        if (!query || !isServerReady) return;
-
-        // 1. Display user message and lock input
-        add('u', query);
-        q.value = '';
-        sendButton.disabled = true;
-        q.disabled = true;
-
-        // 2. Display thinking message (placeholder)
-        add('a', 'Thinking...');
-
-        try {
-            const tempMessage = box.lastChild;
-
-            // 3. Call the bot endpoint on your Termux server
-            const response = await fetch(FLASK_SERVER_URL + '/api/bot/execute', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query })
-            });
-
-            const data = await response.json();
-            
-            // Remove the 'Thinking...' message
-            box.removeChild(tempMessage);
-
-            if (response.ok && data.ok) {
-                // 4. Display successful bot response
-                add('a', data.response);
+            if (role === 'user') {
+                msgDiv.classList.add('user-message');
+                msgDiv.style.textAlign = 'right';
             } else {
-                // 4. Display server-side error message
-                add('a', `ERROR: ${data.message || 'Server returned a bad response.'}`);
+                msgDiv.classList.add('rogers-message');
             }
-
-        } catch (error) {
-            // Catch network/CORS error
-            if (box.lastChild) box.removeChild(box.lastChild);
-            
-            add('a', `CONNECTION FAILED: Server at ${FLASK_SERVER_URL} is running, but is likely missing the **CORS header fix**. Cannot process request.`);
-            console.error("Chat fetch error:", error);
-        } finally {
-            sendButton.disabled = false;
-            q.disabled = false;
-            q.focus();
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
-    }
 
-    // --- INITIALIZATION ---
-    q.addEventListener('keydown', e => { 
-        if (e.key === 'Enter') send(); 
-    });
+        function setStatus(isOnline, message) {
+            statusElement.textContent = message;
+            statusElement.classList.remove('status-offline', 'status-online');
+            
+            if (isOnline) {
+                statusElement.classList.add('status-online');
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            } else {
+                statusElement.classList.add('status-offline');
+                userInput.disabled = true;
+                sendButton.disabled = true;
+            }
+        }
 
-    window.onload = () => {
-        // Check the server status when the page loads
-        checkServerStatus();
-        // Keep checking every 10 seconds
-        setInterval(checkServerStatus, 10000); 
-    };
-</script>
+        // --- SERVER CONNECTION ---
+
+        async function checkServerStatus() {
+            setStatus(false, 'Connecting...');
+            try {
+                // Fetch the /api/status endpoint
+                const response = await fetch(`${SERVER_IP}/api/status`, {
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'ready') {
+                        // SUCCESS! The server is running and CORS is working.
+                        setStatus(true, 'ONLINE');
+                        addMessage('system', 'System: **Rogers AI Console** is online and ready for commands.');
+                    } else {
+                        // Unexpected response structure
+                        setStatus(false, 'OFFLINE (Bad Status)');
+                        console.error("Server returned an unexpected status:", data);
+                    }
+                } else {
+                    // Server responded, but with an error code (e.g., 500)
+                    setStatus(false, `OFFLINE (HTTP Error: ${response.status})`);
+                }
+
+            } catch (error) {
+                // Failed to fetch (Network error, CORS blocking, or server is down)
+                setStatus(false, 'OFFLINE (Network Error)');
+                console.error("Connection failed. Check Termux server status and IP.", error);
+            }
+        }
+
+        // --- MESSAGE SENDING ---
+
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            if (!query || !userInput.disabled) return; 
+
+            // Add user message to chat window
+            addMessage('user', query);
+            userInput.value = '';
+            
+            // Disable input while waiting for bot
+            userInput.disabled = true;
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch(`${SERVER_IP}/api/bot/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query }),
+                    cache: 'no-store'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.ok && result.response) {
+                        addMessage('rogers', result.response);
+                    } else {
+                        addMessage('rogers', `Error: Bot failed to execute. Message: ${result.message || 'Unknown server error.'}`);
+                    }
+                } else {
+                    addMessage('rogers', `Critical Error: Server returned status ${response.status} during bot execution.`);
+                }
+            } catch (error) {
+                addMessage('rogers', 'Critical Network Failure: Could not reach the server to execute the bot.');
+                console.error("Bot execution network error:", error);
+            } finally {
+                // Re-enable input
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // Event listeners
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !userInput.disabled) {
+                sendMessage();
+            }
+        });
+
+        // Initialize connection check on page load
+        window.onload = () => {
+            checkServerStatus();
+        };
+    </script>
 </body>
 </html>
 
