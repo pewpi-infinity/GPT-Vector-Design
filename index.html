@@ -1,74 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Infinity Portal - Dashboard</title>
-  <!-- [Full CSS as in your code above, omitted here for brevity] -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Infinity Launcher · All-in-One Portal</title>
+  <meta name="color-scheme" content="light dark"/>
+  <style>
+    /* *** PASTE THE FULL <STYLE> BLOCK FROM THE INFINITY LAUNCHER SCRIPT HERE ***
+    */
+    :root {
+      --blue-1: #003087;
+      --blue-2: #0b5fd7;
+      --bg: #fff;
+      --panel: #f8fafc;
+      --muted: #637083;
+      --radius: 12px;
+      font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    html, body { margin:0; padding:0; background:var(--bg); color:#051426; min-height:100vh;}
+    /* ... (rest of the CSS) ... */
+  </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo-area">
-      <div class="logo-text">INFINITY</div>
-      <span class="ai-badge">AI Shadow Agent Active</span>
+  <div class="app">
+    <header>
+      <span class="logoText">INFINITY</span>
+      <nav class="nav">
+        <a href="#" class="active" onclick="showPanel('main')">Home</a>
+        <a href="#" onclick="showPanel('dev')">Dev Tools</a>
+      </nav>
+    </header>
+    <main id="mainPanel">
+      <div class="card">
+        <h2>Infinity All-in-One Launcher</h2>
+        <div class="sub" style="margin-bottom:13px;">All your tools, AI, and projects—one page, mobile ready.</div>
+        <div class="apps">
+          
+          <div class="app-link">
+            <a href="infinity-dashboard.html" target="_blank">Portal UI (Dashboard)</a>
+            <div class="desc">Day-to-day secure dashboard, activity log</div>
+            <span class="live">HTML File</span>
+          </div>
+          
+          <div class="app-link">
+            <a href="http://127.0.0.1:5050" target="_blank">Rogers AI Chat (Backend)</a>
+            <div class="desc">Conversational AI, dev chat, steering wheel</div>
+            <span class="live">LIVE on :5050</span>
+          </div>
+          
+          <div class="app-link">
+            <a href="http://127.0.0.1:8000" target="_blank">Socializer (Demo)</a>
+            <div class="desc">Community chat, channels, games (edit URL as needed)</div>
+            <span class="live">:8000 (if running)</span>
+          </div>
+          <div class="app-link">
+            <a href="pi_singer.html" target="_blank">Pi Singer</a>
+            <div class="desc">Digit-to-music generator (your code, local HTML file)</div>
+          </div>
+          </div>
+      </div>
+      <div class="card">
+        <h2>Quick Actions & Resources</h2>
+        <ul style="margin-left:18px;">
+          <li>**Sidebar:** Access all settings, dev tools, saved sessions</li>
+          <li>Floating **Rogers AI:** Chat anytime **R**</li>
+          <li>Visit each app, then bookmark for fast access</li>
+        </ul>
+      </div>
+    </main>
+    
+    <div class="panel" id="devPanel" onclick="closePanel(event)">
+      </div>
+    
+    <button class="sidebarBtn" onclick="toggleSidebar()">☰</button>
+    <aside class="sidebar" id="sidebar">
+      </aside>
+    
+    <div class="rogersDock">
+      <button class="rogBtn" id="rogBtn" title="Rogers AI">R</button>
     </div>
-    <div class="user-info">
-      <div class="user-name">👤 <span id="username"></span></div>
-      <button class="logout-btn" onclick="handleLogout()">Logout</button>
-    </div>
+    <div class="chatBox" id="chatBox">
+      </div>
   </div>
-  <div class="container">
-    <div class="welcome-card">
-      <h1>Welcome back, <span id="welcome-username"></span>! 🚀</h1>
-      <p class="welcome-subtitle">Your secure Infinity Portal is protected by PewPi AI-to-AI encryption</p>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total Activities</div>
-          <div class="stat-value" id="total-activities">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Session Status</div>
-          <div class="stat-value" style="color: var(--success-color);">Active</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Security Level</div>
-          <div class="stat-value">Maximum</div>
-        </div>
-      </div>
-    </div>
-    <div class="activity-section">
-      <div class="activity-header">
-        <h2>
-          Activity Timeline
-          <span class="ai-badge">Live Narration</span>
-        </h2>
-        <button class="clear-btn" onclick="clearActivityLog()">Clear History</button>
-      </div>
-      <div class="activity-log" id="activity-log">
-        <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <p>No activities yet. Your AI shadow agent will narrate your journey here.</p>
-        </div>
-      </div>
-    </div>
-    <div class="quick-actions">
-      <a href="pewpi-about.html" class="action-card">
-        <div class="action-icon">🔐</div>
-        <div class="action-title">PewPi Security</div>
-        <div class="action-desc">Learn about your AI-to-AI encryption protection</div>
-      </a>
-      <a href="infinity-portal-unified.html" class="action-card">
-        <div class="action-icon">🌐</div>
-        <div class="action-title">Infinity Portal</div>
-        <div class="action-desc">Access the main unified portal</div>
-      </a>
-      <div class="action-card" onclick="testActivity()">
-        <div class="action-icon">⚡</div>
-        <div class="action-title">Test Activity</div>
-        <div class="action-desc">Generate a test activity log entry</div>
-      </div>
-    </div>
-  </div>
-  <!-- [Javascript: session management, activity log, initialization, as above] -->
+  
+  <script>
+    // --- Panel logic ---
+    function showPanel(name){
+      document.getElementById('mainPanel').style.display = (name==='main')?'block':'none';
+      document.getElementById('devPanel').style.display = (name==='dev')?'flex':'none';
+    }
+    // ... (rest of the JavaScript functions) ...
+  </script>
 </body>
 </html>
