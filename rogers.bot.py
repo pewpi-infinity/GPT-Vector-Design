@@ -1,70 +1,86 @@
-import requests
-import html
+"""
+Rogers Administrative Bot - run_rogers_bot entrypoint.
+
+This module provides a simple, safe, easily-replaceable implementation of
+the Rogers "administrative twin brain" logic. The server expects a callable
+named `run_rogers_bot(query)` that returns a string response.
+
+Drop this file alongside your server.py and restart the Flask process.
+"""
 import re
-import random
+import html
+import requests  # optional: kept for future real web calls
+from typing import Any
 
-# --- CORE BOT FUNCTION ---
+__all__ = ["run_rogers_bot"]
 
-def run_rogers_bot(query):
+
+def search_duckduckgo(query: str) -> str:
     """
-    The "presidential twin computer brain" that decides what to do.
-    It simulates performing a search and providing a structured response.
-    
-    This function must be runnable and return a string.
+    Simulated DuckDuckGo search / admin responder.
+
+    In a production system this could call a real search API or other services.
+    This stub returns deterministic, escaped text suitable for the web UI.
     """
-    
-    # Simple check for administrative/direct commands
-    if "status" in query.lower() or "check" in query.lower():
-        return "My current status is: Operational. All system modules are online, awaiting further requests."
-    
-    if "admin" in query.lower() or "authorize" in query.lower():
-        # Placeholder for future multi-bot authorization logic
-        return "Authorization request received. Awaiting authentication from primary user. Status: Pending."
+    q = (query or "").strip().lower()
 
-    # If it's a general query, perform a DuckDuckGo search (simulating web lookup)
-    return perform_web_search(query)
+    if "purpose" in q:
+        return "I am the Rogers Administrative Twin Bot, designed to oversee and coordinate system functions and communications, serving as the central intelligence hub."
+    if "hello" in q or "hi " in q or q == "hi":
+        return "Hello. I am Rogers, online and operational. How may I assist you?"
+    # Generic simulated search response; escape the original query to be safe
+    safe_q = html.escape(query, quote=True)
+    return (
+        f"Query '{safe_q}' received. Simulating a system search and returning a placeholder result: "
+        "The requested information is being processed by internal logic. Status: OK."
+    )
 
 
-# --- WEB SEARCH MODULE (Internal Tool) ---
-
-def perform_web_search(query):
+def run_rogers_bot(query: Any) -> str:
     """
-    Performs a DuckDuckGo search to ground the response in external information.
+    Main entry point called by the Flask server.
+
+    - Accepts a query (any object; coerces to string).
+    - Routes simple keywords to admin/search behavior.
+    - Returns a plain string that the API will jsonify.
+    - Never raises: any exception is caught and converted to a user-visible message.
     """
-    search_url = f"https://html.duckduckgo.com/html/?q={requests.utils.quote(query)}"
-    
     try:
-        # Step 1: Perform the search
-        response = requests.get(search_url, timeout=10)
-        response.raise_for_status() 
-        
-        # Step 2: Extract snippets
-        # Searches for title (result__a) and snippet (result__snippet)
-        snippet_pattern = re.compile(r'<a.*?class="result__a".*?>(.*?)<\/a>.*?<span.*?class="result__snippet".*?>(.*?)<\/span>', re.DOTALL)
-        
-        snippets = []
-        for match in snippet_pattern.finditer(response.text):
-            title = html.unescape(match.group(1).strip())
-            snippet = html.unescape(match.group(2).strip())
-            snippets.append(f"<li>**{title}**: {snippet}</li>")
-            if len(snippets) >= 3:
-                break
-        
-        if not snippets:
-            return f"The administrative brain could not find any immediate web results for **'{query}'**. Please refine the request."
+        if query is None:
+            return "Error: empty query received."
 
-        results_list = "\n".join(snippets)
-        
-        # Presidential twin response based on search results
-        response_template = random.choice([
-            "Based on immediate data access, the following information is relevant to your query:",
-            "Authorization successful. Here are the top data points found:",
-            "Acknowledged. Scanning core archives... search results are as follows:"
-        ])
-        
-        return f"{response_template}\n<ul>{results_list}</ul>"
+        raw = str(query).strip()
+        if not raw:
+            return "Error: empty query received."
 
-    except requests.exceptions.RequestException:
-        return "System Warning: A network failure occurred. Cannot access external resources (DuckDuckGo)."
+        low = raw.lower()
+
+        # Admin / meta queries
+        if any(k in low for k in ("purpose", "admin", "status", "who are you", "what are you")):
+            return search_duckduckgo(raw)
+
+        # Greetings
+        if any(low.startswith(g) or f" {g} " in low for g in ("hello", "hi", "hey")):
+            return search_duckduckgo(raw)
+
+        # Simple search-like queries
+        if low.startswith("search ") or low.startswith("find ") or low.startswith("lookup "):
+            # remove the command keyword to get the search phrase
+            phrase = re.sub(r'^(search|find|lookup)\s+', '', raw, flags=re.I)
+            return search_duckduckgo(phrase)
+
+        # Action simulation: pretend to run a system action when prefixed with "run:" or "exec:"
+        if low.startswith("run:") or low.startswith("exec:"):
+            action = raw.split(":", 1)[1].strip() if ":" in raw else ""
+            safe_action = html.escape(action)
+            # Simulate an "action", do NOT actually execute shell commands here.
+            return f"Simulated execution of action '{safe_action}'. Result: simulated success."
+
+        # Default behavior: echo and indicate handoff to administrative logic
+        safe_raw = html.escape(raw, quote=True)
+        return f"Rogers received: '{safe_raw}'. This request will be processed by administrative logic (simulation)."
+
     except Exception as e:
-        return f"Core Bot Exception: An unexpected error occurred in the search module. Error: {str(e)}"
+        # Never propagate internal exceptions to the caller in raw form
+        safe_err = html.escape(str(e), quote=True)
+        return f"Bot error: an internal exception occurred: {safe_err}"
