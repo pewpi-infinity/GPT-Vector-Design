@@ -1,77 +1,184 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Connection Test</title>
-    <!-- Basic Tailwind setup for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Rogers Chat</title>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.5s;
+        /* Base Styling */
+        body { font-family: system-ui, Arial; background: #0b0f14; color: #e7f1ff; margin: 0; }
+        .wrap { max-width: 860px; margin: 24px auto; padding: 12px; }
+        
+        /* Chat Box */
+        .box { 
+            background: #101723; 
+            border: 1px solid #1e2a3a; 
+            border-radius: 18px; 
+            padding: 12px; 
+            height: 60vh; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
         }
+        
+        /* Messages */
+        .msg { margin: 10px 0; padding: 10px 12px; border-radius: 12px; max-width: 88%; font-size: 14px; }
+        .u { background: #17324d; margin-left: auto; align-self: flex-end; }
+        .a { background: #162235; border: 1px solid #223146; align-self: flex-start; }
+        .a strong { color: #5e9ff0; }
+        
+        /* Input Row */
+        .row { display: flex; gap: 8px; margin-top: 10px; }
+        input { flex: 1; padding: 14px; border-radius: 14px; border: 1px solid #25354b; background: #0f1722; color: #e7f1ff; }
+        button { 
+            padding: 14px 16px; 
+            border-radius: 14px; 
+            border: 1px solid #2a3a50; 
+            background: #142033; 
+            color: #e7f1ff; 
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover:not(:disabled) { background: #1f3049; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Hints & Status */
+        .hint { opacity: .7; font-size: 12px; margin-top: 8px; }
+        .status-offline { color: #e53e3e; } /* Red */
+        .status-online { color: #38a169; } /* Green */
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gray-900">
+<body id="body">
+<div class=wrap>
+  <h1 class="text-xl">Rogers AI Console (<span id="status-display">Checking...</span>)</h1>
+  <div id=box class=box></div>
+  <div class=row>
+    <input id=q placeholder="Ask anything… (no keys, basic web lookup)" disabled>
+    <button id="send-button" onclick="send()" disabled>Send</button>
+  </div>
+  <div class=hint>Uses DuckDuckGo HTML and a local summarizer. Server IP: http://100.118.99.166:5000</div>
+</div>
 
-    <div class="p-8 rounded-xl shadow-2xl text-center max-w-sm w-full bg-gray-800">
-        <h1 class="text-3xl font-bold mb-4 text-indigo-400">Server Status</h1>
+<script>
+    // --- CONFIG ---
+    // THIS IS YOUR TERMUX SERVER IP. DO NOT CHANGE THIS.
+    const FLASK_SERVER_URL = "http://100.118.99.166:5000"; 
+    
+    // --- DOM ELEMENTS ---
+    const box = document.getElementById('box');
+    const q = document.getElementById('q');
+    const sendButton = document.getElementById('send-button');
+    const statusDisplay = document.getElementById('status-display');
+    let isServerReady = false;
+
+    // --- UTILITIES ---
+
+    function updateStatus(ready) {
+        isServerReady = ready;
+        q.disabled = !ready;
+        sendButton.disabled = !ready;
         
-        <div id="status-display" class="p-6 rounded-lg text-lg font-semibold transition-all duration-300 transform scale-100">
-            Checking connection...
-        </div>
-        
-        <p class="text-xs text-gray-500 mt-6">Attempting to contact: http://100.118.99.166:5000/api/status</p>
-    </div>
-
-    <script>
-        const FLASK_SERVER_URL = "http://100.118.99.166:5000"; // Use your Termux external IP
-        const $statusDisplay = document.getElementById('status-display');
-        const $body = document.body;
-
-        async function checkConnection() {
-            try {
-                // Use a non-streaming fetch call with a 10-second timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                const response = await fetch(FLASK_SERVER_URL + '/api/status', {
-                    method: 'GET',
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    // Success: Server is up and responded correctly (200 OK)
-                    const data = await response.json();
-                    $statusDisplay.textContent = 'SERVER IS ONLINE';
-                    $statusDisplay.className = 'p-6 rounded-lg text-lg font-semibold bg-green-600 text-white';
-                    $body.className = 'min-h-screen flex items-center justify-center bg-green-900';
-                } else {
-                    // Fail: Server is up but returned an error (e.g., 404, 500)
-                    $statusDisplay.textContent = `SERVER RESPONSE ERROR: ${response.status}`;
-                    $statusDisplay.className = 'p-6 rounded-lg text-lg font-semibold bg-yellow-600 text-white';
-                    $body.className = 'min-h-screen flex items-center justify-center bg-yellow-900';
-                }
-            } catch (error) {
-                // Network Fail: Could not connect to the server (CORS issue, connection refused, or timeout)
-                console.error("Fetch failed:", error);
-                let message = "SERVER IS OFFLINE (Network Error)";
-                
-                if (error.name === 'AbortError') {
-                    message = "SERVER IS OFFLINE (Timeout)";
-                }
-                
-                $statusDisplay.textContent = message;
-                $statusDisplay.className = 'p-6 rounded-lg text-lg font-semibold bg-red-600 text-white';
-                $body.className = 'min-h-screen flex items-center justify-center bg-red-900';
-            }
+        if (ready) {
+            statusDisplay.textContent = 'ONLINE';
+            statusDisplay.className = 'status-online';
+        } else {
+            statusDisplay.textContent = 'OFFLINE (Network Error)';
+            statusDisplay.className = 'status-offline';
         }
+    }
 
-        window.onload = checkConnection;
-    </script>
+    async function checkServerStatus() {
+        try {
+            // Check the status endpoint on your Termux server
+            const response = await fetch(FLASK_SERVER_URL + '/api/status');
+            updateStatus(response.ok);
+        } catch (e) {
+            // If the network request fails entirely (CORS/connection block)
+            updateStatus(false);
+            console.error("Server check failed (Network error):", e);
+        }
+    }
+
+    function add(role, text) {
+        const msg = document.createElement('div');
+        msg.className = `msg ${role}`;
+        
+        if (role === 'a') {
+            // Bot messages are styled with a bold name
+            msg.innerHTML = `<strong>Rogers:</strong> ${text}`;
+        } else {
+            // User messages are plain text
+            msg.textContent = text;
+        }
+        
+        box.appendChild(msg);
+        // Scroll to the bottom of the chat
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // --- MAIN LOGIC ---
+
+    async function send() {
+        const query = q.value.trim();
+        if (!query || !isServerReady) return;
+
+        // 1. Display user message and lock input
+        add('u', query);
+        q.value = '';
+        sendButton.disabled = true;
+        q.disabled = true;
+
+        // 2. Display thinking message (placeholder)
+        add('a', 'Thinking...');
+
+        try {
+            const tempMessage = box.lastChild;
+
+            // 3. Call the bot endpoint on your Termux server
+            const response = await fetch(FLASK_SERVER_URL + '/api/bot/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+
+            const data = await response.json();
+            
+            // Remove the 'Thinking...' message
+            box.removeChild(tempMessage);
+
+            if (response.ok && data.ok) {
+                // 4. Display successful bot response
+                add('a', data.response);
+            } else {
+                // 4. Display server-side error message
+                add('a', `ERROR: ${data.message || 'Server returned a bad response.'}`);
+            }
+
+        } catch (error) {
+            // Catch network/CORS error
+            if (box.lastChild) box.removeChild(box.lastChild);
+            
+            add('a', `CONNECTION FAILED: Server at ${FLASK_SERVER_URL} is running, but is likely missing the **CORS header fix**. Cannot process request.`);
+            console.error("Chat fetch error:", error);
+        } finally {
+            sendButton.disabled = false;
+            q.disabled = false;
+            q.focus();
+        }
+    }
+
+    // --- INITIALIZATION ---
+    q.addEventListener('keydown', e => { 
+        if (e.key === 'Enter') send(); 
+    });
+
+    window.onload = () => {
+        // Check the server status when the page loads
+        checkServerStatus();
+        // Keep checking every 10 seconds
+        setInterval(checkServerStatus, 10000); 
+    };
+</script>
 </body>
 </html>
 
