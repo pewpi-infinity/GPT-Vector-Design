@@ -1,162 +1,137 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Rogers — Test UI</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rogers — Static Test UI (no backend)</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;max-width:900px}
-    h1{font-size:1.2rem;margin-bottom:6px}
-    .row{display:flex;gap:8px;align-items:center;margin-top:8px}
-    input[type=text], input[type=url], select{padding:8px;font-size:1rem;flex:1}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;max-width:980px}
+    h1{margin:0 0 8px 0}
+    #chat{border:1px solid #ddd;padding:12px;min-height:200px;background:#fafafa;white-space:pre-wrap}
+    .row{display:flex;gap:8px;margin-top:10px}
+    input[type=text]{flex:1;padding:8px}
     button{padding:8px 12px}
-    #chat{border:1px solid #ccc;padding:12px;min-height:140px;white-space:pre-wrap;background:#fafafa}
-    .msg-user{color:#004; font-weight:600}
-    .msg-bot{color:#060}
-    label{font-size:0.9rem;color:#333}
-    .small{font-size:0.85rem;color:#666;margin-top:6px}
+    .meta{font-size:0.9rem;color:#666;margin-top:8px}
+    .err{color:#b00;font-weight:600}
+    .note{color:#066}
+    pre.code{background:#111;color:#eee;padding:10px;overflow:auto;max-height:400px}
   </style>
 </head>
 <body>
-  <h1>Rogers — Test UI</h1>
-  <div class="small">This page sends queries to the server helper (default port 8765). If the server is running rogers_http.py, you can type questions and ask Rogers to fetch GitHub files using the built-in "fetch github" command.</div>
+  <h1>Rogers — Static UI (no backend)</h1>
+  <div class="meta">
+    This is a static fallback page. It cannot run Python logic in your repo — it can fetch files from public GitHub repositories.
+  </div>
+
+  <div id="chat" aria-live="polite"></div>
+
+  <div class="row">
+    <input id="query" type="text" placeholder="Type a command (e.g. 'hello' or 'fetch github owner repo path [ref]')" />
+    <button id="send">Send</button>
+    <button id="clear">Clear</button>
+  </div>
 
   <div style="margin-top:12px">
-    <div id="chat" aria-live="polite"></div>
-
-    <div class="row" style="margin-top:10px">
-      <input id="query" type="text" placeholder="Type your question to Rogers (e.g. 'hello' or 'search openai')" />
-      <button id="send">Send</button>
-      <button id="clear">Clear</button>
+    <label class="note">Fetch GitHub example:</label>
+    <div class="row">
+      <input id="gh_owner" type="text" placeholder="owner (e.g. octocat)" />
+      <input id="gh_repo" type="text" placeholder="repo (e.g. Hello-World)" />
+      <input id="gh_path" type="text" placeholder="path (README.md or src/file.py)" />
+      <input id="gh_ref" type="text" placeholder="ref (branch/commit - optional)" />
+      <button id="gh_fetch">Fetch</button>
     </div>
-
-    <div style="margin-top:12px">
-      <label>Fetch a file from GitHub via the server-side logic (no client token needed)</label>
-      <div class="row">
-        <input id="gh_owner" type="text" placeholder="owner (example: timrogers)" />
-        <input id="gh_repo" type="text" placeholder="repo (example: airports)" />
-        <input id="gh_path" type="text" placeholder="path (example: README.md or src/file.py)" />
-        <input id="gh_ref" type="text" placeholder="ref (branch or commit) (optional)" />
-        <button id="gh_fetch">Fetch</button>
-      </div>
-      <div class="small">This form builds a query like: <code>fetch github &lt;owner&gt; &lt;repo&gt; &lt;path&gt; [&lt;ref&gt;]</code> and sends it to the server. The server (rogers_logic) will use any configured GITHUB_PAT if available to call GitHub's API.</div>
-    </div>
-
-    <div style="margin-top:12px">
-      <label>Server helper URL (change if helper runs on different host/port)</label>
-      <div class="row">
-        <input id="server_url" type="url" placeholder="http://localhost:8765" value="" />
-        <button id="set_url">Apply</button>
-      </div>
-      <div class="small">If left empty the page will use the current host with port 8765.</div>
-    </div>
-
-    <div style="margin-top:14px">
-      <button id="helpme">Help: example queries</button>
-    </div>
+    <div class="meta">Public repos only: uses raw.githubusercontent.com or the API for content. Private repos require a token (not safe to embed in a public page).</div>
   </div>
 
   <script>
-    (function(){
-      const chat = document.getElementById('chat');
-      const qel = document.getElementById('query');
-      const send = document.getElementById('send');
-      const clear = document.getElementById('clear');
-      const gh_fetch = document.getElementById('gh_fetch');
-      const ownerEl = document.getElementById('gh_owner');
-      const repoEl = document.getElementById('gh_repo');
-      const pathEl = document.getElementById('gh_path');
-      const refEl = document.getElementById('gh_ref');
-      const serverUrlEl = document.getElementById('server_url');
+    // Utility: append lines to the chat box
+    const chat = document.getElementById('chat');
+    function appendUser(msg){ chat.innerHTML += '<div><strong>You:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
+    function appendBot(msg){ chat.innerHTML += '<div><strong>Result:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
+    function appendHtml(html){ chat.innerHTML += html; chat.scrollTop = chat.scrollHeight; }
+    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-      function baseUrl(){
-        const v = serverUrlEl.value && serverUrlEl.value.trim();
-        if(v) return v.replace(/\/+$/,'');
-        const host = window.location.hostname || 'localhost';
-        return 'http://' + host + ':8765';
-      }
-
-      function appendUser(text){
-        chat.innerHTML += '<div><span class="msg-user">You:</span> '+escapeHtml(text)+'</div>';
-        chat.scrollTop = chat.scrollHeight;
-      }
-      function appendBot(text){
-        chat.innerHTML += '<div><span class="msg-bot">Rogers:</span> '+escapeHtml(text)+'</div>';
-        chat.scrollTop = chat.scrollHeight;
-      }
-      function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-      async function sendQuery(q){
-        appendUser(q);
-        appendBot('...waiting...');
-        try{
-          const res = await fetch(baseUrl() + '/query', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({query: q})
-          });
-          const j = await res.json();
-          const nodes = chat.childNodes;
-          if(nodes.length) nodes[nodes.length-1].remove();
-          if(j && j.response !== undefined){
-            appendBot(j.response);
-          } else {
-            appendBot(JSON.stringify(j, null, 2));
+    async function fetchGithubFile(owner, repo, path, ref){
+      // Try raw.githubusercontent first with a guessed branch
+      // If ref provided, use it. If not, try common default branches.
+      const candidates = ref ? [ref] : ['main','master'];
+      for(const r of candidates){
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${r}/${path}`;
+        try {
+          const res = await fetch(rawUrl);
+          if(res.ok){
+            const text = await res.text();
+            return { ok:true, source: rawUrl, text };
           }
-        } catch(err){
-          const nodes = chat.childNodes;
-          if(nodes.length) nodes[nodes.length-1].remove();
-          appendBot('Network error: ' + err.toString() + '. Make sure rogers_http.py is running on ' + baseUrl());
+        } catch(e){
+          // continue to API fallback
         }
       }
-
-      send.addEventListener('click', () => {
-        const q = qel.value.trim();
-        if(!q) return alert('Type a question first');
-        sendQuery(q);
-      });
-
-      clear.addEventListener('click', () => { qel.value=''; chat.textContent=''; });
-
-      qel.addEventListener('keydown', (ev) => {
-        if(ev.key === 'Enter'){ ev.preventDefault(); send.click(); }
-      });
-
-      gh_fetch.addEventListener('click', () => {
-        const owner = ownerEl.value.trim();
-        const repo = repoEl.value.trim();
-        const path = pathEl.value.trim();
-        const ref = refEl.value.trim();
-        if(!owner || !repo || !path) return alert('owner, repo and path are required');
-        const q = ['fetch','github', owner, repo, path].concat(ref ? [ref] : []).join(' ');
-        qel.value = q;
-        send.click();
-      });
-
-      setUrl.addEventListener('click', () => {
-        alert('Server helper set to: ' + baseUrl());
-      });
-
-      helpBtn.addEventListener('click', () => {
-        const examples = [
-          "hello",
-          "search who invented the telephone",
-          "summarize https://example.com",
-          "fetch github owner repo path/to/file.py"
-        ];
-        alert('Example queries:\\n' + examples.join('\\n'));
-      });
-
-      (async function ping(){
-        try{
-          const r = await fetch(baseUrl() + '/query?q=hello', {cache:'no-store'});
-          const j = await r.json();
-          appendBot('Helper reachable: ' + (j && j.response ? j.response : JSON.stringify(j)));
-        } catch(e){
-          appendBot('Helper not reachable at ' + baseUrl() + ' — start rogers_http.py on the server and retry.');
+      // Fallback: use GitHub contents API (returns JSON unless header Accept: 'application/vnd.github.v3.raw' used)
+      // We try without auth; this works for public repos.
+      const apiRef = ref ? `?ref=${encodeURIComponent(ref)}` : '';
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${apiRef}`;
+      try {
+        const res = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3.raw' } });
+        if(res.ok){
+          const text = await res.text();
+          return { ok:true, source: apiUrl, text };
+        } else {
+          const errText = await res.text();
+          return { ok:false, error: `GitHub API ${res.status}: ${errText}` };
         }
-      })();
-    })();
+      } catch(e){
+        return { ok:false, error: e.toString() };
+      }
+    }
+
+    async function handleQuery(q){
+      q = (q||'').trim();
+      appendUser(q);
+      if(!q){ appendBot('Type a command, eg "fetch github owner repo path"'); return; }
+
+      // If begins with "fetch github", parse and fetch
+      const fetchMatch = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
+      if(fetchMatch){
+        const owner = fetchMatch[1];
+        const repo = fetchMatch[2];
+        const path = fetchMatch[3];
+        const ref = fetchMatch[4] || '';
+        appendBot(`Fetching ${owner}/${repo}/${path} ${ref ? 'ref:'+ref : ''} ...`);
+        const res = await fetchGithubFile(owner, repo, path, ref);
+        if(res.ok){
+          // Show source and code block
+          appendHtml(`<div style="margin-top:10px"><div><em>Fetched from: ${escapeHtml(res.source)}</em></div><pre class="code">${escapeHtml(res.text)}</pre></div>`);
+        } else {
+          appendBot('Error fetching: ' + res.error);
+        }
+        return;
+      }
+
+      // Otherwise simple static fallback "no backend"
+      appendBot('No backend available in this static page. Two options:\n - Run the rogers helper (Python) on a server and let index.html call it (recommended)\n - Use "fetch github <owner> <repo> <path> [ref]" to retrieve files from GitHub (public repos).');
+    }
+
+    document.getElementById('send').addEventListener('click', ()=> {
+      const q = document.getElementById('query').value;
+      handleQuery(q);
+    });
+    document.getElementById('clear').addEventListener('click', ()=> { document.getElementById('query').value=''; chat.innerHTML=''; });
+    document.getElementById('query').addEventListener('keydown', (e)=> { if(e.key==='Enter'){ e.preventDefault(); document.getElementById('send').click(); } });
+
+    document.getElementById('gh_fetch').addEventListener('click', ()=> {
+      const owner = document.getElementById('gh_owner').value.trim();
+      const repo = document.getElementById('gh_repo').value.trim();
+      const path = document.getElementById('gh_path').value.trim();
+      const ref  = document.getElementById('gh_ref').value.trim();
+      if(!owner || !repo || !path){ alert('owner, repo and path required'); return; }
+      const cmd = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
+      document.getElementById('query').value = cmd;
+      handleQuery(cmd);
+    });
+
+    // show short help on load
+    appendBot('Static fallback loaded. Type "fetch github owner repo path [ref]" to fetch a file from GitHub (public repos).');
   </script>
 </body>
 </html>
