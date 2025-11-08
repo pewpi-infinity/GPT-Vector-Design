@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PewPi — Encrypt & Commit Secrets</title>
+  <title>PewPi — Decrypt committed secrets</title>
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
     .wrap{max-width:980px;margin:0 auto}
@@ -11,212 +11,186 @@
     .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
     input,textarea,select,button{font:inherit}
     input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
-    textarea{min-height:120px;resize:vertical;font-family:monospace}
+    textarea{min-height:140px;resize:vertical;font-family:monospace}
     .row{display:flex;gap:8px;margin-top:8px}
     .col{flex:1}
     button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
     button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
     .muted{color:#9bb7c2;font-size:0.9rem}
     label{font-size:0.9rem;color:#9bb7c2;display:block;margin-top:10px}
-    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:240px}
+    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:420px}
     .status{margin-top:8px;color:#cfeee6}
-    .small{font-size:0.9rem;color:#9bb7c2}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>PewPi — Encrypt & Commit Secrets</h1>
-    <div class="muted">This page can encrypt a secrets blob with a passphrase and optionally commit the encrypted blob to your GitHub repo. Do NOT commit passphrases or plaintext tokens. Commit only the ciphertext JSON.</div>
+    <h1>PewPi — Fetch & Decrypt Committed Secrets</h1>
 
     <div class="card">
-      <label>GitHub Personal Access Token (PAT)</label>
-      <input id="pat" type="password" placeholder="Paste PAT here (repo or public_repo / Contents RW)" />
-      <div class="row" style="margin-top:8px">
-        <button id="load_token" class="secondary">Load token (memory only)</button>
-        <button id="clear_token" class="secondary">Clear token</button>
-      </div>
-      <div id="verify_result" class="status"></div>
+      <div class="muted">This tool fetches the encrypted blob you've committed (pewpi_secrets.json), decrypts it in your browser using the passphrase you supply, and shows the plaintext. The passphrase is never sent anywhere. If the blob contains a github_token you can choose to load it into this page's sessionStorage for immediate use. Do NOT commit passphrases or plaintext tokens to the repo.</div>
     </div>
 
     <div class="card">
-      <h3>Account & Secret (Encrypt)</h3>
+      <label>Repository (where the encrypted blob is committed)</label>
       <div class="row">
-        <input id="pm_username" type="text" placeholder="username (eg. kris)" />
-        <input id="pm_email" type="text" placeholder="email (optional)" />
-        <label style="display:flex;align-items:center"><input id="pm_admin" type="checkbox" style="margin-right:6px" /> admin</label>
-      </div>
-
-      <label style="margin-top:8px">Secret to encrypt (paste your PAT here if you want it encrypted into the blob)</label>
-      <input id="pm_secret_input" type="password" placeholder="secret to encrypt (e.g. GitHub PAT)" />
-
-      <label style="margin-top:8px">Passphrase (choose a strong passphrase you will remember)</label>
-      <input id="pm_passphrase" type="password" placeholder="passphrase to encrypt with" />
-
-      <div class="row" style="margin-top:8px">
-        <button id="pm_create_export">Create & Export Encrypted Blob (show ciphertext)</button>
-        <button id="pm_commit_blob" class="secondary">Create & Commit Encrypted Blob to Repo</button>
-      </div>
-
-      <label style="margin-top:10px">Encrypted blob (copy this text if you prefer to commit manually)</label>
-      <textarea id="pm_export_out" style="height:140px"></textarea>
-
-      <div id="pm_status" class="status"></div>
-
-      <hr/>
-
-      <label>If you commit from this page, set repo info below</label>
-      <div class="row" style="margin-top:8px">
-        <input id="owner" class="col" placeholder="owner (username or org)" value="" />
+        <input id="owner" class="col" placeholder="owner (username or org)" value="pewpi-infinity" />
         <input id="repo" class="col" placeholder="repo name" value="" />
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row">
         <input id="branch" class="col" placeholder="branch (eg. main)" value="main" />
-        <input id="filepath" class="col" placeholder="filepath to write (eg. pewpi_secrets.json)" value="pewpi_secrets.json" />
+        <input id="path" class="col" placeholder="path to blob (eg. pewpi_secrets.json)" value="pewpi_secrets.json" />
+      </div>
+
+      <label style="margin-top:10px">Passphrase (used to decrypt the blob)</label>
+      <input id="passphrase" type="password" placeholder="Enter passphrase used when creating the blob" />
+
+      <div class="row" style="margin-top:8px">
+        <button id="fetch_decrypt">Fetch & Decrypt</button>
+        <button id="clear_output" class="secondary">Clear</button>
+      </div>
+
+      <div id="status" class="status">Ready.</div>
+
+      <label style="margin-top:10px">Decrypted JSON (if passphrase is correct)</label>
+      <pre id="plaintext">{ nothing decrypted yet }</pre>
+
+      <div style="margin-top:8px" class="row">
+        <button id="load_token" class="secondary">Load github_token into session (if present)</button>
+        <button id="copy_plain" class="secondary">Copy plaintext</button>
       </div>
     </div>
 
-    <div class="small" style="margin-top:12px">Security: only the encrypted blob is safe to commit. Use a strong passphrase. Do not commit raw tokens. After committing you can revoke the PAT you used for the commit.</div>
+    <div class="card">
+      <label>Use decrypted token with the page</label>
+      <div class="muted">If you load the github_token into sessionStorage it will be used by other UI actions on this page (for example, committing or fetching files). Loading places the token only in this browser session.</div>
+      <div id="token_status" class="status">No token loaded in session.</div>
+    </div>
   </div>
 
   <script>
-  // ---------- PewPiAccountManager (inlined) ----------
-  const PewPiAccountManager = (() => {
-    const ITER = 250000;
-    const KEYLEN = 256;
-    const SALT_BYTES = 16;
-    const IV_BYTES = 12;
-    const enc = new TextEncoder(), dec = new TextDecoder();
-
-    function _b64(u8){
-      let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
-      return btoa(bin);
-    }
-    function _fromB64(s){
-      const bin = atob(s); const u8 = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
-      return u8;
-    }
-
-    async function deriveKey(pass, salt){
-      const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-      return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:ITER, hash:'SHA-256'}, km, {name:'AES-GCM', length:KEYLEN}, false, ['encrypt','decrypt']);
-    }
-
-    async function encryptJSON(obj, pass){
-      const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-      const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-      const key = await deriveKey(pass, salt);
-      const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(obj)));
-      return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
-    }
-
-    async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }){
-      if(!username || !passphrase) throw new Error('username and passphrase required');
-      const plain = {
-        meta:{ created_by:username, created_email:email, is_admin:!!isAdmin, created_at:new Date().toISOString() },
-        accounts:[{username,email,isAdmin:!!isAdmin,created_at:new Date().toISOString()}],
-        secrets
-      };
-      return JSON.stringify(await encryptJSON(plain, passphrase), null, 2);
-    }
-
-    return { createAndExport };
-  })();
-
-  // ---------- GitHub commit helpers ----------
+  // Utilities: base64 helpers and WebCrypto PBKDF2/AES-GCM decryption
   function id(n){ return document.getElementById(n); }
-  let TOKEN = null;
-  id('load_token').addEventListener('click', ()=>{
-    const t = id('pat').value.trim();
-    if(!t) return alert('Paste a PAT first');
-    TOKEN = t;
-    id('verify_result').textContent = 'Token loaded in memory (not persisted).';
-  });
-  id('clear_token').addEventListener('click', ()=>{
-    TOKEN = null; id('pat').value=''; id('verify_result').textContent='Token cleared.';
-  });
-
-  async function getFileInfo(owner,repo,path,branch){
-    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-    const r = await fetch(url, { headers: TOKEN ? { Authorization: 'Bearer ' + TOKEN, Accept:'application/vnd.github.v3+json' } : { Accept:'application/vnd.github.v3+json' } });
-    if(r.status === 404) return { exists:false };
-    const j = await r.json();
-    if(!r.ok) throw new Error(`GET failed ${r.status}: ${j && j.message}`);
-    return { exists:true, sha:j.sha };
-  }
-
-  async function commitFile({ owner, repo, branch, path, message, contentBase64, sha }){
-    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
-    const body = { message: message || 'Add encrypted secrets blob', content: contentBase64, branch };
-    if(sha) body.sha = sha;
-    const r = await fetch(url, {
-      method: 'PUT',
-      headers: { Authorization: 'Bearer ' + TOKEN, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    });
-    const j = await r.json().catch(()=>null);
-    if(!r.ok) throw new Error(`Commit failed ${r.status}: ${j && j.message ? j.message : JSON.stringify(j)}`);
-    return j;
-  }
-
-  function toBase64(str){
-    try { return btoa(unescape(encodeURIComponent(str))); }
-    catch(e){ const u = new TextEncoder().encode(str); let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); }
-  }
-
-  // ---------- UI actions ----------
-  id('pm_create_export').addEventListener('click', async ()=>{
-    const username = id('pm_username').value.trim() || 'kris';
-    const email = id('pm_email').value.trim() || '';
-    const isAdmin = id('pm_admin').checked;
-    const pass = id('pm_passphrase').value;
-    const secret = id('pm_secret_input').value.trim();
-    if(!pass) return alert('Choose a passphrase to encrypt with');
+  function setStatus(s){ id('status').textContent = s; }
+  function b64ToU8(s){
+    // atob may throw on unicode; use decode fallback
     try{
-      id('pm_status').textContent = 'Encrypting…';
-      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
-      id('pm_export_out').value = exported;
-      id('pm_status').textContent = 'Export ready — copy ciphertext (pewpi_secrets.json) or commit from this page.';
+      const bin = atob(s);
+      const u = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+      return u;
     }catch(e){
-      id('pm_status').textContent = 'Error: ' + (e.message || e);
+      // fallback: decode utf8-safe
+      const bin = atob(s);
+      const u = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+      return u;
     }
-  });
+  }
 
-  id('pm_commit_blob').addEventListener('click', async ()=>{
-    // Commit the encrypted blob to repo (needs TOKEN loaded in memory)
+  async function deriveKey(pass, saltU8){
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltU8, iterations: 250000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+  }
+
+  async function decryptBlobObject(blobJson, passphrase){
+    if(!blobJson || !blobJson.ct) throw new Error('Invalid blob format');
+    // parse base64 fields
+    const saltU8 = b64ToU8(blobJson.salt);
+    const ivU8   = b64ToU8(blobJson.iv);
+    const ctU8   = b64ToU8(blobJson.ct);
+    // derive key
+    const key = await deriveKey(passphrase, saltU8);
+    // decrypt using AES-GCM; WebCrypto expects ciphertext+tag together (our JS encryption produced that)
     try{
-      if(!TOKEN) throw new Error('Token not loaded. Click Load token first.');
-      const username = id('pm_username').value.trim() || 'kris';
-      const email = id('pm_email').value.trim() || '';
-      const isAdmin = id('pm_admin').checked;
-      const pass = id('pm_passphrase').value;
-      const secret = id('pm_secret_input').value.trim();
-      if(!pass) throw new Error('Passphrase required for encryption');
-      id('pm_status').textContent = 'Encrypting blob…';
-      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
-      id('pm_export_out').value = exported;
-      // Now commit to GitHub
-      const owner = id('owner').value.trim(); const repo = id('repo').value.trim();
-      const branch = id('branch').value.trim() || 'main'; const path = id('filepath').value.trim() || 'pewpi_secrets.json';
-      if(!owner||!repo) throw new Error('owner and repo required to commit');
-      id('pm_status').textContent = 'Checking for existing file…';
-      let info;
-      try{ info = await getFileInfo(owner,repo,path,branch); } catch(e){ 
-        // If GET failed with 404 it returns exists:false above. If another error, throw.
-        throw e;
+      const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: ivU8 }, key, ctU8.buffer);
+      const dec = new TextDecoder().decode(pt);
+      return JSON.parse(dec);
+    } catch(e){
+      throw new Error('Decrypt failed: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  // Fetch the committed blob via raw.githubusercontent.com
+  async function fetchBlobRaw(owner, repo, branch, path){
+    const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path}`;
+    // raw.githubusercontent.com generally allows CORS; if not, user must open through GitHub UI and copy
+    const r = await fetch(rawUrl, { cache: 'no-store' });
+    if(!r.ok) throw new Error('Fetch failed: ' + r.status + ' ' + r.statusText);
+    const text = await r.text();
+    return text;
+  }
+
+  // Main handler
+  id('fetch_decrypt').addEventListener('click', async ()=>{
+    const owner = id('owner').value.trim();
+    const repo = id('repo').value.trim();
+    const branch = id('branch').value.trim() || 'main';
+    const path = id('path').value.trim() || 'pewpi_secrets.json';
+    const pass = id('passphrase').value;
+    id('plaintext').textContent = '{ decrypting... }';
+    setStatus('Fetching blob from repo...');
+    if(!owner || !repo){ setStatus('owner and repo required'); return; }
+    if(!pass){ setStatus('Enter passphrase to decrypt'); return; }
+    try{
+      const raw = await fetchBlobRaw(owner, repo, branch, path);
+      // try to parse as JSON; the blob should be the ciphertext JSON
+      let blob;
+      try{ blob = JSON.parse(raw); }
+      catch(e){
+        // sometimes raw contains markdown or extra; try to extract first JSON object
+        const m = raw.match(/\{[\s\S]*\}/);
+        if(m) blob = JSON.parse(m[0]);
+        else throw new Error('Could not parse blob JSON');
       }
-      const base64 = toBase64(exported);
-      id('pm_status').textContent = 'Committing encrypted blob to repo…';
-      const res = await commitFile({ owner, repo, branch, path, message: 'Add/Update encrypted secrets blob', contentBase64: base64, sha: info.exists ? info.sha : undefined });
-      id('pm_status').textContent = 'Commit successful: ' + (res && res.commit && res.commit.sha ? res.commit.sha : 'ok');
-    }catch(e){
-      id('pm_status').textContent = 'Error: ' + (e.message || e);
-      console.error(e);
+      setStatus('Decrypting blob in browser (passphrase NEVER leaves your device)...');
+      const plain = await decryptBlobObject(blob, pass);
+      id('plaintext').textContent = JSON.stringify(plain, null, 2);
+      setStatus('Decryption succeeded. You may Load token into session if secrets.github_token exists.');
+    }catch(err){
+      id('plaintext').textContent = '{ decryption failed }';
+      setStatus('Error: ' + (err && err.message ? err.message : String(err)));
     }
   });
 
-  // initialize defaults
-  id('pm_status').textContent = 'Ready. Fill username, passphrase and optional secret. Load token to commit.';
+  id('clear_output').addEventListener('click', ()=>{
+    id('plaintext').textContent = '{ nothing decrypted yet }';
+    id('passphrase').value = '';
+    setStatus('Cleared.');
+  });
+
+  // Copy plaintext to clipboard
+  id('copy_plain').addEventListener('click', async ()=>{
+    const txt = id('plaintext').textContent;
+    try{ await navigator.clipboard.writeText(txt); setStatus('Plaintext copied to clipboard (be careful).'); }
+    catch(e){ setStatus('Copy failed: ' + (e && e.message)); }
+  });
+
+  // Load github_token into sessionStorage for this page to use
+  id('load_token').addEventListener('click', ()=>{
+    try{
+      const txt = id('plaintext').textContent;
+      if(!txt || txt.startsWith('{') && txt.includes('nothing')) { setStatus('No plaintext available to load'); return; }
+      const j = JSON.parse(txt);
+      if(j && j.secrets && j.secrets.github_token){
+        sessionStorage.setItem('gh.token', j.secrets.github_token);
+        id('token_status').textContent = 'github_token loaded into sessionStorage (session key: gh.token)';
+        setStatus('Token loaded into session for immediate use by this page.');
+      } else {
+        setStatus('No secrets.github_token field found in decrypted JSON.');
+      }
+    }catch(e){ setStatus('Load token failed: ' + (e && e.message)); }
+  });
+
+  // Initialize
+  id('token_status').textContent = sessionStorage.getItem('gh.token') ? 'Token already in session' : 'No token loaded in session.';
+  setStatus('Ready. Enter repo info and passphrase, then Fetch & Decrypt.');
   </script>
 </body>
 </html>
