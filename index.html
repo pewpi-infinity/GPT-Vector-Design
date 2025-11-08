@@ -1,296 +1,342 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PewPi — Quick Activate Rogers</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
-    .wrap{max-width:900px;margin:0 auto}
-    h1{margin:0 0 10px 0}
-    .card{background:#08242f;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
-    input,textarea,button{font:inherit}
-    input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
-    textarea{min-height:120px;resize:vertical;font-family:monospace}
-    .row{display:flex;gap:8px;margin-top:8px}
-    .col{flex:1}
-    button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
-    .secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
-    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:320px}
-    .muted{color:#9bb7c2;font-size:0.9rem}
-    .status{margin-top:8px;color:#cfeee6}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PewPi — Unified Admin / Rogers / Bots</title>
+<style>
+  :root{--bg:#071722;--card:#08242f;--muted:#9bb7c2;--accent:#16b07a;--panel:#041016}
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#e9fbff}
+  .app{display:flex;height:100vh}
+  /* drawer */
+  .drawer{width:60px;background:var(--card);display:flex;flex-direction:column;align-items:center;padding-top:12px;gap:8px;border-right:1px solid rgba(255,255,255,0.03)}
+  .btn{width:44px;height:44px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .btn.active{background:var(--accent);color:#00221a}
+  .main{flex:1;display:flex;flex-direction:column}
+  /* header */
+  header{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(0,0,0,0.03),transparent)}
+  h1{margin:0;font-size:1.05rem}
+  .muted{color:var(--muted);font-size:0.92rem}
+  /* content */
+  .content{padding:16px;display:flex;gap:16px;height:calc(100vh - 64px);box-sizing:border-box}
+  .col{flex:1;min-width:320px;overflow:auto}
+  .card{background:var(--card);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
+  input,textarea,select,button{font:inherit}
+  input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+  textarea{min-height:120px;resize:vertical;font-family:monospace}
+  .row{display:flex;gap:8px;margin-top:8px}
+  .col-2{display:flex;gap:8px}
+  .small{font-size:0.9rem;color:var(--muted)}
+  .console{background:var(--panel);padding:10px;border-radius:8px;min-height:180px;white-space:pre-wrap;overflow:auto;color:#cfeee6}
+  .action{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#00221a;cursor:pointer}
+  .secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:8px;border-radius:8px;cursor:pointer}
+  .danger{background:#ff7b7b;color:#3a0000}
+  label{font-size:0.9rem;color:var(--muted);display:block;margin-top:8px}
+  pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto}
+  .bot{padding:8px;border-radius:8px;background:#0a3740;margin-top:8px}
+  footer{padding:8px 12px;border-top:1px solid rgba(255,255,255,0.03);font-size:0.85rem;color:var(--muted)}
+  .tiny{font-size:0.8rem;color:var(--muted)}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>PewPi — Quick Activate Rogers</h1>
-
-    <div class="card">
-      <div class="muted">Paste the passphrase you used to create the encrypted blob (secrets.json). Click Activate — Rogers will automatically find your blob, decrypt it, load the token into session, and enable chat below.</div>
-
-      <div class="row" style="margin-top:8px">
-        <input id="passphrase" type="password" placeholder="Enter passphrase (only in your browser)" />
-        <button id="activate">Activate Rogers</button>
-      </div>
-
-      <div class="status" id="activate_status">Idle. Click Activate when ready.</div>
-    </div>
-
-    <div class="card" id="rogers_card" style="display:none">
-      <label style="font-weight:700">Rogers (chat)</label>
-      <div id="console" style="border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;background:#041016;min-height:180px;white-space:pre-wrap;overflow:auto"></div>
-      <div class="row" style="margin-top:8px">
-        <input id="query" placeholder='Type "fetch github owner repo path [ref]" or say hello' />
-        <button id="send">Send</button>
-      </div>
-      <div class="status" id="console_status">Rogers inactive until activation.</div>
-    </div>
+<div class="app">
+  <div class="drawer" role="navigation" aria-label="Main menu">
+    <button class="btn active" data-view="portal" title="Main Portal">P</button>
+    <button class="btn" data-view="admin" title="Admin / Login">A</button>
+    <button class="btn" data-view="bots" title="Bot Farm">B</button>
+    <button class="btn" data-view="logs" title="Logs & Encrypt">L</button>
+    <button class="btn" data-view="terminal" title="Terminal / Commits">T</button>
   </div>
 
+  <div class="main">
+    <header>
+      <h1>PewPi — Unified Control</h1>
+      <div style="flex:1"></div>
+      <div class="muted tiny" id="session_info">no session</div>
+    </header>
+
+    <div class="content">
+      <!-- left column: main content -->
+      <div class="col" id="left_col">
+        <!-- Portal view -->
+        <div class="card view" id="view_portal">
+          <label><strong>Main Rogers Portal</strong></label>
+          <div class="small">Type your commands or ask Rogers. If a GitHub token is loaded it will be used for private repo operations.</div>
+          <div class="console" id="portal_console">{ Rogers ready — unlock admin to load token }</div>
+          <div class="row" style="margin-top:8px">
+            <input id="portal_query" placeholder='Say "hello" or "fetch github owner repo path"' />
+            <button class="action" id="portal_send">Send</button>
+          </div>
+        </div>
+
+        <!-- Bots view -->
+        <div class="card view" id="view_bots" style="display:none">
+          <label><strong>Bot Farm (manual approvals)</strong></label>
+          <div class="small">Create browser bots, run them on demand. Child spawn requests require manual approval.</div>
+
+          <div class="row">
+            <input id="bot_name" placeholder="bot name (eg. fetcher-1)" />
+            <select id="bot_type">
+              <option value="echo">echo</option>
+              <option value="transform">transform</option>
+              <option value="fetch_github">fetch_github</option>
+            </select>
+            <button class="action" id="create_bot">Create</button>
+          </div>
+
+          <div id="bots_list" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Logs view -->
+        <div class="card view" id="view_logs" style="display:none">
+          <label><strong>Activity & Logs</strong></label>
+          <div class="small">In-memory session log. Encrypt & commit when ready. Save encrypted settings to localStorage to remember across reloads.</div>
+          <pre id="log_view">{ no events }</pre>
+
+          <label>Encryption passphrase (for local encrypted settings / logs)</label>
+          <input id="log_pass" type="password" placeholder="put passphrase here (will NOT be stored)" />
+          <div class="row">
+            <button class="action" id="encrypt_copy">Encrypt & copy to clipboard</button>
+            <button class="secondary" id="encrypt_commit">Encrypt & commit to repo</button>
+            <button class="secondary" id="save_local">Save encrypted settings locally</button>
+          </div>
+
+          <label style="margin-top:8px">Last encrypted blob preview</label>
+          <pre id="last_ct">{ none }</pre>
+          <div id="commit_status" class="tiny"></div>
+        </div>
+
+        <!-- Terminal / Commit view -->
+        <div class="card view" id="view_terminal" style="display:none">
+          <label><strong>Admin Terminal & GitHub Commits</strong></label>
+          <div class="small">Use the PAT loaded in Admin to test the token and to commit files. All tokens stay in memory only unless you copy them manually.</div>
+
+          <label>Commit owner / repo / branch / path</label>
+          <div class="row">
+            <input id="commit_owner" placeholder="owner" />
+            <input id="commit_repo" placeholder="repo" />
+          </div>
+          <div class="row">
+            <input id="commit_branch" placeholder="branch" value="main" />
+            <input id="commit_path" placeholder="path (eg. pewpi_bot_logs.json)" />
+          </div>
+
+          <label>Commit message</label>
+          <input id="commit_msg" placeholder="Commit message" value="Add encrypted log via UI" />
+          <label>File content (paste or generated ciphertext)</label>
+          <textarea id="commit_content" placeholder="// paste file content or ciphertext JSON"></textarea>
+
+          <div class="row" style="margin-top:8px">
+            <button class="action" id="check_file">Check exists</button>
+            <button class="action" id="do_commit">Commit</button>
+            <button class="secondary" id="preview_b64">Preview base64</button>
+          </div>
+
+          <label style="margin-top:8px">Terminal output</label>
+          <pre id="terminal_out" class="console">{ terminal }</pre>
+        </div>
+      </div>
+
+      <!-- right column: admin/login -->
+      <div class="col" id="right_col">
+        <div class="card view" id="view_admin" style="display:none">
+          <label><strong>Admin / Login</strong></label>
+          <div class="small">Enter the passphrase in the field below (simple "put it here" design). You can also paste the ciphertext JSON or fetch it from raw URL. Settings can be saved encrypted locally so you don't re-enter.</div>
+
+          <label>Put it here</label>
+          <div class="row">
+            <input id="admin_pass" type="password" placeholder="Put it here" />
+            <button class="action" id="admin_unlock">Unlock</button>
+          </div>
+
+          <label style="margin-top:8px">Ciphertext JSON (optional)</label>
+          <textarea id="admin_blob" placeholder='Paste ciphertext JSON here (if not embedded)'></textarea>
+          <div class="row">
+            <input id="admin_rawurl" placeholder="raw.githubusercontent URL (optional)" />
+            <button class="secondary" id="fetch_blob">Fetch</button>
+            <button class="secondary" id="paste_clip">Paste clipboard</button>
+          </div>
+
+          <label style="margin-top:8px">In-memory PAT (for commits)</label>
+          <div class="row">
+            <input id="admin_pat" type="password" placeholder="Paste PAT here (memory only)" />
+            <button class="secondary" id="load_pat">Load</button>
+            <button class="secondary" id="clear_pat">Clear</button>
+          </div>
+          <div id="admin_status" class="tiny">No session</div>
+
+          <label style="margin-top:8px">Remember (encrypted, localStorage)</label>
+          <div class="row">
+            <button class="secondary" id="save_settings">Save encrypted settings locally</button>
+            <button class="secondary" id="load_settings">Load encrypted settings</button>
+            <button class="secondary danger" id="clear_settings">Clear saved settings</button>
+          </div>
+
+          <label style="margin-top:8px">Decrypted plaintext preview</label>
+          <pre id="admin_plain">{ none }</pre>
+          <div class="row">
+            <button class="action" id="load_token_from_plain">Load github_token into session</button>
+            <button class="secondary" id="re_encrypt">Re-encrypt (change passphrase)</button>
+          </div>
+        </div>
+
+        <!-- small quick-help card -->
+        <div class="card">
+          <label><strong>Quick Help</strong></label>
+          <div class="small">Steps: 1) Admin → Paste ciphertext or fetch it. 2) Type passphrase in "Put it here" → Unlock. 3) Click "Load github_token into session". 4) Use Portal to chat or Bots to run tasks. 5) Encrypt & Commit logs in Logs/Terminal using PAT.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Built for you — all client-side. Tokens stay in memory unless you copy/paste them. Revoke tokens when done.</footer>
+  </div>
+</div>
+
 <script>
-/*
-  Minimal page that:
-  - auto-tries to find an encrypted blob (secrets.json / pewpi_secrets.json) across candidate repo names & branches
-  - decrypts blob with passphrase (PBKDF2 250k + AES-GCM) in-browser
-  - if secrets.github_token found, loads into sessionStorage and enables a simple client-side "Rogers"
-  - Rogers supports basic "fetch github owner repo path [ref]" (uses token for private repos if present)
-*/
-
-/* ---------- Configuration: candidate repo names & paths ---------- */
-/* If you know your repo name, you can add it here for faster fetch. */
-const OWNER = "pewpi-infinity";
-const CANDIDATE_REPOS = [
-  "pewpi-infinity",       // often repo same as user/org
-  "GPT-Vectors-Design",
-  "Vector",
-  "Vector-Design",
-  "infinity-portal",
-  "InfinityOS",
-  "pewpi-infinity.github.io"
-];
-const CANDIDATE_PATHS = ["secrets.json","pewpi_secrets.json","pewpi_secrets.json.enc"];
-const CANDIDATE_BRANCHES = ["main","master"];
-
-/* ---------- helpers ---------- */
-function id(n){ return document.getElementById(n); }
-function log(s){ const c=id('console'); c.textContent += (c.textContent?'\n':'') + s; c.scrollTop = c.scrollHeight; }
-function setStatus(s){ id('activate_status').textContent = s; }
-function setConsoleStatus(s){ id('console_status').textContent = s; }
-
-/* base64 -> Uint8Array */
-function b64ToU8(s){
-  const bin = atob(s);
-  const u = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
-  return u;
-}
-
-/* derive key */
-async function deriveKey(pass, saltU8){
-  const enc = new TextEncoder();
-  const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name:'PBKDF2', salt: saltU8, iterations: 250000, hash:'SHA-256'}, km, { name:'AES-GCM', length:256 }, false, ['decrypt']);
-}
-
-/* decrypt blob produced by the account manager */
+/* ---------- Core crypto utils (PBKDF2 250k + AES-GCM) ---------- */
+const ITER = 250000;
+function u8FromB64(s){ const bin = atob(s); const u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+function b64FromU8(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
+async function deriveKey(pass, saltU8, usages=['decrypt']){ const enc = new TextEncoder(); const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2', salt: saltU8, iterations: ITER, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, usages); }
 async function decryptBlob(blob, pass){
-  if(!blob || !blob.ct) throw new Error('blob missing ct');
-  const salt = b64ToU8(blob.salt);
-  const iv   = b64ToU8(blob.iv);
-  const ct   = b64ToU8(blob.ct);
-  const key = await deriveKey(pass, salt);
-  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct.buffer);
-  const txt = new TextDecoder().decode(pt);
-  return JSON.parse(txt);
+  if(!blob || !blob.ct) throw new Error('Invalid blob');
+  const salt = u8FromB64(blob.salt), iv = u8FromB64(blob.iv), ct = u8FromB64(blob.ct);
+  const key = await deriveKey(pass, salt, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct.buffer);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function encryptJSON(obj, pass){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return { v:1, salt: b64FromU8(salt), iv: b64FromU8(iv), ct: b64FromU8(new Uint8Array(ct)), created_at: new Date().toISOString() };
 }
 
-/* attempt to fetch raw blob from raw.githubusercontent for given owner/repo/branch/path */
-async function tryFetchRaw(owner, repo, branch, path){
-  const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path}`;
-  try {
-    const r = await fetch(url, { cache:'no-store' });
-    if(r.ok) return await r.text();
-  } catch(e){ /* ignore */ }
-  return null;
+/* ---------- GitHub API helpers (Contents API) ---------- */
+let INMEM_TOKEN = null; // in-memory PAT
+function setSessionToken(t){ INMEM_TOKEN = t; sessionStorage.setItem('gh.token', t); document.getElementById('admin_status').textContent = 'Token loaded in memory (session)'; updateSessionInfo(); }
+function clearSessionToken(){ INMEM_TOKEN = null; sessionStorage.removeItem('gh.token'); document.getElementById('admin_status').textContent = 'Token cleared'; updateSessionInfo(); }
+
+async function getFileInfo(owner,repo,path,branch){
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+  const r = await fetch(url, { headers: INMEM_TOKEN ? { Authorization:'Bearer ' + INMEM_TOKEN, Accept:'application/vnd.github.v3+json' } : { Accept:'application/vnd.github.v3+json' } });
+  if(r.status===404) return { exists:false };
+  const j = await r.json(); if(!r.ok) throw new Error('GET failed: ' + (j && j.message ? j.message : r.status));
+  return { exists:true, sha:j.sha, content:j.content };
+}
+async function commitFile(owner,repo,branch,path,message,contentBase64,sha){
+  if(!INMEM_TOKEN) throw new Error('No PAT loaded for commit');
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+  const body = { message, content: contentBase64, branch }; if(sha) body.sha = sha;
+  const r = await fetch(url, { method:'PUT', headers:{ Authorization:'Bearer ' + INMEM_TOKEN, Accept:'application/vnd.github.v3+json','Content-Type':'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(()=>null); if(!r.ok) throw new Error('Commit failed: ' + (j && j.message ? j.message : JSON.stringify(j))); return j;
 }
 
-/* attempt to find the blob by trying many repo/path/branch combos */
-async function autodiscoverBlob(pass){
-  setStatus('Searching for encrypted blob...');
-  for(const repo of CANDIDATE_REPOS){
-    for(const branch of CANDIDATE_BRANCHES){
-      for(const path of CANDIDATE_PATHS){
-        setStatus(`Trying ${repo}@${branch}/${path} ...`);
-        const raw = await tryFetchRaw(OWNER, repo, branch, path);
-        if(raw){
-          setStatus(`Found blob at ${OWNER}/${repo}@${branch}/${path}`);
-          return { raw, repo, branch, path };
-        }
-      }
-    }
-  }
-  setStatus('Auto-discover failed (no raw file found). If your repo is private, you must paste the blob JSON manually via the console or load a PAT and re-run.');
-  return null;
+/* ---------- fetch raw helper (public) ---------- */
+async function fetchRaw(owner,repo,branch,path){
+  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path}`;
+  const r = await fetch(rawUrl,{cache:'no-store'}); if(!r.ok) throw new Error('Raw fetch failed: ' + r.status); return r.text();
 }
 
-/* If repo is private: try to fetch using GitHub API with token */
-async function fetchBlobWithToken(owner, repo, branch, path, token){
-  const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(api, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3.raw' } });
-  if(res.ok) return await res.text();
-  const txt = await res.text().catch(()=>String(res.status));
-  throw new Error('API fetch failed: ' + res.status + ' ' + txt);
-}
+/* ---------- UI wiring and simple rogers logic ---------- */
+function $(id){ return document.getElementById(id); }
+function updateSessionInfo(){ const s = sessionStorage.getItem('gh.token') ? 'token in session' : 'no token'; $('session_info').textContent = s; }
+function debugOut(el, txt){ const pre = $(el); pre.textContent = txt; }
 
-/* ---------- Activation flow ---------- */
-async function activateRogers(){
-  const pass = id('passphrase').value;
-  if(!pass){ alert('Enter passphrase'); return; }
-  setStatus('Starting activation...');
-  // 1) try auto-discover raw public blobs
-  let found = await autodiscoverBlob(pass);
-  let rawText = null;
-  let discoveredInfo = null;
+const views = document.querySelectorAll('.btn[data-view]');
+views.forEach(b => b.addEventListener('click',(e)=>{
+  document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const view = b.dataset.view;
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('view_' + view).style.display = 'block';
+}));
 
-  if(found) {
-    rawText = found.raw;
-    discoveredInfo = found;
-  } else {
-    // 2) attempt to use a token if the user previously decrypted and stored one in sessionStorage
-    const storedToken = sessionStorage.getItem('gh.token');
-    if(storedToken){
-      setStatus('Trying API fetch with token (private repo) ...');
-      for(const repo of CANDIDATE_REPOS){
-        for(const branch of CANDIDATE_BRANCHES){
-          for(const path of CANDIDATE_PATHS){
-            try{
-              const t = await fetchBlobWithToken(OWNER, repo, branch, path, storedToken);
-              rawText = t; discoveredInfo = { repo, branch, path }; break;
-            }catch(e){ /* continue */ }
-          }
-          if(rawText) break;
-        }
-        if(rawText) break;
-      }
-    }
-  }
+/* Admin: fetch blob, decrypt, load token */
+$('fetch_blob').addEventListener('click', async ()=>{
+  const url = $('admin_rawurl').value.trim(); if(!url) return alert('Enter raw URL');
+  $('admin_status').textContent = 'Fetching raw...';
+  try{ const txt = await fetch(url,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }); $('admin_blob').value = txt; $('admin_status').textContent = 'Fetched raw'; }catch(e){ $('admin_status').textContent = 'Fetch failed: ' + e.message; }
+});
+$('paste_clip').addEventListener('click', async ()=>{ try{ const t = await navigator.clipboard.readText(); $('admin_blob').value = t; $('admin_status').textContent = 'Pasted from clipboard'; }catch(e){ $('admin_status').textContent = 'Clipboard read failed'; } });
 
-  if(!rawText){
-    // no automatic fetch; ask user to paste the ciphertext JSON directly (simple and fast)
-    const pasted = prompt('Auto-discover failed. Paste the ciphertext JSON (the encrypted blob) now (cancel to abort):');
-    if(!pasted){ setStatus('Activation aborted by user.'); return; }
-    rawText = pasted;
-  }
+$('load_pat').addEventListener('click', ()=>{
+  const t = $('admin_pat').value.trim(); if(!t) return alert('Paste PAT first'); setSessionToken(t);
+});
+$('clear_pat').addEventListener('click', ()=>{ clearSessionToken(); });
 
-  // parse JSON and decrypt
-  let blob;
-  try {
-    blob = (typeof rawText === 'string') ? JSON.parse(rawText) : rawText;
-  } catch(e){
-    // try to extract JSON substring if the raw contains wrappers
-    try{
-      const m = rawText.match(/\{[\s\S]*\}/);
-      blob = m ? JSON.parse(m[0]) : null;
-    } catch(err){ blob = null; }
-  }
-  if(!blob){ setStatus('Could not parse blob JSON. Activation failed.'); alert('Blob JSON parse failed.'); return; }
-
-  setStatus('Decrypting in browser...');
-  let plain;
-  try {
-    plain = await decryptBlob(blob, pass);
-  } catch(e){
-    setStatus('Decrypt failed: wrong passphrase?');
-    alert('Decrypt failed: ' + (e && e.message ? e.message : e));
-    return;
-  }
-
-  // store plaintext in memory and token in session
-  window._rogers_plain = plain;
-  if(plain && plain.secrets && plain.secrets.github_token){
-    sessionStorage.setItem('gh.token', plain.secrets.github_token);
-    setStatus('Decryption OK — token loaded into sessionStorage (gh.token). Rogers ready.');
-  } else {
-    setStatus('Decryption OK — no github_token found in blob. Rogers ready (public-only).');
-  }
-
-  // show and enable Rogers UI
-  id('rogers_card').style.display = 'block';
-  id('activate').disabled = true;
-  id('passphrase').disabled = true;
-  setConsoleStatus('Rogers active. Type commands in the box and press Send.');
-  log('Rogers activated. Decrypted account: ' + (plain.meta && plain.meta.created_by ? plain.meta.created_by : '(unknown)'));
-}
-
-/* ---------- small client-side rogers logic ---------- */
-async function fetchGithubFileClient(owner, repo, path, ref){
-  // try raw first (public)
-  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(ref)}/${path}`;
+$('admin_unlock').addEventListener('click', async ()=>{
+  const pass = $('admin_pass').value;
+  let txt = $('admin_blob').value.trim();
+  $('admin_status').textContent = 'Unlocking...';
   try{
-    const r = await fetch(rawUrl, { cache:'no-store' });
-    if(r.ok) return { ok:true, text: await r.text(), source: rawUrl };
-  }catch(e){ /* ignore */ }
-
-  // fallback to API with token if present
-  const token = sessionStorage.getItem('gh.token') || null;
-  if(token){
-    const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
-    const r = await fetch(api, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3.raw' } });
-    if(r.ok) return { ok:true, text: await r.text(), source: api };
-    const txt = await r.text().catch(()=>String(r.status));
-    return { ok:false, err:`GitHub API ${r.status}: ${txt}` };
-  }
-
-  return { ok:false, err:'Not found (raw failed) and no token available for API.' };
-}
-
-async function rogersHandle(query){
-  query = (query||'').trim();
-  if(!query) return 'Empty query';
-  const fetchMatch = /^fetch\\s+github\\s+([^\\s\\/]+)\\s+([^\\s\\/]+)\\s+([^\\s].*?)(?:\\s+([^\\s]+))?$/i.exec(query);
-  if(fetchMatch){
-    const owner = fetchMatch[1], repo = fetchMatch[2], path = fetchMatch[3], ref = fetchMatch[4] || 'main';
-    const res = await fetchGithubFileClient(owner, repo, path, ref);
-    if(res.ok){
-      if(res.text.length > 2500) return `Fetched ${path} from ${owner}/${repo}@${ref} (truncated):\\n\\n${res.text.slice(0,2500)}\\n\\n(Use raw URL for full)`;
-      return `Fetched ${path} from ${owner}/${repo}@${ref}:\\n\\n${res.text}`;
-    } else return 'Fetch error: ' + res.err;
-  }
-  if(/^hello$/i.test(query)) return 'Hello — Rogers (client) here.';
-  return 'Rogers (client) received: ' + query;
-}
-
-/* ---------- chat wiring ---------- */
-id('activate').addEventListener('click', activateRogers);
-
-id('send').addEventListener('click', async ()=>{
-  const q = id('query').value.trim();
-  if(!q) return;
-  log('You: ' + q);
-  setConsoleStatus('Thinking...');
-  try{
-    const r = await rogersHandle(q);
-    log('Rogers: ' + r);
-    setConsoleStatus('Done.');
+    if(!txt){ // no pasted blob: try embedded global or localStorage saved settings encrypted
+      const saved = localStorage.getItem('pewpi_saved_ct');
+      if(saved){ txt = saved; $('admin_status').textContent = 'Using saved encrypted settings'; }
+      else throw new Error('No ciphertext found. Paste it into the box or fetch from raw URL.');
+    }
+    // parse JSON blob
+    let blob = JSON.parse(txt);
+    const plain = await decryptBlob(blob, pass);
+    $('admin_plain').textContent = JSON.stringify(plain, null, 2);
+    window._decrypted_plain = plain;
+    $('admin_status').textContent = 'Decrypted OK';
+    // auto-load token if present
+    if(plain && plain.secrets && plain.secrets.github_token){
+      setSessionToken(plain.secrets.github_token);
+      $('admin_status').textContent += ' — token auto-loaded';
+      // enable portal chat
+      startPortalChat();
+    }
+    updateSessionInfo();
   }catch(e){
-    log('Rogers error: ' + (e && e.message ? e.message : e));
-    setConsoleStatus('Error');
+    $('admin_status').textContent = 'Unlock failed: ' + (e && e.message ? e.message : e);
   }
-  id('query').value = '';
 });
 
-/* allow Enter to send */
-id('query').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){ e.preventDefault(); id('send').click(); }
+/* Load token from preview explicitly */
+$('load_token_from_plain').addEventListener('click', ()=>{
+  try{
+    const txt = $('admin_plain').textContent; if(!txt || txt.includes('none')) return alert('Nothing decrypted');
+    const obj = JSON.parse(txt); if(!obj.secrets || !obj.secrets.github_token) return alert('No github_token present');
+    setSessionToken(obj.secrets.github_token); $('admin_status').textContent = 'Token loaded from plaintext';
+  }catch(e){ $('admin_status').textContent = 'Load failed: ' + e.message; }
 });
 
-/* initialize UI state */
-(function init(){
-  id('rogers_card').style.display = 'none';
-  if(sessionStorage.getItem('gh.token')){
-    setStatus('Token already in sessionStorage. Click Activate to attempt private fetch.');
-  }
-})();
-</script>
-</body>
-</html>
+/* Save encrypted settings locally (encrypted using pass currently in log_pass) */
+$('save_settings').addEventListener('click', async ()=>{
+  const pass = $('log_pass').value || $('admin_pass').value;
+  if(!pass) return alert('Enter passphrase in "Encryption passphrase" box (Logs) or Admin pass');
+  // build settings: store admin_blob (ciphertext raw), owner/repo defaults from commit fields
+  const settings = { blob: $('admin_blob').value.trim(), commit_owner: $('commit_owner').value.trim(), commit_repo: $('commit_repo').value.trim() };
+  const ct = await encryptJSON(settings, pass);
+  localStorage.setItem('pewpi_saved_ct', JSON.stringify(ct));
+  $('admin_status').textContent = 'Settings saved encrypted to localStorage.';
+});
+$('load_settings').addEventListener('click', async ()=>{
+  const saved = localStorage.getItem('pewpi_saved_ct'); if(!saved) return alert('No saved settings');
+  const pass = $('log_pass').value || $('admin_pass').value; if(!pass) return alert('Enter passphrase');
+  try{
+    const obj = JSON.parse(saved); const plain = await decryptBlob(obj, pass); if(plain.blob) $('admin_blob').value = plain.blob; if(plain.commit_owner) $('commit_owner').value = plain.commit_owner; if(plain.commit_repo) $('commit_repo').value = plain.commit_repo;
+    $('admin_status').textContent = 'Settings loaded into admin fields.';
+  }catch(e){ $('admin_status').textContent = 'Load settings failed: ' + e.message; }
+});
+$('clear_settings').addEventListener('click', ()=>{ localStorage.removeItem('pewpi_saved_ct'); $('admin_status').textContent='Saved settings cleared.'; });
+
+/* Re-encrypt flow - change passphrase (admin) */
+$('re_encrypt').addEventListener('click', async ()=>{
+  try{
+    const plain = window._decrypted_plain; if(!plain) return alert('Decrypt first');
+    const newPass = prompt('Enter NEW passphrase (do NOT use the PAT)');
+    if(!newPass) return alert('Cancelled');
+    const newCt = await encryptJSON(plain, newPass);
+    $('admin_blob').value = JSON.stringify(newCt, null, 2);
+    $('admin_status').textContent = 'Re-encrypted. Replace the embedded blob in your file or commit this ciphertext.';
+  }catch(e){ $('admin_status').textContent = 'Re-encrypt failed: ' + e.message; }
+});
+
+/* Terminal: check exists & commit */
+$('check_file').addEventListener('click', async ()=>{
+  try{
+    const owner = $('commit_owner').value.trim(), repo = $('com
