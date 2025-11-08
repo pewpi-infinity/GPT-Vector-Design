@@ -3,135 +3,251 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Rogers — Static Test UI (no backend)</title>
+  <title>Rogers — UI (token-friendly)</title>
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;max-width:980px}
     h1{margin:0 0 8px 0}
     #chat{border:1px solid #ddd;padding:12px;min-height:200px;background:#fafafa;white-space:pre-wrap}
     .row{display:flex;gap:8px;margin-top:10px}
-    input[type=text]{flex:1;padding:8px}
+    input[type=text], input[type=password]{flex:1;padding:8px}
     button{padding:8px 12px}
     .meta{font-size:0.9rem;color:#666;margin-top:8px}
     .err{color:#b00;font-weight:600}
     .note{color:#066}
     pre.code{background:#111;color:#eee;padding:10px;overflow:auto;max-height:400px}
+    .small{font-size:0.85rem;color:#666}
   </style>
 </head>
 <body>
-  <h1>Rogers — Static UI (no backend)</h1>
-  <div class="meta">
-    This is a static fallback page. It cannot run Python logic in your repo — it can fetch files from public GitHub repositories.
-  </div>
+  <h1>Rogers — UI</h1>
+  <div class="meta">This UI can store a GitHub token locally (optionally encrypted), use it to fetch repo files, or attach it when calling a backend helper.</div>
 
   <div id="chat" aria-live="polite"></div>
 
   <div class="row">
-    <input id="query" type="text" placeholder="Type a command (e.g. 'hello' or 'fetch github owner repo path [ref]')" />
+    <input id="query" type="text" placeholder="Type a command (eg 'fetch github owner repo path [ref]' or 'hello')" />
     <button id="send">Send</button>
     <button id="clear">Clear</button>
   </div>
 
-  <div style="margin-top:12px">
-    <label class="note">Fetch GitHub example:</label>
+  <div style="margin-top:12px" class="small">
+    <strong>Helper URL:</strong>
+    <input id="helper_url" type="text" placeholder="http://localhost:8765" style="flex:0.8" />
+    <button id="test_helper">Ping</button>
+    <div class="small">If helper runs locally, use http://localhost:8765. The page will attach any saved token as an Authorization: Bearer header when calling the helper.</div>
+  </div>
+
+  <hr/>
+
+  <div style="margin-top:10px">
+    <div class="small"><strong>GitHub token (optional)</strong> — store locally (encrypted) or plain (not recommended). If stored, it will be used for GitHub API calls and helper requests.</div>
+    <div class="row" style="margin-top:6px">
+      <input id="gh_token" type="password" placeholder="Paste GitHub PAT here (will not be sent unless used)" />
+      <button id="save_token">Save (plain)</button>
+      <button id="encrypt_save">Save (encrypt)</button>
+      <button id="clear_token">Clear</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <input id="enc_pass" type="password" placeholder="Encryption passphrase (for decrypt)" />
+      <button id="unlock_token">Unlock</button>
+    </div>
+    <div class="small">When encrypted, token is stored ciphertext in localStorage. To use it, enter your passphrase and press Unlock.</div>
+  </div>
+
+  <hr/>
+
+  <div style="margin-top:8px">
+    <label class="small">Quick Fetch GitHub:</label>
     <div class="row">
-      <input id="gh_owner" type="text" placeholder="owner (e.g. octocat)" />
-      <input id="gh_repo" type="text" placeholder="repo (e.g. Hello-World)" />
+      <input id="gh_owner" type="text" placeholder="owner (example: octocat)" />
+      <input id="gh_repo" type="text" placeholder="repo (example: Hello-World)" />
       <input id="gh_path" type="text" placeholder="path (README.md or src/file.py)" />
       <input id="gh_ref" type="text" placeholder="ref (branch/commit - optional)" />
       <button id="gh_fetch">Fetch</button>
     </div>
-    <div class="meta">Public repos only: uses raw.githubusercontent.com or the API for content. Private repos require a token (not safe to embed in a public page).</div>
   </div>
 
   <script>
-    // Utility: append lines to the chat box
-    const chat = document.getElementById('chat');
-    function appendUser(msg){ chat.innerHTML += '<div><strong>You:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
-    function appendBot(msg){ chat.innerHTML += '<div><strong>Result:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
-    function appendHtml(html){ chat.innerHTML += html; chat.scrollTop = chat.scrollHeight; }
-    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  // --- storage keys
+  const KEY_PLAIN = 'rogers.gh.token';
+  const KEY_ENC  = 'rogers.gh.token.enc';
 
-    async function fetchGithubFile(owner, repo, path, ref){
-      // Try raw.githubusercontent first with a guessed branch
-      // If ref provided, use it. If not, try common default branches.
-      const candidates = ref ? [ref] : ['main','master'];
-      for(const r of candidates){
-        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${r}/${path}`;
-        try {
-          const res = await fetch(rawUrl);
-          if(res.ok){
-            const text = await res.text();
-            return { ok:true, source: rawUrl, text };
-          }
-        } catch(e){
-          // continue to API fallback
-        }
-      }
-      // Fallback: use GitHub contents API (returns JSON unless header Accept: 'application/vnd.github.v3.raw' used)
-      // We try without auth; this works for public repos.
-      const apiRef = ref ? `?ref=${encodeURIComponent(ref)}` : '';
-      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${apiRef}`;
-      try {
-        const res = await fetch(apiUrl, { headers: { 'Accept': 'application/vnd.github.v3.raw' } });
-        if(res.ok){
-          const text = await res.text();
-          return { ok:true, source: apiUrl, text };
-        } else {
-          const errText = await res.text();
-          return { ok:false, error: `GitHub API ${res.status}: ${errText}` };
-        }
-      } catch(e){
-        return { ok:false, error: e.toString() };
-      }
+  // --- DOM
+  const chat = document.getElementById('chat');
+  const qel = document.getElementById('query');
+  const send = document.getElementById('send');
+  const clearBtn = document.getElementById('clear');
+  const helperUrlEl = document.getElementById('helper_url');
+
+  function appendUser(msg){ chat.innerHTML += '<div><strong>You:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
+  function appendBot(msg){ chat.innerHTML += '<div><strong>Result:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
+  function appendHtml(html){ chat.innerHTML += html; chat.scrollTop = chat.scrollHeight; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // --- Token helpers (plain)
+  function savePlainToken(t){ localStorage.setItem(KEY_PLAIN, t); localStorage.removeItem(KEY_ENC); appendBot('Token saved as plain (not recommended).'); }
+  function clearTokens(){ localStorage.removeItem(KEY_PLAIN); localStorage.removeItem(KEY_ENC); appendBot('Token cleared from storage.'); }
+  function getPlainToken(){ return localStorage.getItem(KEY_PLAIN) || ''; }
+
+  // --- Encryption helpers using Web Crypto (AES-GCM)
+  async function deriveKey(pass, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return window.crypto.subtle.deriveKey({
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 250000,
+      hash: 'SHA-256'
+    }, keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  }
+  async function encryptTokenWithPass(token, pass){
+    const enc = new TextEncoder();
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(pass, salt);
+    const ct = await window.crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(token));
+    return { salt: arrayToBase64(salt), iv: arrayToBase64(iv), ct: arrayBufferToBase64(ct) };
+  }
+  async function decryptTokenWithPass(blob, pass){
+    try{
+      const salt = base64ToArray(blob.salt);
+      const iv = base64ToArray(blob.iv);
+      const ct = base64ToArrayBuffer(blob.ct);
+      const key = await deriveKey(pass, salt);
+      const pt = await window.crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+      return new TextDecoder().decode(pt);
+    } catch(e){
+      throw new Error('Decrypt failed: ' + (e && e.message ? e.message : e));
     }
+  }
+  function arrayBufferToBase64(buf){ const bytes=new Uint8Array(buf); let bin=''; for(let i=0;i<bytes.byteLength;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
+  function arrayToBase64(arr){ return arrayBufferToBase64(arr.buffer); }
+  function base64ToArray(s){ const bin=atob(s); const len=bin.length; const arr=new Uint8Array(len); for(let i=0;i<len;i++) arr[i]=bin.charCodeAt(i); return arr; }
+  function base64ToArrayBuffer(s){ const bin=atob(s); const len=bin.length; const bytes=new Uint8Array(len); for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i); return bytes.buffer; }
 
-    async function handleQuery(q){
-      q = (q||'').trim();
-      appendUser(q);
-      if(!q){ appendBot('Type a command, eg "fetch github owner repo path"'); return; }
+  // UI token buttons
+  document.getElementById('save_token').addEventListener('click', ()=>{
+    const t = document.getElementById('gh_token').value.trim();
+    if(!t){ alert('Paste your token into the field first'); return; }
+    savePlainToken(t);
+  });
+  document.getElementById('clear_token').addEventListener('click', ()=>{ clearTokens(); });
+  document.getElementById('encrypt_save').addEventListener('click', async ()=>{
+    const t = document.getElementById('gh_token').value.trim();
+    const p = document.getElementById('enc_pass').value;
+    if(!t || !p){ alert('Enter both token and a passphrase'); return; }
+    try{
+      const blob = await encryptTokenWithPass(t, p);
+      localStorage.setItem(KEY_ENC, JSON.stringify(blob));
+      localStorage.removeItem(KEY_PLAIN);
+      appendBot('Token encrypted and saved locally. You must provide the passphrase to use it.');
+    } catch(e){ appendBot('Encrypt error: '+e.message); }
+  });
+  document.getElementById('unlock_token').addEventListener('click', async ()=>{
+    const p = document.getElementById('enc_pass').value;
+    if(!p){ alert('Enter passphrase'); return; }
+    const s = localStorage.getItem(KEY_ENC);
+    if(!s){ appendBot('No encrypted token found'); return; }
+    try{
+      const blob = JSON.parse(s);
+      const t = await decryptTokenWithPass(blob, p);
+      // put token into session (not returned to persistent field)
+      sessionStorage.setItem(KEY_PLAIN, t);
+      appendBot('Token unlocked into session storage for this browser session.');
+    } catch(e){ appendBot('Unlock failed: '+e.message); }
+  });
 
-      // If begins with "fetch github", parse and fetch
-      const fetchMatch = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
-      if(fetchMatch){
-        const owner = fetchMatch[1];
-        const repo = fetchMatch[2];
-        const path = fetchMatch[3];
-        const ref = fetchMatch[4] || '';
-        appendBot(`Fetching ${owner}/${repo}/${path} ${ref ? 'ref:'+ref : ''} ...`);
-        const res = await fetchGithubFile(owner, repo, path, ref);
-        if(res.ok){
-          // Show source and code block
-          appendHtml(`<div style="margin-top:10px"><div><em>Fetched from: ${escapeHtml(res.source)}</em></div><pre class="code">${escapeHtml(res.text)}</pre></div>`);
-        } else {
-          appendBot('Error fetching: ' + res.error);
-        }
-        return;
-      }
-
-      // Otherwise simple static fallback "no backend"
-      appendBot('No backend available in this static page. Two options:\n - Run the rogers helper (Python) on a server and let index.html call it (recommended)\n - Use "fetch github <owner> <repo> <path> [ref]" to retrieve files from GitHub (public repos).');
+  // helper ping
+  document.getElementById('test_helper').addEventListener('click', async ()=>{
+    const url = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
+    try{
+      const r = await fetch(url + '/query?q=hello');
+      const j = await r.json();
+      appendBot('Helper ping response: ' + (j.response || JSON.stringify(j)));
+    } catch(e){
+      appendBot('Helper not reachable: ' + e.toString());
     }
+  });
 
-    document.getElementById('send').addEventListener('click', ()=> {
-      const q = document.getElementById('query').value;
-      handleQuery(q);
-    });
-    document.getElementById('clear').addEventListener('click', ()=> { document.getElementById('query').value=''; chat.innerHTML=''; });
-    document.getElementById('query').addEventListener('keydown', (e)=> { if(e.key==='Enter'){ e.preventDefault(); document.getElementById('send').click(); } });
+  // Quick github fetch UI
+  document.getElementById('gh_fetch').addEventListener('click', async ()=>{
+    const owner = document.getElementById('gh_owner').value.trim();
+    const repo = document.getElementById('gh_repo').value.trim();
+    const path = document.getElementById('gh_path').value.trim();
+    const ref  = document.getElementById('gh_ref').value.trim();
+    if(!owner||!repo||!path){ alert('owner, repo and path required'); return; }
+    const cmd = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
+    qel.value = cmd;
+    handleQuery(cmd);
+  });
 
-    document.getElementById('gh_fetch').addEventListener('click', ()=> {
-      const owner = document.getElementById('gh_owner').value.trim();
-      const repo = document.getElementById('gh_repo').value.trim();
-      const path = document.getElementById('gh_path').value.trim();
-      const ref  = document.getElementById('gh_ref').value.trim();
-      if(!owner || !repo || !path){ alert('owner, repo and path required'); return; }
-      const cmd = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
-      document.getElementById('query').value = cmd;
-      handleQuery(cmd);
-    });
+  // fetch helpers (uses token if present in session/local)
+  function getEffectiveToken(){
+    return sessionStorage.getItem(KEY_PLAIN) || localStorage.getItem(KEY_PLAIN) || null;
+  }
 
-    // show short help on load
-    appendBot('Static fallback loaded. Type "fetch github owner repo path [ref]" to fetch a file from GitHub (public repos).');
+  async function fetchGithubRaw(owner, repo, path, ref){
+    // try raw.githubusercontent first with ref or common default branches
+    const candidates = ref ? [ref] : ['main','master'];
+    const token = getEffectiveToken();
+    for(const r of candidates){
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${r}/${path}`;
+      try{
+        const opts = token ? { headers: { 'Authorization': 'token ' + token } } : {};
+        const res = await fetch(url, opts);
+        if(res.ok) return { ok:true, source:url, text: await res.text() };
+      } catch(e){}
+    }
+    // fallback GitHub API
+    const apiRef = ref ? `?ref=${encodeURIComponent(ref)}` : '';
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${apiRef}`;
+    const headers = token ? { 'Authorization':'token '+token, 'Accept':'application/vnd.github.v3.raw' } : { 'Accept':'application/vnd.github.v3.raw' };
+    try{
+      const res = await fetch(apiUrl, { headers });
+      if(res.ok) return { ok:true, source:apiUrl, text: await res.text() };
+      const err = await res.text();
+      return { ok:false, error: `GitHub API ${res.status}: ${err}` };
+    } catch(e){
+      return { ok:false, error: e.toString() };
+    }
+  }
+
+  // handle "fetch github owner repo path [ref]" and helper forwarding
+  async function handleQuery(q){
+    q = (q||'').trim();
+    appendUser(q);
+    if(!q){ appendBot('Type a command.'); return; }
+    const f = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
+    if(f){
+      const owner=f[1], repo=f[2], path=f[3], ref=f[4]||'';
+      appendBot(`Fetching ${owner}/${repo}/${path} ${ref?('ref:'+ref):''} ...`);
+      const r = await fetchGithubRaw(owner,repo,path,ref);
+      if(r.ok){
+        appendHtml(`<div style="margin-top:8px"><div><em>Source: ${escapeHtml(r.source)}</em></div><pre class="code">${escapeHtml(r.text)}</pre></div>`);
+      } else appendBot('Fetch error: '+r.error);
+      return;
+    }
+    // Otherwise forward to helper if available
+    const helper = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
+    try{
+      const token = getEffectiveToken();
+      const headers = {'Content-Type':'application/json'};
+      if(token) headers['Authorization']='Bearer '+token;
+      const res = await fetch(helper + '/query', { method:'POST', headers, body: JSON.stringify({ query: q }) });
+      const j = await res.json();
+      if(j && j.response !== undefined) appendBot(j.response);
+      else appendBot('Helper returned: ' + JSON.stringify(j));
+    } catch(e){
+      appendBot('No helper or network error. Try "fetch github owner repo path" to fetch files directly from GitHub.');
+    }
+  }
+
+  send.addEventListener('click', ()=>{ handleQuery(qel.value); });
+  clearBtn.addEventListener('click', ()=>{ qel.value=''; chat.innerHTML=''; });
+  qel.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); handleQuery(qel.value); } });
+
+  // show short help
+  appendBot('Loaded. To use a token: paste it in Token field, then Save (or Save (encrypt) with passphrase). If you Unlock encrypted token it will be loaded into this browser session.');
   </script>
 </body>
 </html>
