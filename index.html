@@ -3,197 +3,210 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Rogers AI Console — Diagnostic</title>
+  <title>Rogers AI Console — Live</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: Inter, system-ui, Arial; background:#0d1117; color:#c9d1d9; margin:0; padding:20px; display:flex; justify-content:center; }
-    .container { width:100%; max-width:900px; background:#161b22; border-radius:12px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.6); }
-    #chat-window { height:48vh; overflow:auto; background:#0d1117; border-radius:8px; padding:10px; border:1px solid #30363d; }
-    .message { margin-bottom:8px; padding:8px 12px; border-radius:8px; max-width:80%; word-wrap:break-word; }
-    .user-message{ background:#21262d; margin-left:auto; border:1px solid #30363d; }
-    .rogers-message{ background:#0d1117; border:1px solid #30363d; }
-    .status-indicator{ padding:6px 12px; border-radius:9999px; font-weight:700; font-size:.875rem; text-align:center; }
-    .status-offline{ background:#da3633; color:#fff; }
-    .status-online{ background:#3fb950; color:#000; }
-    .diag { margin-top:14px; background:#0b0f14; padding:12px; border-radius:8px; border:1px solid #23303a; color:#c7d1d9; font-family:monospace; font-size:13px; white-space:pre-wrap; max-height:220px; overflow:auto; }
-    .row { display:flex; gap:8px; align-items:center; margin-top:10px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background:#0d1117; color:#c9d1d9; margin:0; padding:20px; display:flex; justify-content:center; }
+    .container { width:100%; max-width:880px; background:#161b22; border-radius:12px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.6); }
+    #chat-window { height:52vh; overflow:auto; background:#0d1117; border-radius:8px; padding:10px; border:1px solid #30363d; }
+    .message { margin-bottom:8px; padding:10px 14px; border-radius:10px; max-width:82%; word-wrap:break-word; }
+    .user-message { background:#21262d; margin-left:auto; border:1px solid #30363d; }
+    .rogers-message { background:#0d1117; border:1px solid #30363d; }
+    .status-indicator { padding:6px 12px; border-radius:9999px; font-weight:700; font-size:.875rem; text-align:center; }
+    .status-offline { background:#da3633; color:#fff; }
+    .status-online { background:#3fb950; color:#000; }
+    .diag { margin-top:12px; background:#0b0f14; padding:12px; border-radius:8px; border:1px solid #23303a; color:#c7d1d9; font-family:monospace; font-size:13px; white-space:pre-wrap; max-height:200px; overflow:auto; }
+    input[type=text] { background:#0d1117; color:#c9d1d9; border-radius:8px; border:1px solid #2b343a; padding:12px; }
     .btn { background:#2563eb; color:#fff; padding:8px 12px; border-radius:8px; border:0; cursor:pointer; }
     .small { font-size:12px; color:#9aa6b2; }
-    label { display:flex; gap:8px; align-items:center; cursor:pointer; }
+    label { display:flex; gap:6px; align-items:center; cursor:pointer; }
   </style>
 </head>
 <body>
-  <div class="container" id="app">
+  <div class="container" id="app-root">
     <div class="flex justify-between items-center border-b pb-3 border-[#30363d]">
-      <h1 class="text-2xl font-bold text-blue-400">Rogers AI Console — Diagnostic</h1>
+      <h1 class="text-2xl font-bold text-blue-400">Rogers AI Console</h1>
       <div id="status" class="status-indicator status-offline">OFFLINE (Connecting...)</div>
     </div>
 
     <div id="chat-window"></div>
 
-    <div class="row">
-      <input id="user-input" type="text" placeholder="Type your message..." disabled
-             class="flex-grow p-3 bg-[#0d1117] border border-[#30363d] rounded-lg text-sm disabled:opacity-50" />
+    <div class="flex gap-3 mt-3">
+      <input id="user-input" type="text" placeholder="Type your message..." disabled class="flex-grow" />
       <button id="send-button" class="btn" disabled>Send</button>
-      <button id="refresh" class="btn">Check Status</button>
-      <label class="small" title="Force enable controls for testing">
-        <input id="force-enable" type="checkbox"/> Force enable
+      <button id="check-button" class="btn">Check Status</button>
+    </div>
+
+    <div class="flex gap-4 items-center mt-3">
+      <div class="small">Server URL:</div>
+      <input id="server-url-input" type="text" style="width:420px" />
+      <button id="save-url" class="btn">Save</button>
+      <label class="small" title="Play bot response via device TTS">
+        <input id="tts-toggle" type="checkbox" /> TTS
+      </label>
+      <label class="small" title="Force enable UI for testing">
+        <input id="force-enable" type="checkbox" /> Force enable
       </label>
     </div>
 
-    <div class="small" style="margin-top:8px;">
-      Server URL: <code id="server-url">http://100.118.99.166:5000</code>
-    </div>
+    <div class="small mt-2">Note: If your page is loaded over HTTPS you must use an HTTPS API URL (ngrok/Cloudflare Tunnel) to avoid Mixed Content blocking.</div>
 
-    <h3 style="margin-top:12px; margin-bottom:6px; color:#cfe8c3">Diagnostics</h3>
-    <div id="diag" class="diag">
-      Last status fetch: (none)
-    </div>
+    <h3 style="color:#cfe8c3; margin-top:12px">Diagnostics</h3>
+    <div id="diag" class="diag">No diagnostics yet.</div>
   </div>
 
   <script>
-  (function(){
-    const SERVER = "http://100.118.99.166:5000";
-    document.getElementById('server-url').textContent = SERVER;
+    (function(){
+      // Default server value — replace at runtime if needed
+      const DEFAULT_SERVER = localStorage.getItem('rogers_server') || 'http://100.118.99.166:5000';
+      const serverInput = document.getElementById('server-url-input');
+      const statusEl = document.getElementById('status');
+      const chatWindow = document.getElementById('chat-window');
+      const userInput = document.getElementById('user-input');
+      const sendButton = document.getElementById('send-button');
+      const checkButton = document.getElementById('check-button');
+      const diag = document.getElementById('diag');
+      const ttsToggle = document.getElementById('tts-toggle');
+      const forceToggle = document.getElementById('force-enable');
+      const saveUrlBtn = document.getElementById('save-url');
 
-    const statusEl = document.getElementById('status');
-    const chatWindow = document.getElementById('chat-window');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const refreshBtn = document.getElementById('refresh');
-    const diag = document.getElementById('diag');
-    const forceToggle = document.getElementById('force-enable');
+      let server = DEFAULT_SERVER;
+      serverInput.value = server;
 
-    let isOnline = false;
+      let isServerOnline = false;
 
-    function logDiag(text) {
-      const now = new Date().toISOString();
-      diag.textContent = `${now} — ${text}\n\n` + diag.textContent;
-    }
+      function log(msg) {
+        const ts = new Date().toISOString();
+        diag.textContent = `${ts} — ${msg}\n\n` + diag.textContent;
+      }
 
-    function setStatus(online, message) {
-      isOnline = !!online;
-      statusEl.textContent = message || (isOnline ? "ONLINE" : "OFFLINE");
-      statusEl.className = 'status-indicator ' + (isOnline ? 'status-online' : 'status-offline');
-      const forced = forceToggle.checked;
-      const effectiveOnline = forced ? true : isOnline;
-      userInput.disabled = !effectiveOnline;
-      sendButton.disabled = !effectiveOnline;
-      if (effectiveOnline) userInput.focus();
-    }
+      function setStatus(online, message) {
+        isServerOnline = !!online;
+        statusEl.textContent = message || (isServerOnline ? 'ONLINE' : 'OFFLINE');
+        statusEl.className = 'status-indicator ' + (isServerOnline ? 'status-online' : 'status-offline');
+        const forced = forceToggle.checked;
+        const enabled = forced ? true : isServerOnline;
+        userInput.disabled = !enabled;
+        sendButton.disabled = !enabled;
+        if (enabled) userInput.focus();
+      }
 
-    function addMessage(role, text) {
-      const d = document.createElement('div');
-      d.classList.add('message', role === 'user' ? 'user-message' : 'rogers-message');
-      d.textContent = String(text);
-      if (role === 'user') d.style.textAlign = 'right';
-      chatWindow.appendChild(d);
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-
-    async function checkStatus() {
-      setStatus(false, 'Connecting...');
-      logDiag('Starting status fetch to ' + SERVER + '/api/status');
+      function addMessage(role, text) {
+        const d = document.createElement('div');
+        d.classList.add('message', role === 'user' ? 'user-message' : 'rogers-message');
+        d.textContent = String(text);
+        if (role === 'user') d.style.textAlign = 'right';
+        chatWindow.appendChild(d);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
 
       // Mixed-content detection
-      if (location.protocol === 'https:' && SERVER.startsWith('http:')) {
-        const msg = 'MIXED-CONTENT WARNING: page loaded over HTTPS but server is HTTP. Browser will block the request.';
-        logDiag(msg);
-        setStatus(false, 'OFFLINE (Mixed Content)');
-        return;
+      function isMixedContent(targetUrl) {
+        try {
+          const pageIsHttps = location.protocol === 'https:';
+          const targetIsHttp = targetUrl.startsWith('http:');
+          return pageIsHttps && targetIsHttp;
+        } catch(e){ return false; }
       }
 
-      try {
-        const resp = await fetch(SERVER + '/api/status', { method:'GET', cache:'no-store', mode:'cors' });
-        const text = await resp.text();
-        logDiag(`Status fetch HTTP ${resp.status}\nResponse body:\n${text}`);
-        let parsed = null;
-        try { parsed = JSON.parse(text); } catch(e) { /* keep raw text */ }
+      async function checkStatus() {
+        setStatus(false, 'Connecting...');
+        log('Starting status fetch to ' + server + '/api/status');
 
-        if (resp.ok && parsed && parsed.status === 'ready') {
-          setStatus(true, 'ONLINE');
-          addMessage('rogers', 'System: Rogers AI Console is online and ready.');
-        } else {
-          // If HTTP 200 but status not ready, show payload
-          setStatus(false, `OFFLINE (Bad Status${resp.status?':'+resp.status:''})`);
+        if (isMixedContent(server)) {
+          const msg = 'MIXED-CONTENT WARNING: page loaded over HTTPS but server is HTTP. Browser will block the request.';
+          log(msg);
+          setStatus(false, 'OFFLINE (Mixed Content)');
+          return;
         }
-      } catch (err) {
-        // network / CORS / blocked fetch errors
-        logDiag('Fetch error: ' + String(err));
-        console.error(err);
-        setStatus(false, 'OFFLINE (Network Error)');
-      }
-    }
 
-    async function sendMessage() {
-      const q = (userInput.value || '').trim();
-      if (!q) return;
-      if (!isOnline && !forceToggle.checked) {
-        addMessage('rogers', 'Cannot send: server offline.');
-        return;
-      }
-      addMessage('user', q);
-      userInput.value = '';
-      setStatus(false, 'Sending...');
-      try {
-        const resp = await fetch(SERVER + '/api/bot/execute', {
-          method:'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ query: q }),
-          cache:'no-store',
-          mode:'cors'
-        });
-        const text = await resp.text();
-        logDiag(`POST /api/bot/execute HTTP ${resp.status}\nBody:\n${text}`);
-        let parsed = null;
-        try { parsed = JSON.parse(text); } catch(e) { parsed = null; }
-
-        if (resp.ok && parsed && parsed.ok && parsed.response) {
-          addMessage('rogers', parsed.response);
-        } else {
-          addMessage('rogers', 'Error: ' + (parsed && parsed.message ? parsed.message : text));
+        try {
+          const resp = await fetch(server + '/api/status', { method: 'GET', cache: 'no-store', mode: 'cors' });
+          const text = await resp.text();
+          log(`Status fetch HTTP ${resp.status}\nBody: ${text}`);
+          let data = null;
+          try { data = JSON.parse(text); } catch(e) { data = null; }
+          if (resp.ok && data && data.status === 'ready') {
+            setStatus(true, 'ONLINE');
+            addMessage('rogers', 'System: Rogers AI Console is online and ready.');
+            return;
+          } else {
+            setStatus(false, 'OFFLINE (Bad Status)');
+            return;
+          }
+        } catch (err) {
+          log('Fetch error: ' + String(err));
+          setStatus(false, 'OFFLINE (Network Error)');
         }
-      } catch (err) {
-        logDiag('Send error: ' + String(err));
-        console.error(err);
-        addMessage('rogers', 'Critical Network Failure: Could not execute bot.');
-      } finally {
-        // re-check status after send
-        await checkStatus();
       }
-    }
 
-    // Bindings
-    refreshBtn.addEventListener('click', () => checkStatus());
-    sendButton.addEventListener('click', () => sendMessage());
-    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
-    forceToggle.addEventListener('change', () => {
-      const forced = forceToggle.checked;
-      if (forced) logDiag('Force enable toggled ON by user; UI enabled for testing.');
-      else logDiag('Force enable toggled OFF; UI will reflect real status.');
-      setStatus(isOnline, statusEl.textContent);
-    });
+      async function sendMessage() {
+        const q = (userInput.value || '').trim();
+        if (!q) return;
+        if (!isServerOnline && !forceToggle.checked) {
+          addMessage('rogers', 'Cannot send: server offline.');
+          return;
+        }
+        addMessage('user', q);
+        userInput.value = '';
+        setStatus(false, 'Sending...');
+        try {
+          const resp = await fetch(server + '/api/bot/execute', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ query: q }),
+            cache: 'no-store',
+            mode: 'cors'
+          });
+          const text = await resp.text();
+          log(`POST /api/bot/execute HTTP ${resp.status}\nBody: ${text}`);
+          let parsed = null;
+          try { parsed = JSON.parse(text); } catch(e){ parsed = null; }
+          let reply = parsed && parsed.ok && parsed.response ? parsed.response : (parsed && parsed.message ? parsed.message : text);
+          addMessage('rogers', reply);
+          // TTS if enabled and available
+          if (ttsToggle.checked && 'speechSynthesis' in window) {
+            try {
+              const utter = new SpeechSynthesisUtterance(reply);
+              window.speechSynthesis.cancel();
+              window.speechSynthesis.speak(utter);
+            } catch(e) { log('TTS failed: ' + e); }
+          }
+        } catch (err) {
+          log('Send error: ' + String(err));
+          addMessage('rogers', 'Critical Network Failure: Could not execute bot.');
+        } finally {
+          await checkStatus();
+        }
+      }
 
-    // Global error handlers to show diagnostics in-page
-    window.addEventListener('error', (ev) => {
-      logDiag('Global error: ' + (ev && ev.error && ev.error.stack ? ev.error.stack : ev.message));
-    });
-    window.addEventListener('unhandledrejection', (ev) => {
-      logDiag('Unhandled Promise Rejection: ' + (ev && ev.reason ? (ev.reason.stack || String(ev.reason)) : String(ev)));
-    });
+      // Bind events
+      checkButton.addEventListener('click', checkStatus);
+      sendButton.addEventListener('click', sendMessage);
+      userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+      forceToggle.addEventListener('change', () => setStatus(isServerOnline, statusEl.textContent));
+      saveUrlBtn.addEventListener('click', () => {
+        const v = (serverInput.value || '').trim();
+        if (!v) return alert('Enter a server URL (http(s)://...)');
+        server = v;
+        localStorage.setItem('rogers_server', server);
+        log('Server URL saved: ' + server);
+        checkStatus();
+      });
 
-    // Start initial check (and poll every 5s)
-    (function init(){
+      // Initial check/poll
       setTimeout(() => {
         checkStatus();
         setInterval(() => checkStatus(), 5000);
-      }, 30);
+      }, 50);
+
+      // Expose debug helpers
+      window._rogers = { checkStatus, sendMessage, setStatus, log };
+
+      // Initial UI state
+      setStatus(false, 'Connecting...');
     })();
-
-    // Expose for manual debug
-    window.__rogers_diag = { checkStatus, sendMessage, logDiag };
-
-  })();
   </script>
 </body>
 </html>
