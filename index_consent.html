@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PewPi — Consent, Login & Encrypted Logging</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
+  .wrap{max-width:980px;margin:0 auto}
+  .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
+  input,textarea,select,button{font:inherit}
+  input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+  textarea{min-height:120px;resize:vertical;font-family:monospace}
+  .row{display:flex;gap:8px;margin-top:8px}
+  .col{flex:1}
+  button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
+  button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
+  pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:260px}
+  label{font-size:0.95rem;color:#9bb7c2;display:block;margin-top:10px}
+  .muted{color:#9bb7c2;font-size:0.9rem}
+  .danger{color:#ff9b9b;font-weight:700}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>PewPi — Consent Login & Encrypted Logging</h1>
+
+    <div class="card">
+      <div class="muted">This system records actions you explicitly consent to (clicks, messages, visited pages) into an encrypted log. The data is encrypted client-side with a passphrase you provide. Nothing is sent or stored without your clear approval. If you do not consent, do not click "Start session".</div>
+    </div>
+
+    <div class="card" id="consent_card">
+      <label><strong>Consent & Account</strong></label>
+      <div class="muted">If you agree to be part of this system and have your activity recorded (encrypted), check the box and sign in. You can stop at any time and clear the session.</div>
+
+      <div class="row" style="margin-top:8px">
+        <label style="display:flex;align-items:center"><input id="consent_chk" type="checkbox" style="margin-right:8px" /> I consent to have my activity recorded and encrypted as described above.</label>
+      </div>
+
+      <label>Username (how you will appear in the log)</label>
+      <input id="username" placeholder="username (eg. kris)" />
+
+      <div class="row">
+        <button id="start_session">Start session (enable logging)</button>
+        <button id="end_session" class="secondary">End session (clear logs & session)</button>
+      </div>
+
+      <div class="muted" style="margin-top:8px">Starting a session enables logging of actions you take in this page only. You must explicitly provide a passphrase to encrypt logs before exporting/committing.</div>
+    </div>
+
+    <div class="card">
+      <label>Client activity (consented events will be recorded)</label>
+      <div class="row">
+        <input id="event_input" placeholder="Type a note to log (example: watched show X)" />
+        <button id="log_event">Log event</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="sample_action" class="secondary">Sample action (simulate play/watch)</button>
+        <button id="chat_send" class="secondary">Simulate chat message</button>
+      </div>
+      <div id="activity_status" class="muted" style="margin-top:8px">No session active.</div>
+    </div>
+
+    <div class="card">
+      <label>Session log preview (in-memory)</label>
+      <pre id="log_preview">{ no session }</pre>
+      <div class="row" style="margin-top:8px">
+        <input id="enc_pass" type="password" placeholder="Passphrase to encrypt log" class="col" />
+        <button id="encrypt_log">Encrypt log (copy to clipboard)</button>
+        <button id="encrypt_commit" class="secondary">Encrypt & commit to GitHub (requires PAT)</button>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <input id="commit_owner" placeholder="owner (username or org)" class="col" />
+        <input id="commit_repo" placeholder="repo name" class="col" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="commit_branch" placeholder="branch" value="main" />
+        <input id="commit_path" placeholder="file path to write (eg. user_activity.json)" value="user_activity.json" />
+      </div>
+
+      <div style="margin-top:8px" class="muted">Encrypting uses PBKDF2 (250k) + AES-GCM in your browser. Only the ciphertext is copied or committed; your passphrase stays local.</div>
+      <div id="commit_status" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <label>Optional: in-memory PAT for commits (do not commit this token)</label>
+      <div class="row">
+        <input id="pat" type="password" placeholder="Paste GitHub PAT here (memory only)" />
+        <button id="load_pat" class="secondary">Load PAT</button>
+        <button id="clear_pat" class="secondary">Clear PAT</button>
+      </div>
+      <div id="pat_status" class="muted" style="margin-top:8px">No PAT loaded.</div>
+    </div>
+
+    <div class="card danger">
+      <div class="danger">Important:</div>
+      <div class="muted">Do not commit raw passphrases or tokens to your repo. This UI encrypts logs for safe storage, but only you control the passphrase. The page will NEVER auto-send logs or create bots without your explicit approval.</div>
+    </div>
+  </div>
+
+<script>
+/* Consent & Encrypted Logging - client-side only
+   Encryption params: PBKDF2 iterations=250000, hash=SHA-256, AES-GCM 256
+*/
+const ITER = 250000;
+const SALT_BYTES = 16;
+const IV_BYTES = 12;
+
+let SESSION = {
+  active: false,
+  username: null,
+  start_ts: null,
+  events: []  // {ts,username,action,details}
+};
+
+let STATE = {
+  TOKEN: null // in-memory PAT for commit (if loaded)
+};
+
+/* utilities */
+function id(n){ return document.getElementById(n); }
+function now(){ return new Date().toISOString(); }
+function updatePreview(){ id('log_preview').textContent = SESSION.active ? JSON.stringify(SESSION, null, 2) : '{ no session }'; }
+function setStatus(el, msg){ id(el).textContent = msg; }
+
+/* record event only when consented and session active */
+function recordEvent(action, details){
+  if(!SESSION.active) return;
+  const e = { ts: now(), username: SESSION.username, action, details };
+  SESSION.events.push(e);
+  updatePreview();
+}
+
+/* UI: start/end session */
+id('start_session').addEventListener('click', ()=>{
+  const cons = id('consent_chk').checked;
+  if(!cons){ alert('You must check the consent box to start a session.'); return; }
+  const username = id('username').value.trim() || 'anonymous';
+  SESSION = { active:true, username, start_ts: now(), events: [] };
+  updatePreview();
+  setStatus('activity_status', 'Session started for ' + username + '. Recording allowed events.');
+  setStatus('commit_status','');
+  recordEvent('session_start', { method: 'user_click' });
+});
+
+id('end_session').addEventListener('click', ()=>{
+  if(SESSION.active){
+    recordEvent('session_end', { method: 'user_click' });
+    SESSION.active = false;
+    updatePreview();
+    setStatus('activity_status','Session ended and cleared.');
+    // optionally clear SESSION entirely if user wants:
+    SESSION = { active:false, username:null, start_ts:null, events:[] };
+    updatePreview();
+  } else {
+    alert('No active session.');
+  }
+});
+
+/* sample actions to record */
+id('log_event').addEventListener('click', ()=>{
+  const txt = id('event_input').value.trim();
+  if(!SESSION.active) return alert('Start a session first (consent required).');
+  if(!txt) return alert('Enter text to log.');
+  recordEvent('user_note', { text: txt });
+  id('event_input').value = '';
+  setStatus('activity_status','Event logged.');
+});
+
+id('sample_action').addEventListener('click', ()=>{
+  if(!SESSION.active) return alert('Start a session first.');
+  recordEvent('play_media', { title: 'Sample Show', duration: 3600 });
+  setStatus('activity_status','Sample play action recorded.');
+});
+
+id('chat_send').addEventListener('click', ()=>{
+  if(!SESSION.active) return alert('Start a session first.');
+  recordEvent('chat_message', { text: 'example chat message' });
+  setStatus('activity_status','Simulated chat message recorded.');
+});
+
+/* ---------------- encryption helpers ---------------- */
+function randU8(n){ const u = new Uint8Array(n); crypto.getRandomValues(u); return u; }
+function u8ToB64(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
+function b64ToU8(s){ const bin = atob(s); const u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+
+async function deriveKey(pass, saltU8){
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt: saltU8, iterations: ITER, hash:'SHA-256' }, km, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+}
+
+async function encryptObject(obj, pass){
+  const salt = randU8(SALT_BYTES);
+  const iv = randU8(IV_BYTES);
+  const key = await deriveKey(pass, salt);
+  const pt = new TextEncoder().encode(JSON.stringify(obj));
+  const ctBuf = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, pt);
+  return { v:1, salt: u8ToB64(salt), iv: u8ToB64(iv), ct: u8ToB64(new Uint8Array(ctBuf)), created_at: new Date().toISOString() };
+}
+
+async function decryptObject(blob, pass){
+  const salt = b64ToU8(blob.salt);
+  const iv = b64ToU8(blob.iv);
+  const ct = b64ToU8(blob.ct);
+  const key = await deriveKey(pass, salt);
+  const ptBuf = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct.buffer);
+  return JSON.parse(new TextDecoder().decode(ptBuf));
+}
+
+/* encrypt log and copy to clipboard */
+id('encrypt_log').addEventListener('click', async ()=>{
+  if(!SESSION.active) return alert('Start and end a session and then encrypt the log.'); 
+  const pass = id('enc_pass').value;
+  if(!pass) return alert('Enter a passphrase to encrypt the log.');
+  const payload = { meta:{ username: SESSION.username, start: SESSION.start_ts, created_at: now() }, events: SESSION.events };
+  try{
+    setStatus('commit_status','Encrypting log...');
+    const ct = await encryptObject(payload, pass);
+    // copy ciphertext JSON to clipboard
+    await navigator.clipboard.writeText(JSON.stringify(ct, null, 2));
+    setStatus('commit_status','Encrypted log copied to clipboard. Do not share passphrase.');
+  }catch(e){
+    setStatus('commit_status','Encrypt failed: ' + e.message);
+  }
+});
+
+/* ---------------- GitHub commit helpers (requires in-memory PAT) ---------------- */
+id('load_pat').addEventListener('click', ()=>{
+  const t = id('pat').value.trim();
+  if(!t) return alert('Paste PAT first');
+  STATE.TOKEN = t;
+  setStatus('pat_status','PAT loaded in memory (not persisted).');
+});
+
+id('clear_pat').addEventListener('click', ()=>{
+  STATE.TOKEN = null; id('pat').value=''; setStatus('pat_status','PAT cleared.');
+});
+
+async function getFileInfo(owner, repo, path, branch){
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+  const r = await fetch(url, { headers: STATE.TOKEN ? { Authorization: 'Bearer ' + STATE.TOKEN, Accept:'application/vnd.github.v3+json' } : { Accept:'application/vnd.github.v3+json' } });
+  if(r.status === 404) return { exists:false };
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error('GET failed: ' + (j && j.message ? j.message : r.status));
+  return { exists:true, sha: j.sha, content: j.content };
+}
+
+async function commitFile(owner, repo, branch, path, message, contentBase64, sha){
+  if(!STATE.TOKEN) throw new Error('No PAT loaded for commit.');
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+  const body = { message, content: contentBase64, branch };
+  if(sha) body.sha = sha;
+  const r = await fetch(url, { method:'PUT', headers:{ Authorization: 'Bearer ' + STATE.TOKEN, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error('Commit failed: ' + (j && j.message ? j.message : JSON.stringify(j)));
+  return j;
+}
+
+/* encrypt & commit: encrypt session events using passphrase then commit ciphertext JSON to repo */
+id('encrypt_commit').addEventListener('click', async ()=>{
+  try{
+    if(!SESSION.active) return alert('Start and end a session, then encrypt & commit.');
+    const pass = id('enc_pass').value;
+    if(!pass) return alert('Enter passphrase to encrypt the log.');
+    const owner = id('commit_owner').value.trim(), repo = id('commit_repo').value.trim();
+    const branch = id('commit_branch').value.trim() || 'main', path = id('commit_path').value.trim() || 'user_activity.json';
+    if(!owner || !repo) return alert('owner and repo required for commit.');
+    if(!STATE.TOKEN) return alert('Load a PAT first to commit.');
+    setStatus('commit_status','Encrypting...');
+    const payload = { meta:{ username: SESSION.username, start: SESSION.start_ts, created_at: now() }, events: SESSION.events };
+    const ct = await encryptObject(payload, pass);
+    setStatus('commit_status','Checking existing file...');
+    let info = await getFileInfo(owner, repo, path, branch).catch(e => { if(e.message && e.message.includes('404')) return { exists:false }; else throw e; });
+    const base64 = btoa(JSON.stringify(ct, null, 2));
+    setStatus('commit_status','Committing encrypted log to repo...');
+    const res = await commitFile(owner, repo, branch, path, 'Add encrypted user activity log', base64, info.exists ? info.sha : undefined);
+    setStatus('commit_status','Commit OK: ' + (res && res.commit && res.commit.sha ? res.commit.sha : 'ok'));
+    // record this action in local session log (user consented to session logging)
+    recordEvent('commit_encrypted_log', { owner, repo, branch, path, commit: (res && res.commit && res.commit.sha) ? res.commit.sha : 'ok' });
+  }catch(e){
+    setStatus('commit_status','Commit error: ' + (e && e.message ? e.message : e));
+  }
+});
+
+/* initialize preview */
+updatePreview();
+</script>
+</body>
+</html>
