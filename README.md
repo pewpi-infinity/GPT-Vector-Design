@@ -21,7 +21,7 @@ An AI-powered vector design tool that combines intuitive drawing capabilities wi
 ### Canvas Actions
 - **Clear Canvas**: Start fresh with a clean slate
 - **Undo/Redo**: Step backward and forward through your changes (Ctrl+Z / Ctrl+Y)
-- **Export as SVG**: Save your design in scalable vector format
+- **Export as SVG**: Save your design as an SVG file (contains a raster image, not true vector paths)
 - **Export as PNG**: Export as a raster image
 
 ### 🤖 GPT Assistant

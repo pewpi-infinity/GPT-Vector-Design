@@ -30,18 +30,26 @@ function initCanvas() {
     app.canvas = document.getElementById('drawingCanvas');
     app.ctx = app.canvas.getContext('2d');
     
-    // Set canvas size
-    const container = app.canvas.parentElement;
-    app.canvas.width = app.canvas.offsetWidth;
-    app.canvas.height = 600;
+    // Set canvas size with device pixel ratio for high-DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = app.canvas.offsetWidth;
+    const displayHeight = 600;
+    
+    app.canvas.width = displayWidth * dpr;
+    app.canvas.height = displayHeight * dpr;
+    app.canvas.style.width = displayWidth + 'px';
+    app.canvas.style.height = displayHeight + 'px';
+    
+    // Scale context to account for device pixel ratio
+    app.ctx.scale(dpr, dpr);
     
     // Set initial canvas background
     app.ctx.fillStyle = 'white';
-    app.ctx.fillRect(0, 0, app.canvas.width, app.canvas.height);
+    app.ctx.fillRect(0, 0, displayWidth, displayHeight);
     
     // Update canvas size display
     document.getElementById('canvasSize').textContent = 
-        `Canvas: ${app.canvas.width} x ${app.canvas.height}`;
+        `Canvas: ${displayWidth} x ${displayHeight}`;
 }
 
 // Initialize tool buttons
@@ -103,10 +111,15 @@ function initActionButtons() {
 // Setup canvas events
 function setupCanvasEvents() {
     app.canvas.addEventListener('mousedown', startDrawing);
-    app.canvas.addEventListener('mousemove', draw);
+    app.canvas.addEventListener('mousemove', handleCanvasMouseMove);
     app.canvas.addEventListener('mouseup', stopDrawing);
     app.canvas.addEventListener('mouseout', stopDrawing);
-    app.canvas.addEventListener('mousemove', updateCursorPosition);
+}
+
+// Combined mousemove handler for drawing and cursor position
+function handleCanvasMouseMove(e) {
+    draw(e);
+    updateCursorPosition(e);
 }
 
 // Update cursor based on tool
@@ -161,8 +174,8 @@ function draw(e) {
 function stopDrawing(e) {
     if (!app.isDrawing) return;
     
-    // Handle case when mouse leaves canvas (e may be null)
-    if (!e || !e.clientX || !e.clientY) {
+    // Handle case when mouse leaves canvas (e may be null or undefined)
+    if (!e || e.clientX === undefined || e.clientY === undefined) {
         app.isDrawing = false;
         return;
     }
@@ -183,6 +196,11 @@ function stopDrawing(e) {
             break;
         case 'triangle':
             drawTriangle(app.startX, app.startY, endX, endY);
+            break;
+        case 'pen':
+        case 'eraser':
+            // State should be saved for these tools too
+            // Drawing is handled in draw function, so just save state
             break;
     }
     
@@ -243,7 +261,6 @@ function drawCircle(x1, y1, x2, y2) {
 }
 
 function drawTriangle(x1, y1, x2, y2) {
-    const height = y2 - y1;
     const width = x2 - x1;
     
     app.ctx.beginPath();
@@ -290,6 +307,8 @@ function saveState() {
     // Limit history size
     if (app.history.length > app.maxHistory) {
         app.history.shift();
+        // After shifting, historyStep should stay at the last index
+        app.historyStep = app.maxHistory - 1;
     } else {
         app.historyStep++;
     }
