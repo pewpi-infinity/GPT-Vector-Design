@@ -40,6 +40,111 @@
   .dbg_btn{margin-top:6px;background:#333;border:1px solid rgba(255,255,255,0.04);color:#cfeee6;padding:6px;border-radius:6px;cursor:pointer}
 </style>
 </head>
+// pewpi_fix_nav.js
+// Reattach and harden the drawer/nav handlers so hamburger buttons work on touch devices.
+// Add this before </body> in index.html or save as pewpi_fix_nav.js and include it.
+
+(function(){
+  function dbg(msg){
+    try{
+      // update debug panel if present
+      var out = document.getElementById('pewpi_debug_out');
+      if(out) out.textContent = (out.textContent && out.textContent !== '{ no errors }' ? out.textContent + '\n' : '') + msg;
+      console.log('[pewpi_fix_nav] ' + msg);
+    }catch(e){ console.log('[pewpi_fix_nav] dbg error', e); }
+  }
+
+  function showView(name){
+    // hide all view.* and show single
+    document.querySelectorAll('.view').forEach(function(v){ v.style.display = 'none'; });
+    var el = document.getElementById('view_' + name);
+    if(el) { el.style.display = 'block'; dbg('Showing view: ' + name); }
+    else dbg('View not found: ' + name);
+  }
+
+  function setActiveButton(btn){
+    document.querySelectorAll('.btn').forEach(function(b){ b.classList.remove('active'); });
+    if(btn) btn.classList.add('active');
+  }
+
+  function attachHandlers(){
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('.btn[data-view]'));
+    if(buttons.length === 0){
+      dbg('No nav buttons found (query returned 0).');
+    }
+    buttons.forEach(function(btn){
+      // ensure clickable
+      btn.disabled = false;
+      btn.style.pointerEvents = 'auto';
+      btn.style.touchAction = 'manipulation';
+      // avoid duplicate listeners
+      if(btn.__pewpi_nav_attached) return;
+      // unified handler
+      var handler = function(ev){
+        try{
+          // allow touchstart to act like click
+          if(ev && ev.type === 'touchstart') ev.preventDefault();
+          var view = btn.getAttribute('data-view') || btn.dataset.view;
+          setActiveButton(btn);
+          showView(view);
+        }catch(e){
+          dbg('nav handler error: ' + (e && e.message ? e.message : e));
+        }
+      };
+      // attach both click and touchstart for mobile
+      btn.addEventListener('click', handler, false);
+      btn.addEventListener('touchstart', handler, { passive:false });
+      btn.__pewpi_nav_attached = true;
+      dbg('Attached handlers to nav button: ' + (btn.id || btn.textContent.trim()));
+    });
+  }
+
+  // If an overlay element is blocking input, make it temporarily non-blocking and highlight it so you can see/adjust
+  function neutralizeHighZOverlays(){
+    var candidates = Array.prototype.slice.call(document.querySelectorAll('body *')).filter(function(el){
+      try{
+        var s = getComputedStyle(el);
+        if(s.display === 'none' || s.visibility === 'hidden') return false;
+        var pos = s.position;
+        var z = parseInt(s.zIndex || 0, 10);
+        return (pos === 'fixed' || pos === 'absolute') && z > 50;
+      }catch(e){ return false; }
+    });
+    if(candidates.length === 0){ dbg('No high-Z overlays detected.'); return; }
+    candidates.forEach(function(el){
+      el.dataset.__pewpi_oldPointer = el.style.pointerEvents || '';
+      el.style.pointerEvents = 'auto'; // ensure clickable elements aren't masked
+      el.style.outline = '2px dashed rgba(255,165,0,0.9)';
+    });
+    dbg('Adjusted ' + candidates.length + ' high-Z elements (outlined). If UI was blocked, try clicking nav again.');
+  }
+
+  // run on DOM ready
+  function ready(fn){
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  ready(function(){
+    try{
+      attachHandlers();
+      neutralizeHighZOverlays();
+      // also re-run after a short delay in case other scripts load later and overwrite handlers
+      setTimeout(function(){ attachHandlers(); }, 700);
+      setTimeout(function(){ attachHandlers(); }, 2000);
+      dbg('pewpi_fix_nav initialized');
+      // If there is no active view visible, show portal by default
+      if(!document.querySelectorAll('.view').length) return;
+      var anyVisible = Array.prototype.slice.call(document.querySelectorAll('.view')).some(function(v){ return v.style.display !== 'none'; });
+      if(!anyVisible) showView('portal');
+    }catch(e){
+      dbg('Initialization error: ' + (e && e.message ? e.message : e));
+    }
+  });
+
+  // Expose for debug
+  window.__pewpi_fix_nav = { attachHandlers: attachHandlers, neutralizeHighZOverlays: neutralizeHighZOverlays, dbg: dbg };
+})();
 <body>
 <div class="app">
   <div class="drawer" role="navigation" aria-label="Main menu">
