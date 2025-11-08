@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PewPi — Commit to GitHub from Browser</title>
+  <title>PewPi — Encrypt & Commit Secrets</title>
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
     .wrap{max-width:980px;margin:0 auto}
@@ -11,246 +11,212 @@
     .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
     input,textarea,select,button{font:inherit}
     input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
-    textarea{min-height:220px;resize:vertical;font-family:monospace}
+    textarea{min-height:120px;resize:vertical;font-family:monospace}
     .row{display:flex;gap:8px;margin-top:8px}
     .col{flex:1}
     button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
     button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
     .muted{color:#9bb7c2;font-size:0.9rem}
     label{font-size:0.9rem;color:#9bb7c2;display:block;margin-top:10px}
-    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto}
+    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:240px}
     .status{margin-top:8px;color:#cfeee6}
+    .small{font-size:0.9rem;color:#9bb7c2}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>PewPi — Commit files to GitHub from the browser</h1>
-    <div class="muted">Paste a GitHub token, choose repo/branch/path and file contents, then Commit. WARNING: exposing tokens in the browser is insecure. Use a dedicated PAT and delete it after use.</div>
+    <h1>PewPi — Encrypt & Commit Secrets</h1>
+    <div class="muted">This page can encrypt a secrets blob with a passphrase and optionally commit the encrypted blob to your GitHub repo. Do NOT commit passphrases or plaintext tokens. Commit only the ciphertext JSON.</div>
 
     <div class="card">
       <label>GitHub Personal Access Token (PAT)</label>
-      <input id="pat" type="password" placeholder="Paste PAT here (scope: repo or public_repo)" />
-      <div class="row">
-        <button id="save_pat" class="secondary">Save in memory (not persistent)</button>
-        <button id="clear_pat" class="secondary">Clear token</button>
+      <input id="pat" type="password" placeholder="Paste PAT here (repo or public_repo / Contents RW)" />
+      <div class="row" style="margin-top:8px">
+        <button id="load_token" class="secondary">Load token (memory only)</button>
+        <button id="clear_token" class="secondary">Clear token</button>
       </div>
-      <div class="muted">The token is kept only in JavaScript memory unless you explicitly store it. If you use the "Save to localStorage" option we will warn you. Prefer to paste each session then clear.</div>
+      <div id="verify_result" class="status"></div>
     </div>
 
     <div class="card">
-      <label>Repository and branch</label>
+      <h3>Account & Secret (Encrypt)</h3>
       <div class="row">
-        <input id="owner" class="col" placeholder="owner (your GitHub username or org)" value="" />
+        <input id="pm_username" type="text" placeholder="username (eg. kris)" />
+        <input id="pm_email" type="text" placeholder="email (optional)" />
+        <label style="display:flex;align-items:center"><input id="pm_admin" type="checkbox" style="margin-right:6px" /> admin</label>
+      </div>
+
+      <label style="margin-top:8px">Secret to encrypt (paste your PAT here if you want it encrypted into the blob)</label>
+      <input id="pm_secret_input" type="password" placeholder="secret to encrypt (e.g. GitHub PAT)" />
+
+      <label style="margin-top:8px">Passphrase (choose a strong passphrase you will remember)</label>
+      <input id="pm_passphrase" type="password" placeholder="passphrase to encrypt with" />
+
+      <div class="row" style="margin-top:8px">
+        <button id="pm_create_export">Create & Export Encrypted Blob (show ciphertext)</button>
+        <button id="pm_commit_blob" class="secondary">Create & Commit Encrypted Blob to Repo</button>
+      </div>
+
+      <label style="margin-top:10px">Encrypted blob (copy this text if you prefer to commit manually)</label>
+      <textarea id="pm_export_out" style="height:140px"></textarea>
+
+      <div id="pm_status" class="status"></div>
+
+      <hr/>
+
+      <label>If you commit from this page, set repo info below</label>
+      <div class="row" style="margin-top:8px">
+        <input id="owner" class="col" placeholder="owner (username or org)" value="" />
         <input id="repo" class="col" placeholder="repo name" value="" />
       </div>
-      <div class="row">
+      <div class="row" style="margin-top:8px">
         <input id="branch" class="col" placeholder="branch (eg. main)" value="main" />
-        <input id="filepath" class="col" placeholder="file path to create/update (eg. rogers_logic.py)" value="rogers_logic.py" />
+        <input id="filepath" class="col" placeholder="filepath to write (eg. pewpi_secrets.json)" value="pewpi_secrets.json" />
       </div>
     </div>
 
-    <div class="card">
-      <label>Commit message</label>
-      <input id="commit_msg" placeholder="Commit message" value="Update via browser commit" />
-
-      <label>File contents (what you want to write into the repo file)</label>
-      <textarea id="file_content" placeholder="Paste the file contents here (e.g. rogers_logic.py)"></textarea>
-
-      <div class="row" style="margin-top:10px">
-        <button id="check_exists">Check file exists</button>
-        <button id="preview_b64" class="secondary">Preview base64</button>
-        <button id="commit_btn">Commit to GitHub</button>
-      </div>
-
-      <div class="status" id="action_status"></div>
-
-      <label style="margin-top:12px">API result</label>
-      <pre id="api_result">{ no action yet }</pre>
-    </div>
-
-    <div class="card muted">
-      After commit: remove or revoke the PAT. If you accidentally exposed it, revoke it immediately at https://github.com/settings/tokens
-    </div>
+    <div class="small" style="margin-top:12px">Security: only the encrypted blob is safe to commit. Use a strong passphrase. Do not commit raw tokens. After committing you can revoke the PAT you used for the commit.</div>
   </div>
 
   <script>
-  // Minimal browser GitHub commit helper
-  (function(){
-    // In-memory token only (unless user stores to localStorage)
-    let token = null;
+  // ---------- PewPiAccountManager (inlined) ----------
+  const PewPiAccountManager = (() => {
+    const ITER = 250000;
+    const KEYLEN = 256;
+    const SALT_BYTES = 16;
+    const IV_BYTES = 12;
+    const enc = new TextEncoder(), dec = new TextDecoder();
 
-    const el = id;
-    function id(n){ return document.getElementById(n); }
-
-    // Save token in memory only
-    el('save_pat').addEventListener('click', ()=>{
-      const t = el('pat').value.trim();
-      if(!t) return alert('Paste PAT first');
-      token = t;
-      el('action_status').textContent = 'Token loaded into memory (not persisted).';
-    });
-
-    el('clear_pat').addEventListener('click', ()=>{
-      token = null;
-      el('pat').value = '';
-      el('action_status').textContent = 'Token cleared from memory and input.';
-    });
-
-    // Helper: base64 encode file content
-    function toBase64(str){
-      // btoa works on binary string; ensure proper utf8 handling:
-      try {
-        return btoa(unescape(encodeURIComponent(str)));
-      } catch(e){
-        // fallback: use browser TextEncoder -> array -> btoa
-        const u = new TextEncoder().encode(str);
-        let s = '';
-        for(let i=0;i<u.length;i++) s += String.fromCharCode(u[i]);
-        return btoa(s);
-      }
+    function _b64(u8){
+      let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
+      return btoa(bin);
+    }
+    function _fromB64(s){
+      const bin = atob(s); const u8 = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+      return u8;
     }
 
-    // Get file SHA if exists (needed for updates). Returns {sha,exists,content}
-    async function getFileSha(owner, repo, path, branch){
-      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-      const r = await fetch(url, {
-        method: 'GET',
-        headers: token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } : { 'Accept': 'application/vnd.github.v3+json' }
-      });
-      if(r.status === 404) return { exists:false };
-      const j = await r.json();
-      if(r.ok){
-        return { exists:true, sha: j.sha, content: j.content, download_url: j.download_url };
-      } else {
-        throw new Error('Error checking file: ' + (j && j.message ? j.message : r.status));
-      }
+    async function deriveKey(pass, salt){
+      const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:ITER, hash:'SHA-256'}, km, {name:'AES-GCM', length:KEYLEN}, false, ['encrypt','decrypt']);
     }
 
-    // Commit (create or update)
-    async function commitFile({ owner, repo, branch, path, message, contentBase64, sha }){
-      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
-      const body = {
-        message: message || 'Update via browser',
-        content: contentBase64,
-        branch: branch || 'main'
+    async function encryptJSON(obj, pass){
+      const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+      const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+      const key = await deriveKey(pass, salt);
+      const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(obj)));
+      return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
+    }
+
+    async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }){
+      if(!username || !passphrase) throw new Error('username and passphrase required');
+      const plain = {
+        meta:{ created_by:username, created_email:email, is_admin:!!isAdmin, created_at:new Date().toISOString() },
+        accounts:[{username,email,isAdmin:!!isAdmin,created_at:new Date().toISOString()}],
+        secrets
       };
-      if(sha) body.sha = sha;
-      const r = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      const j = await r.json();
-      return { ok: r.ok, status: r.status, json: j };
+      return JSON.stringify(await encryptJSON(plain, passphrase), null, 2);
     }
 
-    // Click handlers
-    el('check_exists').addEventListener('click', async ()=>{
-      clearResult();
-      try {
-        ensureToken();
-        const owner = el('owner').value.trim();
-        const repo = el('repo').value.trim();
-        const branch = el('branch').value.trim() || 'main';
-        const path = el('filepath').value.trim();
-        if(!owner||!repo||!path) return alert('provide owner, repo and filepath');
-        el('action_status').textContent = 'Checking...';
-        const info = await getFileSha(owner,repo,path,branch);
-        if(!info.exists){
-          el('action_status').textContent = 'File does NOT exist (will be created).';
-          el('api_result').textContent = JSON.stringify(info,null,2);
-        } else {
-          el('action_status').textContent = 'File exists; sha found.';
-          el('api_result').textContent = JSON.stringify({sha:info.sha, download_url: info.download_url},null,2);
-        }
-      } catch(e){
-        el('action_status').textContent = 'Error: ' + e.message;
-        el('api_result').textContent = (e.stack || e.message || String(e));
-      }
-    });
-
-    el('preview_b64').addEventListener('click', ()=>{
-      const content = el('file_content').value || '';
-      el('api_result').textContent = toBase64(content).slice(0,400) + (content.length>200 ? '... (truncated)' : '');
-    });
-
-    el('commit_btn').addEventListener('click', async ()=>{
-      clearResult();
-      try {
-        ensureToken();
-        const owner = el('owner').value.trim();
-        const repo = el('repo').value.trim();
-        const branch = el('branch').value.trim() || 'main';
-        const path = el('filepath').value.trim();
-        const message = el('commit_msg').value.trim() || 'Update via browser commit';
-        const content = el('file_content').value || '';
-        if(!owner||!repo||!path) return alert('set owner, repo and filepath');
-        el('action_status').textContent = 'Checking existing file...';
-        const info = await getFileSha(owner,repo,path,branch);
-        const base64 = toBase64(content);
-        el('action_status').textContent = 'Committing... (may take a few seconds)';
-        let resp;
-        if(info.exists){
-          resp = await commitFile({ owner, repo, branch, path, message, contentBase64: base64, sha: info.sha });
-        } else {
-          resp = await commitFile({ owner, repo, branch, path, message, contentBase64: base64 });
-        }
-        if(resp.ok){
-          el('action_status').textContent = 'Commit successful: ' + (resp.json && resp.json.commit ? resp.json.commit.sha : 'ok');
-          el('api_result').textContent = JSON.stringify(resp.json, null, 2);
-        } else {
-          el('action_status').textContent = 'Commit failed: ' + resp.status;
-          el('api_result').textContent = JSON.stringify(resp.json, null, 2);
-        }
-      } catch(e){
-        el('action_status').textContent = 'Error: ' + (e.message || e);
-        el('api_result').textContent = (e.stack || e.message || String(e));
-      }
-    });
-
-    function clearResult(){
-      el('action_status').textContent = '';
-      el('api_result').textContent = '{ no action yet }';
-    }
-
-    function ensureToken(){
-      if(!token){
-        const t = el('pat').value.trim();
-        if(!t) throw new Error('Token not loaded. Paste your PAT and click Save in memory.');
-        token = t;
-      }
-    }
-
-    // Quick demo helper: prefill basic rogers_logic.py minimal content if user wants a starting file
-    // (You can replace this content with the real code you want to commit.)
-    const sample = `# Minimal rogers_logic.py example
-import requests, re
-
-def handle_query(q, provided_token=None):
-    m = re.match(r'^fetch\\s+github\\s+([^\\s\\/]+)\\s+([^\\s\\/]+)\\s+([^\\s].*?)(?:\\s+([^\\s]+))?$', q, re.I)
-    if m:
-        owner, repo, path, ref = m.group(1), m.group(2), m.group(3), (m.group(4) or None)
-        headers = {}
-        if provided_token:
-            headers['Authorization'] = 'token ' + provided_token
-        # Try raw first
-        for r in ([ref] if ref else ['main','master']):
-            url = f"https://raw.githubusercontent.com/{owner}/{repo}/{r}/{path}"
-            resp = requests.get(url, headers=headers, timeout=10)
-            if resp.status_code == 200:
-                return resp.text
-        # fallback
-        return f"Unable to fetch {owner}/{repo}/{path}"
-    return f"Rogers received: {q}"
-`;
-    // Prefill file_content with sample if empty
-    if(!el('file_content').value) el('file_content').value = sample;
-
+    return { createAndExport };
   })();
+
+  // ---------- GitHub commit helpers ----------
+  function id(n){ return document.getElementById(n); }
+  let TOKEN = null;
+  id('load_token').addEventListener('click', ()=>{
+    const t = id('pat').value.trim();
+    if(!t) return alert('Paste a PAT first');
+    TOKEN = t;
+    id('verify_result').textContent = 'Token loaded in memory (not persisted).';
+  });
+  id('clear_token').addEventListener('click', ()=>{
+    TOKEN = null; id('pat').value=''; id('verify_result').textContent='Token cleared.';
+  });
+
+  async function getFileInfo(owner,repo,path,branch){
+    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+    const r = await fetch(url, { headers: TOKEN ? { Authorization: 'Bearer ' + TOKEN, Accept:'application/vnd.github.v3+json' } : { Accept:'application/vnd.github.v3+json' } });
+    if(r.status === 404) return { exists:false };
+    const j = await r.json();
+    if(!r.ok) throw new Error(`GET failed ${r.status}: ${j && j.message}`);
+    return { exists:true, sha:j.sha };
+  }
+
+  async function commitFile({ owner, repo, branch, path, message, contentBase64, sha }){
+    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+    const body = { message: message || 'Add encrypted secrets blob', content: contentBase64, branch };
+    if(sha) body.sha = sha;
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + TOKEN, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok) throw new Error(`Commit failed ${r.status}: ${j && j.message ? j.message : JSON.stringify(j)}`);
+    return j;
+  }
+
+  function toBase64(str){
+    try { return btoa(unescape(encodeURIComponent(str))); }
+    catch(e){ const u = new TextEncoder().encode(str); let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); }
+  }
+
+  // ---------- UI actions ----------
+  id('pm_create_export').addEventListener('click', async ()=>{
+    const username = id('pm_username').value.trim() || 'kris';
+    const email = id('pm_email').value.trim() || '';
+    const isAdmin = id('pm_admin').checked;
+    const pass = id('pm_passphrase').value;
+    const secret = id('pm_secret_input').value.trim();
+    if(!pass) return alert('Choose a passphrase to encrypt with');
+    try{
+      id('pm_status').textContent = 'Encrypting…';
+      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
+      id('pm_export_out').value = exported;
+      id('pm_status').textContent = 'Export ready — copy ciphertext (pewpi_secrets.json) or commit from this page.';
+    }catch(e){
+      id('pm_status').textContent = 'Error: ' + (e.message || e);
+    }
+  });
+
+  id('pm_commit_blob').addEventListener('click', async ()=>{
+    // Commit the encrypted blob to repo (needs TOKEN loaded in memory)
+    try{
+      if(!TOKEN) throw new Error('Token not loaded. Click Load token first.');
+      const username = id('pm_username').value.trim() || 'kris';
+      const email = id('pm_email').value.trim() || '';
+      const isAdmin = id('pm_admin').checked;
+      const pass = id('pm_passphrase').value;
+      const secret = id('pm_secret_input').value.trim();
+      if(!pass) throw new Error('Passphrase required for encryption');
+      id('pm_status').textContent = 'Encrypting blob…';
+      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
+      id('pm_export_out').value = exported;
+      // Now commit to GitHub
+      const owner = id('owner').value.trim(); const repo = id('repo').value.trim();
+      const branch = id('branch').value.trim() || 'main'; const path = id('filepath').value.trim() || 'pewpi_secrets.json';
+      if(!owner||!repo) throw new Error('owner and repo required to commit');
+      id('pm_status').textContent = 'Checking for existing file…';
+      let info;
+      try{ info = await getFileInfo(owner,repo,path,branch); } catch(e){ 
+        // If GET failed with 404 it returns exists:false above. If another error, throw.
+        throw e;
+      }
+      const base64 = toBase64(exported);
+      id('pm_status').textContent = 'Committing encrypted blob to repo…';
+      const res = await commitFile({ owner, repo, branch, path, message: 'Add/Update encrypted secrets blob', contentBase64: base64, sha: info.exists ? info.sha : undefined });
+      id('pm_status').textContent = 'Commit successful: ' + (res && res.commit && res.commit.sha ? res.commit.sha : 'ok');
+    }catch(e){
+      id('pm_status').textContent = 'Error: ' + (e.message || e);
+      console.error(e);
+    }
+  });
+
+  // initialize defaults
+  id('pm_status').textContent = 'Ready. Fill username, passphrase and optional secret. Load token to commit.';
   </script>
 </body>
 </html>
