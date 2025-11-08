@@ -3,193 +3,220 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Rogers — UI (token-friendly)</title>
+  <title>PewPi · Rogers UI & Account Manager</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;max-width:980px}
-    h1{margin:0 0 8px 0}
-    #chat{border:1px solid #ddd;padding:12px;min-height:200px;background:#fafafa;white-space:pre-wrap}
-    .row{display:flex;gap:8px;margin-top:10px}
-    input[type=text], input[type=password]{flex:1;padding:8px}
-    button{padding:8px 12px}
-    .meta{font-size:0.9rem;color:#666;margin-top:8px}
-    .err{color:#b00;font-weight:600}
-    .note{color:#066}
-    pre.code{background:#111;color:#eee;padding:10px;overflow:auto;max-height:400px}
-    .small{font-size:0.85rem;color:#666}
+    :root{
+      --bg:#061018; --card:#07202a; --accent:#1fb07a; --muted:#9bb7c2; --panel:#08222b;
+      --text:#e9fbff; --codebg:#071418;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#031015 0%, #071420 100%);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
+    .wrap{max-width:980px;margin:20px auto;padding:18px}
+    h1{margin:0 0 8px 0;font-size:1.3rem}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,0.03);border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type=text], input[type=url], input[type=password], textarea, select{background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:var(--text);padding:8px;border-radius:8px;flex:1}
+    button{background:var(--accent);color:#00221a;border:0;padding:9px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+    .small{font-size:0.9rem;color:var(--muted);margin-top:8px}
+    #chat{border:1px solid rgba(255,255,255,0.03);padding:12px;min-height:180px;background:linear-gradient(90deg,#041016,#071722);border-radius:8px;overflow:auto;white-space:pre-wrap}
+    .msg-user{color:#9be0ff;font-weight:700}
+    .msg-bot{color:#b9ffd9}
+    pre.code{background:var(--codebg);padding:10px;border-radius:8px;color:#dff6f0;overflow:auto;max-height:420px}
+    label{font-size:0.9rem;color:var(--muted)}
+    .flex-col{display:flex;flex-direction:column;gap:8px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .note{font-size:0.85rem;color:#9ac3b9}
+    .status{margin-top:8px;color:var(--muted)}
+    textarea{resize:vertical}
+    .kbd{background:#00121a;padding:4px 8px;border-radius:6px;font-family:monospace}
   </style>
 </head>
 <body>
-  <h1>Rogers — UI</h1>
-  <div class="meta">This UI can store a GitHub token locally (optionally encrypted), use it to fetch repo files, or attach it when calling a backend helper.</div>
+  <div class="wrap">
+    <h1>PewPi — Rogers UI & Account Manager</h1>
+    <div class="small">This page can: (A) talk to a local/server helper (rogers_http.py) and send a saved GitHub token as Authorization: Bearer &nbsp; (B) encrypt and export a secrets blob (safe to commit), unlock it in-browser (session only), and fetch GitHub files for public or token-authenticated requests.</div>
 
-  <div id="chat" aria-live="polite"></div>
+    <div class="card">
+      <div class="grid-2">
+        <div>
+          <label>Helper URL (where rogers_http.py listens)</label>
+          <div class="row" style="margin-top:6px">
+            <input id="helper_url" type="text" placeholder="http://localhost:8765" value="http://localhost:8765" />
+            <button id="test_helper" class="secondary">Ping</button>
+          </div>
+          <div class="status" id="helper_status">Helper status: unknown</div>
+        </div>
 
-  <div class="row">
-    <input id="query" type="text" placeholder="Type a command (eg 'fetch github owner repo path [ref]' or 'hello')" />
-    <button id="send">Send</button>
-    <button id="clear">Clear</button>
-  </div>
-
-  <div style="margin-top:12px" class="small">
-    <strong>Helper URL:</strong>
-    <input id="helper_url" type="text" placeholder="http://localhost:8765" style="flex:0.8" />
-    <button id="test_helper">Ping</button>
-    <div class="small">If helper runs locally, use http://localhost:8765. The page will attach any saved token as an Authorization: Bearer header when calling the helper.</div>
-  </div>
-
-  <hr/>
-
-  <div style="margin-top:10px">
-    <div class="small"><strong>GitHub token (optional)</strong> — store locally (encrypted) or plain (not recommended). If stored, it will be used for GitHub API calls and helper requests.</div>
-    <div class="row" style="margin-top:6px">
-      <input id="gh_token" type="password" placeholder="Paste GitHub PAT here (will not be sent unless used)" />
-      <button id="save_token">Save (plain)</button>
-      <button id="encrypt_save">Save (encrypt)</button>
-      <button id="clear_token">Clear</button>
+        <div>
+          <label>GitHub token (optional)</label>
+          <div class="row" style="margin-top:6px">
+            <input id="gh_token" type="password" placeholder="Paste GitHub PAT here (optional)" />
+            <button id="save_plain" class="secondary">Save (plain)</button>
+            <button id="save_enc">Save (encrypt)</button>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <input id="enc_pass" type="password" placeholder="Passphrase to encrypt/unlock" />
+            <button id="unlock_enc" class="secondary">Unlock</button>
+            <button id="clear_tokens" class="secondary">Clear</button>
+          </div>
+          <div class="small">Encrypted tokens are stored ciphertext in localStorage. Unlocking loads the token into sessionStorage only for this browser session.</div>
+        </div>
+      </div>
     </div>
-    <div class="row" style="margin-top:6px">
-      <input id="enc_pass" type="password" placeholder="Encryption passphrase (for decrypt)" />
-      <button id="unlock_token">Unlock</button>
+
+    <div class="card">
+      <div id="chat" aria-live="polite"></div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="query" type="text" placeholder='Type "hello" or "fetch github owner repo path [ref]"' />
+        <button id="send">Send</button>
+        <button id="clear" class="secondary">Clear</button>
+      </div>
+
+      <div style="margin-top:12px" class="flex-col">
+        <label class="note">Fetch GitHub quick form</label>
+        <div class="row">
+          <input id="gh_owner" type="text" placeholder="owner (e.g. octocat)" />
+          <input id="gh_repo" type="text" placeholder="repo (e.g. Hello-World)" />
+          <input id="gh_path" type="text" placeholder="path (README.md)" />
+          <input id="gh_ref" type="text" placeholder="ref (branch/commit, optional)" />
+          <button id="gh_fetch">Fetch</button>
+        </div>
+      </div>
     </div>
-    <div class="small">When encrypted, token is stored ciphertext in localStorage. To use it, enter your passphrase and press Unlock.</div>
+
+    <!-- Account manager UI -->
+    <section id="pewpi-account-manager" class="card">
+      <h3>PewPi Account & Encrypted Secrets</h3>
+      <div class="flex-col">
+        <div class="row">
+          <input id="pm_username" type="text" placeholder="username (eg. kris)" />
+          <input id="pm_email" type="text" placeholder="email (optional)" />
+          <label style="display:flex;align-items:center"><input id="pm_admin" type="checkbox" style="margin-right:6px" /> admin</label>
+        </div>
+
+        <div class="row">
+          <input id="pm_secret_input" type="password" placeholder="secret to encrypt (e.g. GitHub PAT)" />
+          <input id="pm_passphrase" type="password" placeholder="passphrase to encrypt with" />
+        </div>
+
+        <div class="row">
+          <button id="pm_create_export">Create & Export Encrypted Blob</button>
+          <button id="pm_clear_unlocked" class="secondary">Clear Unlocked</button>
+        </div>
+
+        <label>Exported encrypted blob (copy & commit to repo as pewpi_secrets.json):</label>
+        <textarea id="pm_export_out" style="height:120px"></textarea>
+
+        <hr/>
+
+        <label>Unlock committed blob (paste ciphertext here and enter passphrase):</label>
+        <textarea id="pm_import_blob" style="height:120px"></textarea>
+        <div class="row">
+          <input id="pm_import_pass" type="password" placeholder="passphrase to unlock" />
+          <button id="pm_unlock_btn">Unlock Blob into Session</button>
+        </div>
+
+        <div id="pm_status" class="status"></div>
+      </div>
+    </section>
+
+    <div class="small" style="margin-top:12px">Notes: committing only the encrypted blob to GitHub is safe-ish — do NOT commit the passphrase or the raw token. Use a strong unique passphrase.</div>
   </div>
 
-  <hr/>
-
-  <div style="margin-top:8px">
-    <label class="small">Quick Fetch GitHub:</label>
-    <div class="row">
-      <input id="gh_owner" type="text" placeholder="owner (example: octocat)" />
-      <input id="gh_repo" type="text" placeholder="repo (example: Hello-World)" />
-      <input id="gh_path" type="text" placeholder="path (README.md or src/file.py)" />
-      <input id="gh_ref" type="text" placeholder="ref (branch/commit - optional)" />
-      <button id="gh_fetch">Fetch</button>
-    </div>
-  </div>
-
+  <!-- ---- PewPi Account Manager & app logic (inline for single-file usage) ---- -->
   <script>
-  // --- storage keys
-  const KEY_PLAIN = 'rogers.gh.token';
-  const KEY_ENC  = 'rogers.gh.token.enc';
+  // ---- PewPiAccountManager (WebCrypto AES-GCM + PBKDF2) ----
+  const PewPiAccountManager = (() => {
+    const ITER = 250000;
+    const KEYLEN = 256;
+    const SALT_BYTES = 16;
+    const IV_BYTES = 12;
 
-  // --- DOM
+    const enc = new TextEncoder(), dec = new TextDecoder();
+
+    function _b64(u8){
+      let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
+      return btoa(bin);
+    }
+    function _fromB64(s){
+      const bin = atob(s); const u8 = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+      return u8;
+    }
+
+    async function deriveKey(pass, salt){
+      const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:ITER, hash:'SHA-256'}, km, {name:'AES-GCM', length:KEYLEN}, false, ['encrypt','decrypt']);
+    }
+
+    async function encryptJSON(obj, pass){
+      const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+      const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+      const key = await deriveKey(pass, salt);
+      const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(obj)));
+      return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
+    }
+
+    async function decryptBlob(blobJson, pass){
+      if(!blobJson || !blobJson.ct) throw new Error('Invalid blob');
+      const salt = _fromB64(blobJson.salt);
+      const iv = _fromB64(blobJson.iv);
+      const ctArr = _fromB64(blobJson.ct);
+      const key = await deriveKey(pass, salt.buffer ? salt.buffer : salt);
+      try{
+        const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ctArr.buffer);
+        return JSON.parse(dec.decode(pt));
+      } catch(e){
+        throw new Error('Decrypt failed: wrong passphrase or corrupted blob');
+      }
+    }
+
+    function buildPlaintext({ username, email, isAdmin=false, secrets={} }){
+      return {
+        meta:{ created_by:username, created_email:email, is_admin:!!isAdmin, created_at:new Date().toISOString() },
+        accounts:[{username,email,isAdmin:!!isAdmin,created_at:new Date().toISOString()}],
+        secrets
+      };
+    }
+
+    async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }){
+      if(!username || !passphrase) throw new Error('username and passphrase required');
+      const plain = buildPlaintext({ username, email, isAdmin, secrets });
+      return JSON.stringify(await encryptJSON(plain, passphrase), null, 2);
+    }
+
+    async function unlockBlobText(blobText, passphrase){
+      const blob = JSON.parse(blobText);
+      const plain = await decryptBlob(blob, passphrase);
+      sessionStorage.setItem('pewpi.plain', JSON.stringify(plain));
+      return plain;
+    }
+    function getUnlockedPlain(){ const s = sessionStorage.getItem('pewpi.plain'); return s ? JSON.parse(s) : null; }
+    function clearUnlocked(){ sessionStorage.removeItem('pewpi.plain'); }
+
+    return { createAndExport, unlockBlobText, getUnlockedPlain, clearUnlocked };
+  })();
+
+  // ---- App helpers ----
   const chat = document.getElementById('chat');
   const qel = document.getElementById('query');
-  const send = document.getElementById('send');
-  const clearBtn = document.getElementById('clear');
   const helperUrlEl = document.getElementById('helper_url');
 
-  function appendUser(msg){ chat.innerHTML += '<div><strong>You:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
-  function appendBot(msg){ chat.innerHTML += '<div><strong>Result:</strong> '+escapeHtml(msg)+'</div>'; chat.scrollTop = chat.scrollHeight; }
+  function appendUser(text){ chat.innerHTML += `<div><span class="msg-user">You:</span> ${escapeHtml(text)}</div>`; chat.scrollTop = chat.scrollHeight; }
+  function appendBot(text){ chat.innerHTML += `<div><span class="msg-bot">Rogers:</span> ${escapeHtml(text)}</div>`; chat.scrollTop = chat.scrollHeight; }
   function appendHtml(html){ chat.innerHTML += html; chat.scrollTop = chat.scrollHeight; }
-  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  // --- Token helpers (plain)
-  function savePlainToken(t){ localStorage.setItem(KEY_PLAIN, t); localStorage.removeItem(KEY_ENC); appendBot('Token saved as plain (not recommended).'); }
-  function clearTokens(){ localStorage.removeItem(KEY_PLAIN); localStorage.removeItem(KEY_ENC); appendBot('Token cleared from storage.'); }
-  function getPlainToken(){ return localStorage.getItem(KEY_PLAIN) || ''; }
-
-  // --- Encryption helpers using Web Crypto (AES-GCM)
-  async function deriveKey(pass, salt) {
-    const enc = new TextEncoder();
-    const keyMaterial = await window.crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-    return window.crypto.subtle.deriveKey({
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: 250000,
-      hash: 'SHA-256'
-    }, keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
-  }
-  async function encryptTokenWithPass(token, pass){
-    const enc = new TextEncoder();
-    const salt = window.crypto.getRandomValues(new Uint8Array(16));
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(pass, salt);
-    const ct = await window.crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(token));
-    return { salt: arrayToBase64(salt), iv: arrayToBase64(iv), ct: arrayBufferToBase64(ct) };
-  }
-  async function decryptTokenWithPass(blob, pass){
-    try{
-      const salt = base64ToArray(blob.salt);
-      const iv = base64ToArray(blob.iv);
-      const ct = base64ToArrayBuffer(blob.ct);
-      const key = await deriveKey(pass, salt);
-      const pt = await window.crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
-      return new TextDecoder().decode(pt);
-    } catch(e){
-      throw new Error('Decrypt failed: ' + (e && e.message ? e.message : e));
-    }
-  }
-  function arrayBufferToBase64(buf){ const bytes=new Uint8Array(buf); let bin=''; for(let i=0;i<bytes.byteLength;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
-  function arrayToBase64(arr){ return arrayBufferToBase64(arr.buffer); }
-  function base64ToArray(s){ const bin=atob(s); const len=bin.length; const arr=new Uint8Array(len); for(let i=0;i<len;i++) arr[i]=bin.charCodeAt(i); return arr; }
-  function base64ToArrayBuffer(s){ const bin=atob(s); const len=bin.length; const bytes=new Uint8Array(len); for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i); return bytes.buffer; }
-
-  // UI token buttons
-  document.getElementById('save_token').addEventListener('click', ()=>{
-    const t = document.getElementById('gh_token').value.trim();
-    if(!t){ alert('Paste your token into the field first'); return; }
-    savePlainToken(t);
-  });
-  document.getElementById('clear_token').addEventListener('click', ()=>{ clearTokens(); });
-  document.getElementById('encrypt_save').addEventListener('click', async ()=>{
-    const t = document.getElementById('gh_token').value.trim();
-    const p = document.getElementById('enc_pass').value;
-    if(!t || !p){ alert('Enter both token and a passphrase'); return; }
-    try{
-      const blob = await encryptTokenWithPass(t, p);
-      localStorage.setItem(KEY_ENC, JSON.stringify(blob));
-      localStorage.removeItem(KEY_PLAIN);
-      appendBot('Token encrypted and saved locally. You must provide the passphrase to use it.');
-    } catch(e){ appendBot('Encrypt error: '+e.message); }
-  });
-  document.getElementById('unlock_token').addEventListener('click', async ()=>{
-    const p = document.getElementById('enc_pass').value;
-    if(!p){ alert('Enter passphrase'); return; }
-    const s = localStorage.getItem(KEY_ENC);
-    if(!s){ appendBot('No encrypted token found'); return; }
-    try{
-      const blob = JSON.parse(s);
-      const t = await decryptTokenWithPass(blob, p);
-      // put token into session (not returned to persistent field)
-      sessionStorage.setItem(KEY_PLAIN, t);
-      appendBot('Token unlocked into session storage for this browser session.');
-    } catch(e){ appendBot('Unlock failed: '+e.message); }
-  });
-
-  // helper ping
-  document.getElementById('test_helper').addEventListener('click', async ()=>{
-    const url = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
-    try{
-      const r = await fetch(url + '/query?q=hello');
-      const j = await r.json();
-      appendBot('Helper ping response: ' + (j.response || JSON.stringify(j)));
-    } catch(e){
-      appendBot('Helper not reachable: ' + e.toString());
-    }
-  });
-
-  // Quick github fetch UI
-  document.getElementById('gh_fetch').addEventListener('click', async ()=>{
-    const owner = document.getElementById('gh_owner').value.trim();
-    const repo = document.getElementById('gh_repo').value.trim();
-    const path = document.getElementById('gh_path').value.trim();
-    const ref  = document.getElementById('gh_ref').value.trim();
-    if(!owner||!repo||!path){ alert('owner, repo and path required'); return; }
-    const cmd = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
-    qel.value = cmd;
-    handleQuery(cmd);
-  });
-
-  // fetch helpers (uses token if present in session/local)
   function getEffectiveToken(){
-    return sessionStorage.getItem(KEY_PLAIN) || localStorage.getItem(KEY_PLAIN) || null;
+    return sessionStorage.getItem('gh.token') || localStorage.getItem('gh.token') || null;
   }
+  function savePlainToken(t){ localStorage.setItem('gh.token', t); localStorage.removeItem('gh.token.enc'); appendBot('Token saved as plain (not recommended).'); }
+  function clearTokens(){ localStorage.removeItem('gh.token'); localStorage.removeItem('gh.token.enc'); sessionStorage.removeItem('gh.token'); appendBot('All stored tokens cleared.'); }
 
   async function fetchGithubRaw(owner, repo, path, ref){
-    // try raw.githubusercontent first with ref or common default branches
-    const candidates = ref ? [ref] : ['main','master'];
     const token = getEffectiveToken();
+    const candidates = ref ? [ref] : ['main','master'];
     for(const r of candidates){
       const url = `https://raw.githubusercontent.com/${owner}/${repo}/${r}/${path}`;
       try{
@@ -198,188 +225,164 @@
         if(res.ok) return { ok:true, source:url, text: await res.text() };
       } catch(e){}
     }
-    // fallback GitHub API
     const apiRef = ref ? `?ref=${encodeURIComponent(ref)}` : '';
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${apiRef}`;
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}${apiRef}`;
     const headers = token ? { 'Authorization':'token '+token, 'Accept':'application/vnd.github.v3.raw' } : { 'Accept':'application/vnd.github.v3.raw' };
     try{
       const res = await fetch(apiUrl, { headers });
       if(res.ok) return { ok:true, source:apiUrl, text: await res.text() };
       const err = await res.text();
-      return { ok:false, error: `GitHub API ${res.status}: ${err}` };
+      return { ok:false, error:`GitHub API ${res.status}: ${err}` };
     } catch(e){
       return { ok:false, error: e.toString() };
     }
   }
 
-  // handle "fetch github owner repo path [ref]" and helper forwarding
+  async function forwardToHelper(q){
+    const helper = (helperUrlEl.value || 'http://localhost:8765').replace(/\/+$/,'');
+    const token = getEffectiveToken();
+    const headers = { 'Content-Type':'application/json' };
+    if(token) headers['Authorization'] = 'Bearer ' + token;
+    try{
+      const res = await fetch(helper + '/query', { method:'POST', headers, body: JSON.stringify({ query: q }) });
+      if(!res.ok) return { ok:false, error:`helper ${res.status}` };
+      const j = await res.json();
+      return { ok:true, json:j };
+    } catch(e){
+      return { ok:false, error: e.toString() };
+    }
+  }
+
   async function handleQuery(q){
     q = (q||'').trim();
     appendUser(q);
     if(!q){ appendBot('Type a command.'); return; }
-    const f = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
-    if(f){
-      const owner=f[1], repo=f[2], path=f[3], ref=f[4]||'';
-      appendBot(`Fetching ${owner}/${repo}/${path} ${ref?('ref:'+ref):''} ...`);
+
+    const fetchMatch = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
+    if(fetchMatch){
+      const owner = fetchMatch[1], repo = fetchMatch[2], path = fetchMatch[3], ref = fetchMatch[4] || '';
+      appendBot(`Fetching ${owner}/${repo}/${path} ${ref ? 'ref:'+ref : ''} ...`);
       const r = await fetchGithubRaw(owner,repo,path,ref);
-      if(r.ok){
-        appendHtml(`<div style="margin-top:8px"><div><em>Source: ${escapeHtml(r.source)}</em></div><pre class="code">${escapeHtml(r.text)}</pre></div>`);
-      } else appendBot('Fetch error: '+r.error);
+      if(r.ok) appendHtml(`<div style="margin-top:8px"><div><em>Source: ${escapeHtml(r.source)}</em></div><pre class="code">${escapeHtml(r.text)}</pre></div>`);
+      else appendBot('Fetch error: '+r.error);
       return;
     }
-    // Otherwise forward to helper if available
-    const helper = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
-    try{
-      const token = getEffectiveToken();
-      const headers = {'Content-Type':'application/json'};
-      if(token) headers['Authorization']='Bearer '+token;
-      const res = await fetch(helper + '/query', { method:'POST', headers, body: JSON.stringify({ query: q }) });
-      const j = await res.json();
+
+    // otherwise try helper forward
+    const res = await forwardToHelper(q);
+    if(res.ok){
+      const j = res.json;
       if(j && j.response !== undefined) appendBot(j.response);
       else appendBot('Helper returned: ' + JSON.stringify(j));
-    } catch(e){
-      appendBot('No helper or network error. Try "fetch github owner repo path" to fetch files directly from GitHub.');
+    } else {
+      appendBot('No helper reachable (' + res.error + '). You can use "fetch github ..." to fetch files directly from GitHub.');
     }
   }
 
-  send.addEventListener('click', ()=>{ handleQuery(qel.value); });
-  clearBtn.addEventListener('click', ()=>{ qel.value=''; chat.innerHTML=''; });
-  qel.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); handleQuery(qel.value); } });
+  // ---- UI wiring ----
+  document.getElementById('send').addEventListener('click', ()=> handleQuery(qel.value));
+  document.getElementById('clear').addEventListener('click', ()=> { qel.value=''; chat.innerHTML=''; });
+  qel.addEventListener('keydown', (e)=> { if(e.key==='Enter'){ e.preventDefault(); handleQuery(qel.value); } });
 
-  // show short help
-  appendBot('Loaded. To use a token: paste it in Token field, then Save (or Save (encrypt) with passphrase). If you Unlock encrypted token it will be loaded into this browser session.');
-  </script>
-// pewpi_account_manager.js
-// Client-side account / secret manager.
-// - Create account (username, email), set admin flag.
-// - Encrypt full secrets blob with a passphrase (PBKDF2 -> AES-GCM).
-// - Export ciphertext JSON for copy/paste commit to repo.
-// - Unlock (decrypt) the ciphertext into sessionStorage for use by the UI.
-//
-// Usage: include this <script> in your index.html and wire the UI buttons to the functions below.
-// The exported file is a JSON object with keys: v,salt,iv,ct,created_by,created_at
+  document.getElementById('gh_fetch').addEventListener('click', ()=>{
+    const owner = document.getElementById('gh_owner').value.trim();
+    const repo = document.getElementById('gh_repo').value.trim();
+    const path = document.getElementById('gh_path').value.trim();
+    const ref  = document.getElementById('gh_ref').value.trim();
+    if(!owner || !repo || !path) return alert('owner, repo and path are required');
+    qel.value = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
+    handleQuery(qel.value);
+  });
 
-const PewPiAccountManager = (() => {
-  const ITER = 250000; // PBKDF2 iterations (higher if device tolerates)
-  const KEYLEN = 256;
-  const SALT_BYTES = 16;
-  const IV_BYTES = 12;
-
-  function _b64(u8) {
-    let bin = '';
-    for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
-    return btoa(bin);
-  }
-  function _fromB64(s) {
-    const bin = atob(s);
-    const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return u8;
-  }
-
-  async function deriveKey(pass, salt) {
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({
-      name: 'PBKDF2',
-      salt,
-      iterations: ITER,
-      hash: 'SHA-256'
-    }, keyMaterial, { name: 'AES-GCM', length: KEYLEN }, false, ['encrypt', 'decrypt']);
-  }
-
-  async function encryptJSON(obj, pass) {
-    const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-    const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-    const key = await deriveKey(pass, salt);
-    const enc = new TextEncoder();
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)));
-    return {
-      v: 1,
-      salt: _b64(salt),
-      iv: _b64(iv),
-      ct: _b64(new Uint8Array(ct)),
-      created_at: new Date().toISOString()
-    };
-  }
-
-  async function decryptBlob(blobJson, pass) {
-    if (!blobJson || !blobJson.ct) throw new Error('Invalid blob');
-    const salt = _fromB64(blobJson.salt);
-    const iv = _fromB64(blobJson.iv);
-    const ct = _fromB64(blobJson.ct).buffer;
-    const key = await deriveKey(pass, salt.buffer ? salt.buffer : salt);
-    try {
-      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-      const dec = new TextDecoder().decode(pt);
-      return JSON.parse(dec);
-    } catch (e) {
-      throw new Error('Decrypt failed: wrong passphrase or corrupted blob');
+  // helper ping
+  document.getElementById('test_helper').addEventListener('click', async ()=>{
+    const url = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
+    try{
+      const r = await fetch(url + '/query?q=hello');
+      const j = await r.json();
+      document.getElementById('helper_status').textContent = 'Helper reachable: ' + (j.response || JSON.stringify(j));
+    }catch(e){
+      document.getElementById('helper_status').textContent = 'Helper not reachable: ' + e.toString();
     }
-  }
+  });
 
-  // Build a canonical plaintext object to encrypt
-  function buildPlaintext({ username, email, isAdmin=false, secrets={} }) {
-    return {
-      meta: {
-        created_by: username,
-        created_email: email,
-        is_admin: !!isAdmin,
-        created_at: new Date().toISOString()
-      },
-      accounts: [
-        { username, email, isAdmin: !!isAdmin, created_at: new Date().toISOString() }
-      ],
-      secrets // arbitrary secret bag, e.g. { github_token: "ghp_xxx" }
-    };
-  }
+  // token UI wiring
+  document.getElementById('save_plain').addEventListener('click', ()=> {
+    const t = document.getElementById('gh_token').value.trim();
+    if(!t) return alert('Paste token first');
+    localStorage.setItem('gh.token', t);
+    appendBot('Saved token as plain in localStorage (not recommended).');
+  });
+  document.getElementById('save_enc').addEventListener('click', async ()=>{
+    const t = document.getElementById('gh_token').value.trim();
+    const p = document.getElementById('enc_pass').value;
+    if(!t||!p) return alert('Token and passphrase required');
+    try{
+      const blob = await (async () => {
+        const obj = { github_token: t, created_at: new Date().toISOString() };
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await (async (pass,salt)=>{
+          const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+          return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
+        })(p, salt);
+        const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
+        return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
+      })();
+      localStorage.setItem('gh.token.enc', JSON.stringify(blob));
+      localStorage.removeItem('gh.token');
+      appendBot('Token encrypted and saved to localStorage (you may export encrypted blob separately below).');
+    }catch(e){ appendBot('Encrypt error: ' + e.toString()); }
+  });
 
-  // Helpers wired to UI usage:
-  async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }) {
-    if (!username || !passphrase) throw new Error('username and passphrase are required');
-    const plain = buildPlaintext({ username, email, isAdmin, secrets });
-    const blob = await encryptJSON(plain, passphrase);
-    // Return JSON string suitable for commit (user should copy/paste)
-    return JSON.stringify(blob, null, 2);
-  }
+  document.getElementById('unlock_enc').addEventListener('click', async ()=>{
+    const p = document.getElementById('enc_pass').value;
+    if(!p) return alert('Enter passphrase');
+    const s = localStorage.getItem('gh.token.enc');
+    if(!s) return appendBot('No encrypted token in localStorage');
+    try{
+      const blob = JSON.parse(s);
+      const plain = await (async (blob,pass)=>{
+        const salt = _fromB64(blob.salt);
+        const iv = _fromB64(blob.iv);
+        const ctArr = _fromB64(blob.ct);
+        const key = await (async (pass,salt){ const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']); })(pass, salt);
+        const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ctArr.buffer);
+        return JSON.parse(new TextDecoder().decode(pt));
+      })(blob,p);
+      sessionStorage.setItem('gh.token', plain.github_token);
+      appendBot('Encrypted token unlocked into session for this browser session.');
+    }catch(e){ appendBot('Unlock failed: ' + (e.message || e)); }
+  });
 
-  // Unlock a committed blob (JSON string) into session for use by the UI
-  async function unlockBlobText(blobText, passphrase) {
-    const blob = JSON.parse(blobText);
-    const plain = await decryptBlob(blob, passphrase);
-    // Save plaintext into sessionStorage for the running browser session only
-    sessionStorage.setItem('pewpi.plain', JSON.stringify(plain));
-    return plain;
-  }
+  document.getElementById('clear_tokens').addEventListener('click', ()=> {
+    clearTokens();
+  });
 
-  function getUnlockedPlain() {
-    const s = sessionStorage.getItem('pewpi.plain');
-    return s ? JSON.parse(s) : null;
-  }
+  // ---- Account manager UI wiring (uses PewPiAccountManager above) ----
+  document.getElementById('pm_create_export').addEventListener('click', async ()=>{
+    const username = document.getElementById('pm_username').value.trim() || 'kris';
+    const email = document.getElementById('pm_email').value.trim() || '';
+    const isAdmin = document.getElementById('pm_admin').checked;
+    const pass = document.getElementById('pm_passphrase').value;
+    const secret = document.getElementById('pm_secret_input').value.trim();
+    if(!pass) return alert('Choose a passphrase to encrypt with');
+    try{
+      document.getElementById('pm_status').textContent = 'Encrypting…';
+      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
+      document.getElementById('pm_export_out').value = exported;
+      document.getElementById('pm_status').textContent = 'Export ready — copy the ciphertext and commit as pewpi_secrets.json';
+    }catch(e){
+      document.getElementById('pm_status').textContent = 'Error: ' + (e.message || e);
+    }
+  });
 
-  function clearUnlocked() {
-    sessionStorage.removeItem('pewpi.plain');
-  }
-
-  return {
-    createAndExport,    // async -> returns JSON ciphertext string
-    unlockBlobText,     // async -> returns plaintext object
-    getUnlockedPlain,   // sync -> plaintext object or null
-    clearUnlocked
-  };
-})();
-
-// Example usage for UI wiring (you can copy these into your index.html):
-// document.getElementById('create_btn').onclick = async () => {
-//   const username = ...; const email = ...; const pass = ...; const token = ...;
-//   const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin:true, passphrase:pass, secrets:{ github_token: token } });
-//   // show exported in a textarea for copy/paste commit
-// };
-//
-// document.getElementById('unlock_btn').onclick = async () => {
-//   const blobText = ...; const pass = ...;
-//   const plain = await PewPiAccountManager.unlockBlobText(blobText, pass);
-//   // now plain.secrets.github_token is available in sessionStorage
-// };
-</body>
-</html>
+  document.getElementById('pm_unlock_btn').addEventListener('click', async ()=>{
+    const blobText = document.getElementById('pm_import_blob').value.trim();
+    const pass = document.getElementById('pm_import_pass').value;
+    if(!blobText || !pass) return alert('Paste blob and enter passphrase');
+    document.getElementById('pm_status').textContent = 'Decrypting…';
+    try{
+      const plain = await PewPiAccountManager.unlockBlobText(blobText, pass);
+      // if secrets.github_token present, place into sessionStorage for use
+      if(plain.secrets && plain.secrets.github_token) session
