@@ -314,6 +314,8 @@ function saveState() {
         app.history.shift();
         // After shifting, historyStep should stay at the last index
         app.historyStep = app.maxHistory - 1;
+        // After shifting, historyStep should stay at the last index
+        app.historyStep = app.maxHistory - 1;
     } else {
         app.historyStep++;
     }
