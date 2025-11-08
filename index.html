@@ -40,7 +40,7 @@
 
     <div class="flex gap-4 items-center mt-3">
       <div class="small">Server URL:</div>
-      <input id="server-url-input" type="text" style="width:420px" />
+      <input id="server-url-input" type="text" style="width:420px" placeholder="http(s)://your-server:5000" />
       <button id="save-url" class="btn">Save</button>
       <label class="small" title="Play bot response via device TTS">
         <input id="tts-toggle" type="checkbox" /> TTS
@@ -50,7 +50,7 @@
       </label>
     </div>
 
-    <div class="small mt-2">Note: If your page is loaded over HTTPS you must use an HTTPS API URL (ngrok/Cloudflare Tunnel) to avoid Mixed Content blocking.</div>
+    <div class="small mt-2">If your site is served over HTTPS, use an HTTPS API URL (ngrok/Cloudflare tunnel) to avoid Mixed Content blocking.</div>
 
     <h3 style="color:#cfe8c3; margin-top:12px">Diagnostics</h3>
     <div id="diag" class="diag">No diagnostics yet.</div>
@@ -58,7 +58,7 @@
 
   <script>
     (function(){
-      // Default server value — replace at runtime if needed
+      // Default server value stored in localStorage; user can paste a different URL and Save
       const DEFAULT_SERVER = localStorage.getItem('rogers_server') || 'http://100.118.99.166:5000';
       const serverInput = document.getElementById('server-url-input');
       const statusEl = document.getElementById('status');
@@ -165,7 +165,7 @@
           try { parsed = JSON.parse(text); } catch(e){ parsed = null; }
           let reply = parsed && parsed.ok && parsed.response ? parsed.response : (parsed && parsed.message ? parsed.message : text);
           addMessage('rogers', reply);
-          // TTS if enabled and available
+          // TTS if enabled
           if (ttsToggle.checked && 'speechSynthesis' in window) {
             try {
               const utter = new SpeechSynthesisUtterance(reply);
@@ -201,10 +201,7 @@
         setInterval(() => checkStatus(), 5000);
       }, 50);
 
-      // Expose debug helpers
       window._rogers = { checkStatus, sendMessage, setStatus, log };
-
-      // Initial UI state
       setStatus(false, 'Connecting...');
     })();
   </script>
