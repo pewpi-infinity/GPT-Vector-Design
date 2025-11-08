@@ -1,42 +1,36 @@
-"""
-Safe Rogers Administrative Bot (rogers.bot.py)
-Provides run_rogers_bot(query) for the Flask server.
-"""
-import re
-import html
-from typing import Any
+// Add this at the end of your existing <script> (before </script>)
+;(function enableOnTapForMobile(){
+  try {
+    const userInput = document.getElementById('user-input');
+    const forceToggle = document.getElementById('force-enable');
+    // If elements are missing, abort silently
+    if (!userInput || !forceToggle) return;
 
-def search_duckduckgo(query: str) -> str:
-    q = (query or "").strip()
-    low = q.lower()
-    if "purpose" in low:
-        return "I am the Rogers Administrative Twin Bot, designed to oversee and coordinate system functions and communications."
-    if "hello" in low or low in ("hi", "hey"):
-        return "Hello. I am Rogers, online and operational. How may I assist you?"
-    safe_q = html.escape(q, quote=True)
-    return f"Query '{safe_q}' received. Simulated search/handoff to administrative logic. Status: OK."
+    // Ensure input can receive focus even if temporarily enabled
+    userInput.setAttribute('tabindex', '0');
+    userInput.autocomplete = 'off';
 
-def run_rogers_bot(query: Any) -> str:
-    try:
-        if query is None:
-            return "Error: empty query received."
-        raw = str(query).strip()
-        if not raw:
-            return "Error: empty query received."
-        low = raw.lower()
-        if any(k in low for k in ("purpose", "admin", "status", "who are you", "what are you")):
-            return search_duckduckgo(raw)
-        if any(low.startswith(g) or f" {g} " in low for g in ("hello", "hi", "hey")):
-            return search_duckduckgo(raw)
-        m = re.match(r'^(search|find|lookup)\s+(.+)', raw, flags=re.I)
-        if m:
-            return search_duckduckgo(m.group(2))
-        if low.startswith("run:") or low.startswith("exec:"):
-            action = raw.split(":", 1)[1].strip() if ":" in raw else ""
-            safe_action = html.escape(action, quote=True)
-            return f"Simulated execution of '{safe_action}'. Result: simulated success."
-        safe_raw = html.escape(raw, quote=True)
-        return f"Rogers received: '{safe_raw}'. This request will be processed by administrative logic (simulation)."
-    except Exception as e:
-        safe_err = html.escape(str(e), quote=True)
-        return f"Bot error: an internal exception occurred: {safe_err}"
+    // On touchstart (mobile) or mousedown (desktop), enable and focus
+    function enableAndFocusOnce(e){
+      if (!userInput.disabled) return;
+      e && e.preventDefault();
+      // enable UI for testing
+      try { forceToggle.checked = true; } catch(_) {}
+      try { userInput.disabled = false; } catch(_) {}
+      // small delay before focusing to let the browser render state change
+      setTimeout(()=> {
+        try { userInput.focus(); } catch(_) {}
+      }, 60);
+      // keep this handler but allow future taps to behave normally
+    }
+
+    // Use touchstart for mobile and mousedown for non-touch fallback
+    userInput.addEventListener('touchstart', enableAndFocusOnce, {passive:false});
+    userInput.addEventListener('mousedown', enableAndFocusOnce);
+
+    // If the user navigates away and back or reloads, the script still applies.
+    console.debug('enableOnTapForMobile active');
+  } catch (err) {
+    console.warn('enableOnTapForMobile error', err);
+  }
+})();
