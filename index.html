@@ -3,194 +3,294 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PewPi — Decrypt committed secrets</title>
+  <title>PewPi — Quick Activate Rogers</title>
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
-    .wrap{max-width:980px;margin:0 auto}
+    .wrap{max-width:900px;margin:0 auto}
     h1{margin:0 0 10px 0}
-    .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
-    input,textarea,select,button{font:inherit}
-    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
-    textarea{min-height:140px;resize:vertical;font-family:monospace}
+    .card{background:#08242f;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
+    input,textarea,button{font:inherit}
+    input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+    textarea{min-height:120px;resize:vertical;font-family:monospace}
     .row{display:flex;gap:8px;margin-top:8px}
     .col{flex:1}
     button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
-    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
+    .secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
+    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:320px}
     .muted{color:#9bb7c2;font-size:0.9rem}
-    label{font-size:0.9rem;color:#9bb7c2;display:block;margin-top:10px}
-    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto;max-height:420px}
     .status{margin-top:8px;color:#cfeee6}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>PewPi — Fetch & Decrypt Committed Secrets</h1>
+    <h1>PewPi — Quick Activate Rogers</h1>
 
     <div class="card">
-      <div class="muted">This tool fetches the encrypted blob you've committed (pewpi_secrets.json), decrypts it in your browser using the passphrase you supply, and shows the plaintext. The passphrase is never sent anywhere. If the blob contains a github_token you can choose to load it into this page's sessionStorage for immediate use. Do NOT commit passphrases or plaintext tokens to the repo.</div>
-    </div>
-
-    <div class="card">
-      <label>Repository (where the encrypted blob is committed)</label>
-      <div class="row">
-        <input id="owner" class="col" placeholder="owner (username or org)" value="pewpi-infinity" />
-        <input id="repo" class="col" placeholder="repo name" value="" />
-      </div>
-      <div class="row">
-        <input id="branch" class="col" placeholder="branch (eg. main)" value="main" />
-        <input id="path" class="col" placeholder="path to blob (eg. pewpi_secrets.json)" value="pewpi_secrets.json" />
-      </div>
-
-      <label style="margin-top:10px">Passphrase (used to decrypt the blob)</label>
-      <input id="passphrase" type="password" placeholder="Enter passphrase used when creating the blob" />
+      <div class="muted">Paste the passphrase you used to create the encrypted blob (secrets.json). Click Activate — Rogers will automatically find your blob, decrypt it, load the token into session, and enable chat below.</div>
 
       <div class="row" style="margin-top:8px">
-        <button id="fetch_decrypt">Fetch & Decrypt</button>
-        <button id="clear_output" class="secondary">Clear</button>
+        <input id="passphrase" type="password" placeholder="Enter passphrase (only in your browser)" />
+        <button id="activate">Activate Rogers</button>
       </div>
 
-      <div id="status" class="status">Ready.</div>
-
-      <label style="margin-top:10px">Decrypted JSON (if passphrase is correct)</label>
-      <pre id="plaintext">{ nothing decrypted yet }</pre>
-
-      <div style="margin-top:8px" class="row">
-        <button id="load_token" class="secondary">Load github_token into session (if present)</button>
-        <button id="copy_plain" class="secondary">Copy plaintext</button>
-      </div>
+      <div class="status" id="activate_status">Idle. Click Activate when ready.</div>
     </div>
 
-    <div class="card">
-      <label>Use decrypted token with the page</label>
-      <div class="muted">If you load the github_token into sessionStorage it will be used by other UI actions on this page (for example, committing or fetching files). Loading places the token only in this browser session.</div>
-      <div id="token_status" class="status">No token loaded in session.</div>
+    <div class="card" id="rogers_card" style="display:none">
+      <label style="font-weight:700">Rogers (chat)</label>
+      <div id="console" style="border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;background:#041016;min-height:180px;white-space:pre-wrap;overflow:auto"></div>
+      <div class="row" style="margin-top:8px">
+        <input id="query" placeholder='Type "fetch github owner repo path [ref]" or say hello' />
+        <button id="send">Send</button>
+      </div>
+      <div class="status" id="console_status">Rogers inactive until activation.</div>
     </div>
   </div>
 
-  <script>
-  // Utilities: base64 helpers and WebCrypto PBKDF2/AES-GCM decryption
-  function id(n){ return document.getElementById(n); }
-  function setStatus(s){ id('status').textContent = s; }
-  function b64ToU8(s){
-    // atob may throw on unicode; use decode fallback
-    try{
-      const bin = atob(s);
-      const u = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
-      return u;
-    }catch(e){
-      // fallback: decode utf8-safe
-      const bin = atob(s);
-      const u = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
-      return u;
-    }
-  }
+<script>
+/*
+  Minimal page that:
+  - auto-tries to find an encrypted blob (secrets.json / pewpi_secrets.json) across candidate repo names & branches
+  - decrypts blob with passphrase (PBKDF2 250k + AES-GCM) in-browser
+  - if secrets.github_token found, loads into sessionStorage and enables a simple client-side "Rogers"
+  - Rogers supports basic "fetch github owner repo path [ref]" (uses token for private repos if present)
+*/
 
-  async function deriveKey(pass, saltU8){
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: saltU8, iterations: 250000, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-  }
+/* ---------- Configuration: candidate repo names & paths ---------- */
+/* If you know your repo name, you can add it here for faster fetch. */
+const OWNER = "pewpi-infinity";
+const CANDIDATE_REPOS = [
+  "pewpi-infinity",       // often repo same as user/org
+  "GPT-Vectors-Design",
+  "Vector",
+  "Vector-Design",
+  "infinity-portal",
+  "InfinityOS",
+  "pewpi-infinity.github.io"
+];
+const CANDIDATE_PATHS = ["secrets.json","pewpi_secrets.json","pewpi_secrets.json.enc"];
+const CANDIDATE_BRANCHES = ["main","master"];
 
-  async function decryptBlobObject(blobJson, passphrase){
-    if(!blobJson || !blobJson.ct) throw new Error('Invalid blob format');
-    // parse base64 fields
-    const saltU8 = b64ToU8(blobJson.salt);
-    const ivU8   = b64ToU8(blobJson.iv);
-    const ctU8   = b64ToU8(blobJson.ct);
-    // derive key
-    const key = await deriveKey(passphrase, saltU8);
-    // decrypt using AES-GCM; WebCrypto expects ciphertext+tag together (our JS encryption produced that)
-    try{
-      const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: ivU8 }, key, ctU8.buffer);
-      const dec = new TextDecoder().decode(pt);
-      return JSON.parse(dec);
-    } catch(e){
-      throw new Error('Decrypt failed: ' + (e && e.message ? e.message : e));
-    }
-  }
+/* ---------- helpers ---------- */
+function id(n){ return document.getElementById(n); }
+function log(s){ const c=id('console'); c.textContent += (c.textContent?'\n':'') + s; c.scrollTop = c.scrollHeight; }
+function setStatus(s){ id('activate_status').textContent = s; }
+function setConsoleStatus(s){ id('console_status').textContent = s; }
 
-  // Fetch the committed blob via raw.githubusercontent.com
-  async function fetchBlobRaw(owner, repo, branch, path){
-    const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path}`;
-    // raw.githubusercontent.com generally allows CORS; if not, user must open through GitHub UI and copy
-    const r = await fetch(rawUrl, { cache: 'no-store' });
-    if(!r.ok) throw new Error('Fetch failed: ' + r.status + ' ' + r.statusText);
-    const text = await r.text();
-    return text;
-  }
+/* base64 -> Uint8Array */
+function b64ToU8(s){
+  const bin = atob(s);
+  const u = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  return u;
+}
 
-  // Main handler
-  id('fetch_decrypt').addEventListener('click', async ()=>{
-    const owner = id('owner').value.trim();
-    const repo = id('repo').value.trim();
-    const branch = id('branch').value.trim() || 'main';
-    const path = id('path').value.trim() || 'pewpi_secrets.json';
-    const pass = id('passphrase').value;
-    id('plaintext').textContent = '{ decrypting... }';
-    setStatus('Fetching blob from repo...');
-    if(!owner || !repo){ setStatus('owner and repo required'); return; }
-    if(!pass){ setStatus('Enter passphrase to decrypt'); return; }
-    try{
-      const raw = await fetchBlobRaw(owner, repo, branch, path);
-      // try to parse as JSON; the blob should be the ciphertext JSON
-      let blob;
-      try{ blob = JSON.parse(raw); }
-      catch(e){
-        // sometimes raw contains markdown or extra; try to extract first JSON object
-        const m = raw.match(/\{[\s\S]*\}/);
-        if(m) blob = JSON.parse(m[0]);
-        else throw new Error('Could not parse blob JSON');
+/* derive key */
+async function deriveKey(pass, saltU8){
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt: saltU8, iterations: 250000, hash:'SHA-256'}, km, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+}
+
+/* decrypt blob produced by the account manager */
+async function decryptBlob(blob, pass){
+  if(!blob || !blob.ct) throw new Error('blob missing ct');
+  const salt = b64ToU8(blob.salt);
+  const iv   = b64ToU8(blob.iv);
+  const ct   = b64ToU8(blob.ct);
+  const key = await deriveKey(pass, salt);
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct.buffer);
+  const txt = new TextDecoder().decode(pt);
+  return JSON.parse(txt);
+}
+
+/* attempt to fetch raw blob from raw.githubusercontent for given owner/repo/branch/path */
+async function tryFetchRaw(owner, repo, branch, path){
+  const url = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${path}`;
+  try {
+    const r = await fetch(url, { cache:'no-store' });
+    if(r.ok) return await r.text();
+  } catch(e){ /* ignore */ }
+  return null;
+}
+
+/* attempt to find the blob by trying many repo/path/branch combos */
+async function autodiscoverBlob(pass){
+  setStatus('Searching for encrypted blob...');
+  for(const repo of CANDIDATE_REPOS){
+    for(const branch of CANDIDATE_BRANCHES){
+      for(const path of CANDIDATE_PATHS){
+        setStatus(`Trying ${repo}@${branch}/${path} ...`);
+        const raw = await tryFetchRaw(OWNER, repo, branch, path);
+        if(raw){
+          setStatus(`Found blob at ${OWNER}/${repo}@${branch}/${path}`);
+          return { raw, repo, branch, path };
+        }
       }
-      setStatus('Decrypting blob in browser (passphrase NEVER leaves your device)...');
-      const plain = await decryptBlobObject(blob, pass);
-      id('plaintext').textContent = JSON.stringify(plain, null, 2);
-      setStatus('Decryption succeeded. You may Load token into session if secrets.github_token exists.');
-    }catch(err){
-      id('plaintext').textContent = '{ decryption failed }';
-      setStatus('Error: ' + (err && err.message ? err.message : String(err)));
     }
-  });
+  }
+  setStatus('Auto-discover failed (no raw file found). If your repo is private, you must paste the blob JSON manually via the console or load a PAT and re-run.');
+  return null;
+}
 
-  id('clear_output').addEventListener('click', ()=>{
-    id('plaintext').textContent = '{ nothing decrypted yet }';
-    id('passphrase').value = '';
-    setStatus('Cleared.');
-  });
+/* If repo is private: try to fetch using GitHub API with token */
+async function fetchBlobWithToken(owner, repo, branch, path, token){
+  const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(api, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3.raw' } });
+  if(res.ok) return await res.text();
+  const txt = await res.text().catch(()=>String(res.status));
+  throw new Error('API fetch failed: ' + res.status + ' ' + txt);
+}
 
-  // Copy plaintext to clipboard
-  id('copy_plain').addEventListener('click', async ()=>{
-    const txt = id('plaintext').textContent;
-    try{ await navigator.clipboard.writeText(txt); setStatus('Plaintext copied to clipboard (be careful).'); }
-    catch(e){ setStatus('Copy failed: ' + (e && e.message)); }
-  });
+/* ---------- Activation flow ---------- */
+async function activateRogers(){
+  const pass = id('passphrase').value;
+  if(!pass){ alert('Enter passphrase'); return; }
+  setStatus('Starting activation...');
+  // 1) try auto-discover raw public blobs
+  let found = await autodiscoverBlob(pass);
+  let rawText = null;
+  let discoveredInfo = null;
 
-  // Load github_token into sessionStorage for this page to use
-  id('load_token').addEventListener('click', ()=>{
-    try{
-      const txt = id('plaintext').textContent;
-      if(!txt || txt.startsWith('{') && txt.includes('nothing')) { setStatus('No plaintext available to load'); return; }
-      const j = JSON.parse(txt);
-      if(j && j.secrets && j.secrets.github_token){
-        sessionStorage.setItem('gh.token', j.secrets.github_token);
-        id('token_status').textContent = 'github_token loaded into sessionStorage (session key: gh.token)';
-        setStatus('Token loaded into session for immediate use by this page.');
-      } else {
-        setStatus('No secrets.github_token field found in decrypted JSON.');
+  if(found) {
+    rawText = found.raw;
+    discoveredInfo = found;
+  } else {
+    // 2) attempt to use a token if the user previously decrypted and stored one in sessionStorage
+    const storedToken = sessionStorage.getItem('gh.token');
+    if(storedToken){
+      setStatus('Trying API fetch with token (private repo) ...');
+      for(const repo of CANDIDATE_REPOS){
+        for(const branch of CANDIDATE_BRANCHES){
+          for(const path of CANDIDATE_PATHS){
+            try{
+              const t = await fetchBlobWithToken(OWNER, repo, branch, path, storedToken);
+              rawText = t; discoveredInfo = { repo, branch, path }; break;
+            }catch(e){ /* continue */ }
+          }
+          if(rawText) break;
+        }
+        if(rawText) break;
       }
-    }catch(e){ setStatus('Load token failed: ' + (e && e.message)); }
-  });
+    }
+  }
 
-  // Initialize
-  id('token_status').textContent = sessionStorage.getItem('gh.token') ? 'Token already in session' : 'No token loaded in session.';
-  setStatus('Ready. Enter repo info and passphrase, then Fetch & Decrypt.');
-  </script>
+  if(!rawText){
+    // no automatic fetch; ask user to paste the ciphertext JSON directly (simple and fast)
+    const pasted = prompt('Auto-discover failed. Paste the ciphertext JSON (the encrypted blob) now (cancel to abort):');
+    if(!pasted){ setStatus('Activation aborted by user.'); return; }
+    rawText = pasted;
+  }
+
+  // parse JSON and decrypt
+  let blob;
+  try {
+    blob = (typeof rawText === 'string') ? JSON.parse(rawText) : rawText;
+  } catch(e){
+    // try to extract JSON substring if the raw contains wrappers
+    try{
+      const m = rawText.match(/\{[\s\S]*\}/);
+      blob = m ? JSON.parse(m[0]) : null;
+    } catch(err){ blob = null; }
+  }
+  if(!blob){ setStatus('Could not parse blob JSON. Activation failed.'); alert('Blob JSON parse failed.'); return; }
+
+  setStatus('Decrypting in browser...');
+  let plain;
+  try {
+    plain = await decryptBlob(blob, pass);
+  } catch(e){
+    setStatus('Decrypt failed: wrong passphrase?');
+    alert('Decrypt failed: ' + (e && e.message ? e.message : e));
+    return;
+  }
+
+  // store plaintext in memory and token in session
+  window._rogers_plain = plain;
+  if(plain && plain.secrets && plain.secrets.github_token){
+    sessionStorage.setItem('gh.token', plain.secrets.github_token);
+    setStatus('Decryption OK — token loaded into sessionStorage (gh.token). Rogers ready.');
+  } else {
+    setStatus('Decryption OK — no github_token found in blob. Rogers ready (public-only).');
+  }
+
+  // show and enable Rogers UI
+  id('rogers_card').style.display = 'block';
+  id('activate').disabled = true;
+  id('passphrase').disabled = true;
+  setConsoleStatus('Rogers active. Type commands in the box and press Send.');
+  log('Rogers activated. Decrypted account: ' + (plain.meta && plain.meta.created_by ? plain.meta.created_by : '(unknown)'));
+}
+
+/* ---------- small client-side rogers logic ---------- */
+async function fetchGithubFileClient(owner, repo, path, ref){
+  // try raw first (public)
+  const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(ref)}/${path}`;
+  try{
+    const r = await fetch(rawUrl, { cache:'no-store' });
+    if(r.ok) return { ok:true, text: await r.text(), source: rawUrl };
+  }catch(e){ /* ignore */ }
+
+  // fallback to API with token if present
+  const token = sessionStorage.getItem('gh.token') || null;
+  if(token){
+    const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`;
+    const r = await fetch(api, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.v3.raw' } });
+    if(r.ok) return { ok:true, text: await r.text(), source: api };
+    const txt = await r.text().catch(()=>String(r.status));
+    return { ok:false, err:`GitHub API ${r.status}: ${txt}` };
+  }
+
+  return { ok:false, err:'Not found (raw failed) and no token available for API.' };
+}
+
+async function rogersHandle(query){
+  query = (query||'').trim();
+  if(!query) return 'Empty query';
+  const fetchMatch = /^fetch\\s+github\\s+([^\\s\\/]+)\\s+([^\\s\\/]+)\\s+([^\\s].*?)(?:\\s+([^\\s]+))?$/i.exec(query);
+  if(fetchMatch){
+    const owner = fetchMatch[1], repo = fetchMatch[2], path = fetchMatch[3], ref = fetchMatch[4] || 'main';
+    const res = await fetchGithubFileClient(owner, repo, path, ref);
+    if(res.ok){
+      if(res.text.length > 2500) return `Fetched ${path} from ${owner}/${repo}@${ref} (truncated):\\n\\n${res.text.slice(0,2500)}\\n\\n(Use raw URL for full)`;
+      return `Fetched ${path} from ${owner}/${repo}@${ref}:\\n\\n${res.text}`;
+    } else return 'Fetch error: ' + res.err;
+  }
+  if(/^hello$/i.test(query)) return 'Hello — Rogers (client) here.';
+  return 'Rogers (client) received: ' + query;
+}
+
+/* ---------- chat wiring ---------- */
+id('activate').addEventListener('click', activateRogers);
+
+id('send').addEventListener('click', async ()=>{
+  const q = id('query').value.trim();
+  if(!q) return;
+  log('You: ' + q);
+  setConsoleStatus('Thinking...');
+  try{
+    const r = await rogersHandle(q);
+    log('Rogers: ' + r);
+    setConsoleStatus('Done.');
+  }catch(e){
+    log('Rogers error: ' + (e && e.message ? e.message : e));
+    setConsoleStatus('Error');
+  }
+  id('query').value = '';
+});
+
+/* allow Enter to send */
+id('query').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); id('send').click(); }
+});
+
+/* initialize UI state */
+(function init(){
+  id('rogers_card').style.display = 'none';
+  if(sessionStorage.getItem('gh.token')){
+    setStatus('Token already in sessionStorage. Click Activate to attempt private fetch.');
+  }
+})();
+</script>
 </body>
 </html>
