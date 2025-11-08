@@ -39,6 +39,144 @@
 </style>
 </head>
 <body>
+<script>
+/*
+  Resilience & compatibility shim for PewPi UI
+  - map token function names so all pages can call either setToken or setSessionToken
+  - install delegated click/touch handlers so nav & send work even if original handlers failed to attach
+  - re-enable pointer-events on likely buttons & log to in-page debug_out element
+  Paste near top of index.html (right after <body>).
+*/
+
+(function(){
+  // safe guard: only run once
+  if(window.__pewpi_shim_installed) return;
+  window.__pewpi_shim_installed = true;
+
+  // debug logger (writes to debug box if present)
+  function shimLog(msg){
+    try {
+      const el = document.getElementById('debug_out') || document.getElementById('pewpi_debug_out');
+      const ts = new Date().toISOString().split('T')[1].slice(0,8);
+      if(el) el.textContent = (el.textContent && el.textContent.indexOf('{ no') === -1 ? el.textContent + '\n' : '') + '['+ts+'] ' + msg;
+      else console.log('[pewpi-shim] ' + msg);
+    } catch(e) { console.log('[pewpi-shim] ' + msg); }
+  }
+
+  // Token API compatibility: if shared helper exposes one name, create aliases
+  function ensureTokenAPI(){
+    try{
+      // if core provides setToken, alias setSessionToken and setSessionToken
+      if(window.PewPi && typeof window.PewPi.setToken === 'function'){
+        if(!window.PewPi.setSessionToken) {
+          window.PewPi.setSessionToken = window.PewPi.setToken;
+          shimLog('Aliased PewPi.setSessionToken -> PewPi.setToken');
+        }
+        if(!window.PewPi.setSessionTokenShim) {
+          window.PewPi.setSessionTokenShim = window.PewPi.setToken; // extra alias
+        }
+      }
+      // if page code defines setSessionToken but PewPi lacks setToken, alias globally
+      if(typeof window.setSessionToken === 'function' && !(window.PewPi && window.PewPi.setToken)){
+        window.PewPi = window.PewPi || {};
+        if(!window.PewPi.setToken) {
+          window.PewPi.setToken = window.setSessionToken;
+          shimLog('Aliased global setSessionToken -> PewPi.setToken');
+        }
+      }
+      // create safe wrappers on window for either name
+      if(!window.setToken) window.setToken = function(t){ try{ if(window.PewPi && typeof window.PewPi.setToken==='function') return window.PewPi.setToken(t); sessionStorage.setItem('gh.token', t); }catch(e){ shimLog('setToken wrapper err: '+e.message); } };
+      if(!window.setSessionToken) window.setSessionToken = function(t){ try{ if(window.PewPi && typeof window.PewPi.setSessionToken==='function') return window.PewPi.setSessionToken(t); return window.setToken(t); }catch(e){ shimLog('setSessionToken wrapper err: '+e.message); } };
+    }catch(e){ shimLog('ensureTokenAPI error: ' + (e && e.message)); }
+  }
+
+  // Re-enable pointer events on visible buttons to avoid CSS blocking
+  function enableButtons(){
+    try{
+      const buttons = Array.from(document.querySelectorAll('button, .nav-btn, .btn-primary, .btn-secondary'));
+      buttons.forEach(b => { try{ b.disabled = false; b.style.pointerEvents = 'auto'; b.style.opacity = ''; }catch(_){} });
+      shimLog('Enabled pointer-events on ' + buttons.length + ' buttons');
+    }catch(e){ shimLog('enableButtons error: '+e.message); }
+  }
+
+  // Delegated nav/send handler (listens on document so it works even if original handlers not attached)
+  function installDelegation(){
+    try{
+      if(window.__pewpi_delegate_installed) return;
+      window.__pewpi_delegate_installed = true;
+
+      document.addEventListener('click', function(ev){
+        try{
+          const nav = ev.target.closest && ev.target.closest('[data-view], .nav-btn');
+          if(nav && (nav.dataset && nav.dataset.view || nav.getAttribute('data-view'))){
+            ev.preventDefault();
+            const view = nav.dataset ? nav.dataset.view : nav.getAttribute('data-view');
+            // hide all views and show requested (works with your class 'view' and id 'view_NAME')
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            const el = document.getElementById('view_' + view);
+            if(el){ el.style.display = 'block'; }
+            // active styling
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList && b.classList.remove('active'));
+            if(nav.classList) nav.classList.add('active');
+            shimLog('Delegated nav -> ' + view);
+            return;
+          }
+
+          const send = ev.target.closest && ev.target.closest('#portal_send, button#portal_send, .btn-primary#portal_send');
+          if(send){
+            ev.preventDefault();
+            const qEl = document.getElementById('portal_query') || document.getElementById('query');
+            const consoleEl = document.getElementById('portal_console') || document.getElementById('console');
+            const q = qEl ? (qEl.value || '').trim() : '';
+            if(!q){ shimLog('Delegated send: empty query'); return; }
+            shimLog('Delegated send: ' + q);
+            (async ()=>{
+              try{
+                if(typeof rogersRespond === 'function'){
+                  const resp = await rogersRespond(q);
+                  if(consoleEl){
+                    consoleEl.textContent += (consoleEl.textContent?'\n':'') + 'You: ' + q + '\nRogers: ' + resp;
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+                  } else {
+                    alert('Rogers: ' + resp);
+                  }
+                } else {
+                  // fallback echo
+                  if(consoleEl){ consoleEl.textContent += (consoleEl.textContent?'\n':'') + 'You: ' + q + '\nRogers: (no handler)'; consoleEl.scrollTop = consoleEl.scrollHeight; }
+                  else alert('Rogers: (no handler)');
+                }
+              }catch(err){
+                shimLog('Delegated send error: ' + (err && err.message ? err.message : err));
+                alert('Send error: ' + (err && err.message ? err.message : err));
+              }
+            })();
+            return;
+          }
+        }catch(e){ shimLog('delegation outer error: ' + (e && e.message)); }
+      }, false);
+
+      // also add touchstart for mobile responsiveness
+      document.addEventListener('touchstart', function(ev){
+        try{
+          const nav = ev.target.closest && ev.target.closest('[data-view], .nav-btn');
+          if(nav){ ev.preventDefault(); nav.click(); }
+        }catch(e){}
+      }, { passive:false });
+
+      shimLog('Delegation handlers installed');
+    }catch(e){ shimLog('installDelegation error: '+e.message); }
+  }
+
+  // Run everything now and also after a short delay in case page loads more scripts
+  try{
+    ensureTokenAPI();
+    enableButtons();
+    installDelegation();
+    setTimeout(function(){ enableButtons(); installDelegation(); ensureTokenAPI(); }, 700);
+    setTimeout(function(){ enableButtons(); installDelegation(); ensureTokenAPI(); }, 2500);
+  }catch(e){ shimLog('startup error: ' + (e && e.message)); }
+})();
+</script>
 <header>
   <div>
     <h1>PewPi</h1>
