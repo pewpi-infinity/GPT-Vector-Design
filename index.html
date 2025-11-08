@@ -1,453 +1,385 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PewPi — Unified Admin / Rogers / Bots (with built-in debug)</title>
-<style>
-  :root{--bg:#071722;--card:#08242f;--muted:#9bb7c2;--accent:#16b07a;--panel:#041016}
-  body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#e9fbff}
-  .app{display:flex;height:100vh}
-  .drawer{width:60px;background:var(--card);display:flex;flex-direction:column;align-items:center;padding-top:12px;gap:8px;border-right:1px solid rgba(255,255,255,0.03)}
-  .btn{width:44px;height:44px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
-  .btn.active{background:var(--accent);color:#00221a}
-  .main{flex:1;display:flex;flex-direction:column}
-  header{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(0,0,0,0.03),transparent)}
-  h1{margin:0;font-size:1.05rem}
-  .muted{color:var(--muted);font-size:0.92rem}
-  .content{padding:16px;display:flex;gap:16px;height:calc(100vh - 64px);box-sizing:border-box}
-  .col{flex:1;min-width:320px;overflow:auto}
-  .card{background:var(--card);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
-  input,textarea,select,button{font:inherit}
-  input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
-  textarea{min-height:120px;resize:vertical;font-family:monospace}
-  .row{display:flex;gap:8px;margin-top:8px}
-  .col-2{display:flex;gap:8px}
-  .small{font-size:0.9rem;color:var(--muted)}
-  .console{background:var(--panel);padding:10px;border-radius:8px;min-height:180px;white-space:pre-wrap;overflow:auto;color:#cfeee6}
-  .action{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#00221a;cursor:pointer}
-  .secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:8px;border-radius:8px;cursor:pointer}
-  .danger{background:#ff7b7b;color:#3a0000}
-  label{font-size:0.9rem;color:var(--muted);display:block;margin-top:8px}
-  pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto}
-  .bot{padding:8px;border-radius:8px;background:#0a3740;margin-top:8px}
-  footer{padding:8px 12px;border-top:1px solid rgba(255,255,255,0.03);font-size:0.85rem;color:var(--muted)}
-  .tiny{font-size:0.8rem;color:var(--muted)}
-  /* debug panel styles */
-  #pewpi_debug_panel{position:fixed;right:12px;bottom:12px;background:rgba(1,8,12,0.95);color:#fff;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;z-index:99999;max-width:360px;font-family:monospace;font-size:12px}
-  #pewpi_debug_panel h4{margin:0 0 6px 0;font-size:12px}
-  #pewpi_debug_out{max-height:180px;overflow:auto;background:#021418;padding:6px;border-radius:6px;color:#cfeee6}
-  .dbg_btn{margin-top:6px;background:#333;border:1px solid rgba(255,255,255,0.04);color:#cfeee6;padding:6px;border-radius:6px;cursor:pointer}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PewPi — Buttons + Color Words + Admin</title>
+  <style>
+    :root{
+      --bg:#071722; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --panel:#041016;
+      --purple:#b695ff; --green:#75e39a; --red:#ff8b8b; --blue:#8fd1ff; --orange:#ffb06b; --yellow:#fff28f;
+    }
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#e9fbff}
+    header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    h1{margin:0;font-size:1.0rem}
+    .topbar{display:flex;gap:8px;align-items:center}
+    .nav-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .nav-btn.active{background:var(--accent);color:#00221a;border-color:transparent}
+    .wrap{display:flex;gap:16px;padding:12px;box-sizing:border-box;height:calc(100vh - 56px)}
+    .left{flex:1;overflow:auto}
+    .right{width:420px;min-width:300px;overflow:auto}
+    .card{background:var(--card);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
+    input,textarea,select,button{font:inherit}
+    input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+    textarea{min-height:100px;resize:vertical;font-family:monospace}
+    .row{display:flex;gap:8px;margin-top:8px}
+    .console{background:var(--panel);padding:10px;border-radius:8px;min-height:120px;white-space:pre-wrap;overflow:auto;color:#cfeee6}
+    label{font-size:0.9rem;color:var(--muted);display:block;margin-top:8px}
+    .tiny{font-size:0.85rem;color:var(--muted)}
+    .words{line-height:1.6;font-size:1.05rem}
+    .word{cursor:pointer;padding:2px 4px;border-radius:4px;text-decoration:none}
+    .word.purple{background:rgba(181,149,255,0.08);color:var(--purple)}
+    .word.green{background:rgba(117,227,154,0.06);color:var(--green)}
+    .word.red{background:rgba(255,139,139,0.06);color:var(--red)}
+    .word.blue{background:rgba(143,209,255,0.06);color:var(--blue)}
+    .word.orange{background:rgba(255,176,107,0.06);color:var(--orange)}
+    .word.yellow{background:rgba(255,242,143,0.06);color:var(--yellow);color:#222}
+    .meta{font-size:0.85rem;color:var(--muted);margin-top:6px}
+    .btn-primary{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#00221a;cursor:pointer}
+    .btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    @media(max-width:900px){ .wrap{flex-direction:column} .right{width:100%;min-width:0} }
+  </style>
 </head>
-// pewpi_fix_nav.js
-// Reattach and harden the drawer/nav handlers so hamburger buttons work on touch devices.
-// Add this before </body> in index.html or save as pewpi_fix_nav.js and include it.
-
-(function(){
-  function dbg(msg){
-    try{
-      // update debug panel if present
-      var out = document.getElementById('pewpi_debug_out');
-      if(out) out.textContent = (out.textContent && out.textContent !== '{ no errors }' ? out.textContent + '\n' : '') + msg;
-      console.log('[pewpi_fix_nav] ' + msg);
-    }catch(e){ console.log('[pewpi_fix_nav] dbg error', e); }
-  }
-
-  function showView(name){
-    // hide all view.* and show single
-    document.querySelectorAll('.view').forEach(function(v){ v.style.display = 'none'; });
-    var el = document.getElementById('view_' + name);
-    if(el) { el.style.display = 'block'; dbg('Showing view: ' + name); }
-    else dbg('View not found: ' + name);
-  }
-
-  function setActiveButton(btn){
-    document.querySelectorAll('.btn').forEach(function(b){ b.classList.remove('active'); });
-    if(btn) btn.classList.add('active');
-  }
-
-  function attachHandlers(){
-    var buttons = Array.prototype.slice.call(document.querySelectorAll('.btn[data-view]'));
-    if(buttons.length === 0){
-      dbg('No nav buttons found (query returned 0).');
-    }
-    buttons.forEach(function(btn){
-      // ensure clickable
-      btn.disabled = false;
-      btn.style.pointerEvents = 'auto';
-      btn.style.touchAction = 'manipulation';
-      // avoid duplicate listeners
-      if(btn.__pewpi_nav_attached) return;
-      // unified handler
-      var handler = function(ev){
-        try{
-          // allow touchstart to act like click
-          if(ev && ev.type === 'touchstart') ev.preventDefault();
-          var view = btn.getAttribute('data-view') || btn.dataset.view;
-          setActiveButton(btn);
-          showView(view);
-        }catch(e){
-          dbg('nav handler error: ' + (e && e.message ? e.message : e));
-        }
-      };
-      // attach both click and touchstart for mobile
-      btn.addEventListener('click', handler, false);
-      btn.addEventListener('touchstart', handler, { passive:false });
-      btn.__pewpi_nav_attached = true;
-      dbg('Attached handlers to nav button: ' + (btn.id || btn.textContent.trim()));
-    });
-  }
-
-  // If an overlay element is blocking input, make it temporarily non-blocking and highlight it so you can see/adjust
-  function neutralizeHighZOverlays(){
-    var candidates = Array.prototype.slice.call(document.querySelectorAll('body *')).filter(function(el){
-      try{
-        var s = getComputedStyle(el);
-        if(s.display === 'none' || s.visibility === 'hidden') return false;
-        var pos = s.position;
-        var z = parseInt(s.zIndex || 0, 10);
-        return (pos === 'fixed' || pos === 'absolute') && z > 50;
-      }catch(e){ return false; }
-    });
-    if(candidates.length === 0){ dbg('No high-Z overlays detected.'); return; }
-    candidates.forEach(function(el){
-      el.dataset.__pewpi_oldPointer = el.style.pointerEvents || '';
-      el.style.pointerEvents = 'auto'; // ensure clickable elements aren't masked
-      el.style.outline = '2px dashed rgba(255,165,0,0.9)';
-    });
-    dbg('Adjusted ' + candidates.length + ' high-Z elements (outlined). If UI was blocked, try clicking nav again.');
-  }
-
-  // run on DOM ready
-  function ready(fn){
-    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
-    else fn();
-  }
-
-  ready(function(){
-    try{
-      attachHandlers();
-      neutralizeHighZOverlays();
-      // also re-run after a short delay in case other scripts load later and overwrite handlers
-      setTimeout(function(){ attachHandlers(); }, 700);
-      setTimeout(function(){ attachHandlers(); }, 2000);
-      dbg('pewpi_fix_nav initialized');
-      // If there is no active view visible, show portal by default
-      if(!document.querySelectorAll('.view').length) return;
-      var anyVisible = Array.prototype.slice.call(document.querySelectorAll('.view')).some(function(v){ return v.style.display !== 'none'; });
-      if(!anyVisible) showView('portal');
-    }catch(e){
-      dbg('Initialization error: ' + (e && e.message ? e.message : e));
-    }
-  });
-
-  // Expose for debug
-  window.__pewpi_fix_nav = { attachHandlers: attachHandlers, neutralizeHighZOverlays: neutralizeHighZOverlays, dbg: dbg };
-})();
 <body>
-<div class="app">
-  <div class="drawer" role="navigation" aria-label="Main menu">
-    <button class="btn active" data-view="portal" title="Main Portal" id="nav_portal">P</button>
-    <button class="btn" data-view="admin" title="Admin / Login" id="nav_admin">A</button>
-    <button class="btn" data-view="bots" title="Bot Farm" id="nav_bots">B</button>
-    <button class="btn" data-view="logs" title="Logs & Encrypt" id="nav_logs">L</button>
-    <button class="btn" data-view="terminal" title="Terminal / Commits" id="nav_terminal">T</button>
-  </div>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1>PewPi</h1>
+      <div class="tiny">Unified Portal</div>
+    </div>
 
-  <div class="main">
-    <header>
-      <h1>PewPi — Unified Control</h1>
-      <div style="flex:1"></div>
-      <div class="muted tiny" id="session_info">no session</div>
-    </header>
+    <div style="flex:1"></div>
 
-    <div class="content">
-      <div class="col" id="left_col">
-        <div class="card view" id="view_portal">
-          <label><strong>Main Rogers Portal</strong></label>
-          <div class="small">Type your commands or ask Rogers. If a GitHub token is loaded it will be used for private repo operations.</div>
-          <div class="console" id="portal_console">{ Rogers ready — unlock admin to load token }</div>
-          <div class="row" style="margin-top:8px">
-            <input id="portal_query" placeholder='Say "hello" or "fetch github owner repo path"' />
-            <button class="action" id="portal_send">Send</button>
-          </div>
-        </div>
+    <div class="topbar" role="navigation" aria-label="Main navigation">
+      <button class="nav-btn active" data-view="portal" id="nav_portal">Portal</button>
+      <button class="nav-btn" data-view="admin" id="nav_admin">Admin</button>
+      <button class="nav-btn" data-view="bots" id="nav_bots">Bots</button>
+      <button class="nav-btn" data-view="logs" id="nav_logs">Logs</button>
+      <button class="nav-btn" data-view="terminal" id="nav_terminal">Terminal</button>
+    </div>
+  </header>
 
-        <div class="card view" id="view_bots" style="display:none">
-          <label><strong>Bot Farm (manual approvals)</strong></label>
-          <div class="small">Create browser bots, run them on demand. Child spawn requests require manual approval.</div>
-          <div class="row">
-            <input id="bot_name" placeholder="bot name (eg. fetcher-1)" />
-            <select id="bot_type">
-              <option value="echo">echo</option>
-              <option value="transform">transform</option>
-              <option value="fetch_github">fetch_github</option>
-            </select>
-            <button class="action" id="create_bot">Create</button>
-          </div>
-          <div id="bots_list" style="margin-top:10px"></div>
-        </div>
+  <div class="wrap">
+    <div class="left">
+      <!-- PORTAL -->
+      <div class="card view" id="view_portal">
+        <label><strong>Main Portal</strong></label>
+        <div class="tiny">Click any colored word in the sentence below to act on it. Yellow words start the App Builder flow.</div>
 
-        <div class="card view" id="view_logs" style="display:none">
-          <label><strong>Activity & Logs</strong></label>
-          <div class="small">In-memory session log. Encrypt & commit when ready. Save encrypted settings to localStorage to remember across reloads.</div>
-          <pre id="log_view">{ no events }</pre>
-          <label>Encryption passphrase (for local encrypted settings / logs)</label>
-          <input id="log_pass" type="password" placeholder="put passphrase here (will NOT be stored)" />
-          <div class="row">
-            <button class="action" id="encrypt_copy">Encrypt & copy to clipboard</button>
-            <button class="secondary" id="encrypt_commit">Encrypt & commit to repo</button>
-            <button class="secondary" id="save_local">Save encrypted settings locally</button>
-          </div>
-          <label style="margin-top:8px">Last encrypted blob preview</label>
-          <pre id="last_ct">{ none }</pre>
-          <div id="commit_status" class="tiny"></div>
-        </div>
-
-        <div class="card view" id="view_terminal" style="display:none">
-          <label><strong>Admin Terminal & GitHub Commits</strong></label>
-          <div class="small">Use the PAT loaded in Admin to test the token and to commit files. All tokens stay in memory only unless you copy them manually.</div>
-          <label>Commit owner / repo / branch / path</label>
-          <div class="row">
-            <input id="commit_owner" placeholder="owner" />
-            <input id="commit_repo" placeholder="repo" />
-          </div>
-          <div class="row">
-            <input id="commit_branch" placeholder="branch" value="main" />
-            <input id="commit_path" placeholder="path (eg. pewpi_bot_logs.json)" />
-          </div>
-          <label>Commit message</label>
-          <input id="commit_msg" placeholder="Commit message" value="Add encrypted log via UI" />
-          <label>File content (paste or generated ciphertext)</label>
-          <textarea id="commit_content" placeholder="// paste file content or ciphertext JSON"></textarea>
-          <div class="row" style="margin-top:8px">
-            <button class="action" id="check_file">Check exists</button>
-            <button class="action" id="do_commit">Commit</button>
-            <button class="secondary" id="preview_b64">Preview base64</button>
-          </div>
-          <label style="margin-top:8px">Terminal output</label>
-          <pre id="terminal_out" class="console">{ terminal }</pre>
-        </div>
-      </div>
-
-      <div class="col" id="right_col">
-        <div class="card view" id="view_admin" style="display:none">
-          <label><strong>Admin / Login</strong></label>
-          <div class="small">Enter the passphrase in the field below (simple "put it here" design). You can also paste the ciphertext JSON or fetch it from raw URL. Settings can be saved encrypted locally so you don't re-enter.</div>
-          <label>Put it here</label>
-          <div class="row">
-            <input id="admin_pass" type="password" placeholder="Put it here" />
-            <button class="action" id="admin_unlock">Unlock</button>
-          </div>
-          <label style="margin-top:8px">Ciphertext JSON (optional)</label>
-          <textarea id="admin_blob" placeholder='Paste ciphertext JSON here (if not embedded)'></textarea>
-          <div class="row">
-            <input id="admin_rawurl" placeholder="raw.githubusercontent URL (optional)" />
-            <button class="secondary" id="fetch_blob">Fetch</button>
-            <button class="secondary" id="paste_clip">Paste clipboard</button>
-          </div>
-          <label style="margin-top:8px">In-memory PAT (for commits)</label>
-          <div class="row">
-            <input id="admin_pat" type="password" placeholder="Paste PAT here (memory only)" />
-            <button class="secondary" id="load_pat">Load</button>
-            <button class="secondary" id="clear_pat">Clear</button>
-          </div>
-          <div id="admin_status" class="tiny">No session</div>
-          <label style="margin-top:8px">Remember (encrypted, localStorage)</label>
-          <div class="row">
-            <button class="secondary" id="save_settings">Save encrypted settings locally</button>
-            <button class="secondary" id="load_settings">Load encrypted settings</button>
-            <button class="secondary danger" id="clear_settings">Clear saved settings</button>
-          </div>
-          <label style="margin-top:8px">Decrypted plaintext preview</label>
-          <pre id="admin_plain">{ none }</pre>
-          <div class="row">
-            <button class="action" id="load_token_from_plain">Load github_token into session</button>
-            <button class="secondary" id="re_encrypt">Re-encrypt (change passphrase)</button>
+        <div style="margin-top:10px" class="card">
+          <label>Interactive Sentences</label>
+          <div class="words" id="words_area">
+            <!-- Example sentence: words wrapped and status set via data-status -->
+            <span class="word purple" data-status="purple" data-key="purple">Purple</span> are already working with you.
+            <span class="word green" data-status="green" data-key="green">Green</span> are ready.
+            <span class="word red" data-status="red" data-key="red">Red</span> have errors.
+            <span class="word blue" data-status="blue" data-key="blue">Blue</span> are awaiting info.
+            <span class="word orange" data-status="orange" data-key="orange">Orange</span> are risky.
+            <span class="word yellow" data-status="yellow" data-key="maps">Maps</span> are producing and making money.
+            Click a colored word to interact.
           </div>
         </div>
 
         <div class="card">
-          <label><strong>Quick Help</strong></label>
-          <div class="small">Steps: 1) Admin → Paste ciphertext or fetch it. 2) Type passphrase in "Put it here" → Unlock. 3) Click "Load github_token into session". 4) Use Portal to chat or Bots to run tasks. 5) Encrypt & Commit logs in Logs/Terminal using PAT.</div>
+          <label>Portal Chat</label>
+          <div id="portal_console" class="console">Rogers: ready.</div>
+          <div class="row" style="margin-top:8px">
+            <input id="portal_query" placeholder='Type "fetch github owner repo path" or "hello"' />
+            <button class="btn-primary" id="portal_send">Send</button>
+          </div>
         </div>
+      </div>
+
+      <!-- BOTS -->
+      <div class="card view" id="view_bots" style="display:none">
+        <label><strong>Bot Farm (manual)</strong></label>
+        <div class="tiny">Create small browser bots (manual approval for spawns).</div>
+        <div class="row">
+          <input id="bot_name" placeholder="bot name" />
+          <select id="bot_type"><option value="echo">echo</option><option value="transform">transform</option><option value="fetch_github">fetch_github</option></select>
+          <button class="btn-primary" id="create_bot">Create</button>
+        </div>
+        <div id="bots_list" style="margin-top:12px"></div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="card view" id="view_logs" style="display:none">
+        <label><strong>Logs & Activity</strong></label>
+        <div id="log_view" class="console">{ no events }</div>
+        <div class="row" style="margin-top:8px">
+          <input id="log_pass" type="password" placeholder="Encryption passphrase (not saved)" />
+          <button class="btn-primary" id="encrypt_copy">Encrypt & Copy</button>
+          <button class="btn-secondary" id="encrypt_commit">Encrypt & Commit (needs PAT)</button>
+        </div>
+        <pre id="last_ct" style="margin-top:8px;background:#021418;padding:8px;border-radius:6px;color:#cfeee6;max-height:160px;overflow:auto">{ none }</pre>
+      </div>
+
+      <!-- TERMINAL -->
+      <div class="card view" id="view_terminal" style="display:none">
+        <label><strong>Terminal / Commits</strong></label>
+        <div class="tiny">Use this to commit encrypted blobs. Load PAT in Admin first.</div>
+        <label>Owner / Repo</label>
+        <div class="row"><input id="commit_owner" placeholder="owner" /><input id="commit_repo" placeholder="repo" /></div>
+        <label>Branch / Path</label>
+        <div class="row"><input id="commit_branch" placeholder="branch" value="main" /><input id="commit_path" placeholder="path (eg. logs.json)" /></div>
+        <label>Message</label>
+        <input id="commit_msg" placeholder="Commit message" value="Add encrypted log" />
+        <label>Content (paste ciphertext JSON)</label>
+        <textarea id="commit_content"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn-primary" id="do_commit">Commit</button>
+          <button class="btn-secondary" id="check_file">Check Exists</button>
+        </div>
+        <pre id="terminal_out" class="console" style="margin-top:8px">{ terminal }</pre>
       </div>
     </div>
 
-    <footer>Built for you — all client-side. Tokens stay in memory unless you copy/paste them. Revoke tokens when done.</footer>
-  </div>
-</div>
+    <div class="right">
+      <div class="card view" id="view_admin" style="display:none">
+        <label><strong>Admin / Unlock</strong></label>
+        <div class="tiny">Paste ciphertext or enter your passphrase. "Put it here" field accepts the passphrase.</div>
+        <label>Put it here</label>
+        <div class="row">
+          <input id="admin_pass" type="password" placeholder="Put it here" />
+          <button class="btn-primary" id="admin_unlock">Unlock</button>
+        </div>
 
-<!-- Debug panel (always present, visible to user) -->
-<div id="pewpi_debug_panel" aria-live="polite">
-  <h4>Debug — PewPi</h4>
-  <div id="pewpi_debug_out">{ no errors }</div>
-  <div style="display:flex;gap:6px">
-    <button class="dbg_btn" id="dbg_fix_buttons">Run Fix (enable clicks)</button>
-    <button class="dbg_btn" id="dbg_show_errors">Show Recent Errors</button>
-    <button class="dbg_btn" id="dbg_toggle_overlay">Toggle blocking overlay check</button>
+        <label style="margin-top:8px">Ciphertext JSON (optional)</label>
+        <textarea id="admin_blob" placeholder='Paste ciphertext JSON here if not embedded'></textarea>
+        <div class="row" style="margin-top:8px">
+          <input id="admin_rawurl" placeholder="raw.githubusercontent.com raw URL (optional)" />
+          <button class="btn-secondary" id="fetch_blob">Fetch</button>
+          <button class="btn-secondary" id="paste_clip">Paste clipboard</button>
+        </div>
+
+        <label style="margin-top:8px">In-memory PAT (for commits)</label>
+        <div class="row">
+          <input id="admin_pat" type="password" placeholder="Paste PAT here (memory only)" />
+          <button class="btn-secondary" id="load_pat">Load</button>
+          <button class="btn-secondary" id="clear_pat">Clear</button>
+        </div>
+
+        <div id="admin_status" class="tiny" style="margin-top:8px">No session</div>
+
+        <label style="margin-top:8px">Decrypted preview</label>
+        <pre id="admin_plain" style="max-height:160px;overflow:auto">{ none }</pre>
+        <div class="row" style="margin-top:8px">
+          <button class="btn-primary" id="load_token_from_plain">Load github_token into session</button>
+          <button class="btn-secondary" id="re_encrypt">Re-encrypt (change passphrase)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label><strong>Word Info</strong></label>
+        <div id="word_info" class="tiny">Click a colored word to see info and actions.</div>
+        <div style="margin-top:8px">
+          <button class="btn-secondary" id="clear_log">Clear Session Log</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label><strong>Debug</strong></label>
+        <div id="debug_out" class="console">{ no debug }</div>
+      </div>
+    </div>
   </div>
-  <div style="margin-top:6px;font-size:11px;color:#9bb7c2">If buttons are stuck, click "Run Fix". Errors will appear above.</div>
-</div>
 
 <script>
-/*
-  Built-in debug + fixes for when DevTools isn't available.
-  - Captures window.onerror and unhandledrejection
-  - Logs recent errors into the visible debug panel
-  - Provides "Run Fix" to re-enable buttons, remove pointer-blockers and attach fallback handlers
-  - Auto-attaches fallback send handler for Portal if main handler missing
+/* Lightweight single-file app:
+   - Visible nav buttons (no hamburger)
+   - Interactive color-coded words with click actions
+   - Admin decrypt + load token to sessionStorage
+   - Portal chat + simple rogersRespond
+   - Basic bot farm + logs
+   Mobile touch-friendly, defensive handlers and visible debug output.
 */
 
-(function(){
-  const out = document.getElementById('pewpi_debug_out');
-  const ERRLOG = [];
-  function logDebug(msg){
-    const ts = new Date().toISOString().split('T')[1].slice(0,8);
-    ERRLOG.push({ts, msg});
-    // keep last 30
-    if(ERRLOG.length>30) ERRLOG.shift();
-    out.textContent = ERRLOG.map(e=>`[${e.ts}] ${e.msg}`).join('\n');
+/* ---------- Utilities ---------- */
+function $(id){ return document.getElementById(id); }
+function logDebug(msg){
+  const el = $('debug_out');
+  const ts = new Date().toISOString().split('T')[1].slice(0,8);
+  el.textContent = (el.textContent && el.textContent !== '{ no debug }' ? el.textContent + '\n' : '') + `[${ts}] ${msg}`;
+  el.scrollTop = el.scrollHeight;
+}
+function appendLog(entry){
+  SESSION_LOG.push({ ts: new Date().toISOString(), entry });
+  $('log_view').textContent = JSON.stringify(SESSION_LOG, null, 2);
+}
+
+/* ---------- Simple WebCrypto helpers (PBKDF2 250k + AES-GCM) ---------- */
+const ITER = 250000;
+function u8FromB64(s){ const bin = atob(s); const u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+function u8ToB64(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
+
+async function deriveKey(pass, saltU8, usages=['encrypt','decrypt']){
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt: saltU8, iterations: ITER, hash: 'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, usages);
+}
+
+async function decryptBlob(blob, pass){
+  if(!blob || !blob.ct) throw new Error('Invalid ciphertext blob');
+  const salt = u8FromB64(blob.salt), iv = u8FromB64(blob.iv), ct = u8FromB64(blob.ct);
+  const key = await deriveKey(pass, salt, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct.buffer);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+async function encryptJSON(obj, pass){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return { v:1, salt: u8ToB64(salt), iv: u8ToB64(iv), ct: u8ToB64(new Uint8Array(ct)), created_at: new Date().toISOString() };
+}
+
+/* ---------- Session and token management ---------- */
+let SESSION_LOG = [];
+let INMEM_TOKEN = null;
+function setToken(t){
+  INMEM_TOKEN = t;
+  try { sessionStorage.setItem('gh.token', t); } catch(e){}
+  // Broadcast to other tabs (best-effort)
+  try{ const ch = new BroadcastChannel('pewpi-token'); ch.postMessage({ token: t }); ch.close(); }catch(e){}
+  $('admin_status').textContent = 'Token loaded in session';
+  logDebug('Token set in sessionStorage');
+}
+function clearToken(){
+  INMEM_TOKEN = null;
+  try { sessionStorage.removeItem('gh.token'); } catch(e){}
+  $('admin_status').textContent = 'Token cleared';
+  logDebug('Token cleared');
+}
+function getToken(){ return sessionStorage.getItem('gh.token') || INMEM_TOKEN || null; }
+
+/* ---------- Navigation (visible buttons) ---------- */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  const el = $('view_' + name);
+  if(el) el.style.display = 'block';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn = document.querySelector('.nav-btn[data-view="'+name+'"]');
+  if(btn) btn.classList.add('active');
+}
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  // attach click and touch handlers
+  btn.addEventListener('click', ()=> showView(btn.dataset.view));
+  btn.addEventListener('touchstart', (ev)=>{ ev.preventDefault(); showView(btn.dataset.view); }, { passive:false });
+});
+
+/* ---------- Interactive words system ---------- */
+const WORD_ACTIONS = {
+  purple: { label:'Already working', info:'Purple items are integrated and functional.' },
+  green: { label:'Ready', info:'Green items are ready to use.' },
+  red: { label:'Error', info:'Red items indicate errors. Inspect logs.' },
+  blue: { label:'Awaiting', info:'Blue items need extra info.' },
+  orange: { label:'Risky', info:'Orange items are risky; proceed with caution.' },
+  yellow: { label:'App Builder', info:'Yellow items can start the App Builder flow.' }
+};
+
+function onWordClick(ev){
+  const el = ev.currentTarget;
+  const status = el.dataset.status;
+  const key = el.dataset.key || el.textContent.trim();
+  const info = WORD_ACTIONS[status] || { label:status, info:'' };
+  $('word_info').innerHTML = `<strong style="color:inherit">${key}</strong><div class="meta">${info.label}</div><div class="tiny" style="margin-top:6px">${info.info}</div>`;
+  appendLog(`Word clicked: ${key} (${status})`);
+  if(status === 'yellow'){
+    // Start App Builder flow (simple prompt-based)
+    setTimeout(()=> startAppBuilder(key), 50);
   }
-
-  // global error capture
-  window.addEventListener('error', function(e){
-    try{ logDebug(`ERROR: ${e.message} @ ${e.filename}:${e.lineno}`); }catch(_){}
-  });
-  window.addEventListener('unhandledrejection', function(ev){
-    try{ logDebug(`PROMISE REJECT: ${ev.reason && ev.reason.message ? ev.reason.message : JSON.stringify(ev.reason)}`); }catch(_){}
-  });
-
-  // helper: re-enable buttons and attach logging
-  function enableButtonsAndAttachLogging(){
-    document.querySelectorAll('button, input[type="button"], input[type="submit"]').forEach(btn=>{
-      try{
-        btn.disabled = false;
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-        btn.addEventListener('click', ()=>{ logDebug(`CLICK: ${btn.id||btn.textContent.trim()}`); }, false);
-      }catch(e){ logDebug('enableButtons error: ' + e.message); }
-    });
-    logDebug('Buttons enabled and logging attached.');
+  if(status === 'red'){
+    alert('This item is marked RED (error). Check logs or ask for assistance.');
   }
+}
 
-  // helper: detect and disable blocking overlays (temporary)
-  let overlayDisabled = false;
-  function toggleOverlayCheck(){
-    if(!overlayDisabled){
-      // find high z-index fixed/absolute elements and temporarily disable pointer-events
-      const candidates = Array.from(document.querySelectorAll('body *')).filter(el=>{
-        const s = getComputedStyle(el);
-        if(s.display==='none' || s.visibility==='hidden') return false;
-        const pos = s.position;
-        if(!(pos === 'fixed' || pos === 'absolute')) return false;
-        const z = parseInt(s.zIndex||0,10);
-        return z > 50;
-      });
-      if(candidates.length===0) { logDebug('No high-z overlays found.'); overlayDisabled = false; return; }
-      candidates.forEach(el=>{
-        el.dataset._pewpi_oldPointer = el.style.pointerEvents || '';
-        el.dataset._pewpi_oldOutline = el.style.outline || '';
-        el.style.pointerEvents = 'none';
-        el.style.outline = '2px dashed rgba(255,0,0,0.6)';
-      });
-      overlayDisabled = true;
-      logDebug('Disabled pointer-events on possible overlays ('+candidates.length+' elements). Click "Toggle blocking overlay check" to restore.');
-    } else {
-      // restore
-      document.querySelectorAll('[data-_pewpi_oldPointer]').forEach(el=>{
-        el.style.pointerEvents = el.dataset._pewpi_oldPointer || '';
-        el.style.outline = el.dataset._pewpi_oldOutline || '';
-        delete el.dataset._pewpi_oldPointer;
-        delete el.dataset._pewpi_oldOutline;
-      });
-      overlayDisabled = false;
-      logDebug('Restored overlay pointer-events.');
+function attachWordHandlers(){
+  document.querySelectorAll('.word').forEach(w=>{
+    w.removeEventListener('click', onWordClick); // safe detach
+    w.addEventListener('click', onWordClick);
+    w.addEventListener('touchstart', ev=>{ ev.preventDefault(); onWordClick.call(w, ev); }, { passive:false });
+  });
+}
+
+/* App Builder simple flow for yellow words */
+async function startAppBuilder(topic){
+  try{
+    const ok = confirm(`Start App Builder for "${topic}"?`);
+    if(!ok) { appendLog(`App Builder cancelled for ${topic}`); return; }
+    // ask quick questions
+    const appName = prompt('App name (short):', topic + ' App');
+    if(!appName) { appendLog('App Builder aborted (no name)'); return; }
+    const purpose = prompt('What is the main purpose of this app?', 'Mapping / navigation / suggestions');
+    const users = prompt('Target users (comma separated)', 'me,team');
+    // produce a small "scaffold" preview (not publishing anything)
+    const preview = { appName, topic, purpose, users: users ? users.split(',').map(s=>s.trim()) : [], created: new Date().toISOString() };
+    appendLog(`App Builder created stub: ${appName} for topic ${topic}`);
+    alert('App scaffold created in-session. Check Logs view to copy encrypted or commit.');
+    // record scaffold into session log
+    appendLog('APP_SCAFFOLD: ' + JSON.stringify(preview));
+  }catch(e){ appendLog('App Builder error: ' + (e && e.message)); logDebug('App Builder error: ' + (e && e.stack || e)); }
+}
+
+/* ---------- Admin: fetch & decrypt ---------- */
+$('paste_clip') && $('paste_clip').addEventListener('click', async ()=>{
+  try{ const t = await navigator.clipboard.readText(); $('admin_blob').value = t; $('admin_status').textContent = 'Pasted from clipboard'; }catch(e){ $('admin_status').textContent = 'Clipboard read failed'; logDebug('Clipboard read failed: ' + e.message); }
+});
+$('fetch_blob') && $('fetch_blob').addEventListener('click', async ()=>{
+  const url = $('admin_rawurl').value.trim(); if(!url) return alert('Enter raw URL');
+  $('admin_status').textContent = 'Fetching...'; try{ const txt = await fetch(url,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }); $('admin_blob').value = txt; $('admin_status').textContent = 'Fetched'; appendLog('Fetched blob from raw URL'); }catch(e){ $('admin_status').textContent = 'Fetch failed: ' + e.message; logDebug('Fetch blob error: ' + e.message); }
+});
+
+$('admin_unlock').addEventListener('click', async ()=>{
+  const pass = $('admin_pass').value;
+  let txt = $('admin_blob').value.trim();
+  $('admin_status').textContent = 'Unlocking...';
+  try{
+    if(!txt){
+      // no blob provided; try check localStorage embedded
+      const saved = localStorage.getItem('pewpi_embedded_ct');
+      if(saved){ txt = saved; $('admin_status').textContent = 'Using saved embedded ciphertext'; }
+      else throw new Error('No ciphertext found; paste it or fetch raw URL.');
     }
-  }
+    const blob = JSON.parse(txt);
+    const plain = await decryptBlob(blob, pass);
+    $('admin_plain').textContent = JSON.stringify(plain, null, 2);
+    window._decrypted_plain = plain;
+    $('admin_status').textContent = 'Decrypted OK';
+    appendLog('Decryption succeeded');
+    // auto-load token if present
+    if(plain && plain.secrets && plain.secrets.github_token){
+      setToken(plain.secrets.github_token);
+      $('admin_status').textContent += ' — token auto-loaded';
+      showView('portal');
+      portalAnnounce('Token loaded from decrypted blob.');
+    }
+  }catch(e){ $('admin_status').textContent = 'Unlock failed: ' + (e && e.message ? e.message : e); logDebug('Decrypt error: ' + (e && e.stack || e)); appendLog('Decrypt failed'); }
+});
 
-  // fallback portal send handler if real handler wasn't attached
-  function attachFallbackPortalSend(){
-    const portalSend = document.getElementById('portal_send');
-    const portalQuery = document.getElementById('portal_query');
-    if(!portalSend || !portalQuery){ logDebug('Portal send/query not found for fallback attach.'); return; }
-    // avoid double-attach
-    if(portalSend.dataset._pewpi_fallback_attached) { logDebug('Portal fallback already attached.'); return; }
-    portalSend.addEventListener('click', async function(){
-      const q = (portalQuery.value || '').trim();
-      if(!q){ logDebug('Portal send clicked with empty query'); return; }
-      logDebug('Fallback portal send handling query: ' + q);
-      // attempt to use rogersRespond if available
-      if(typeof rogersRespond === 'function'){
-        try{
-          const c = document.getElementById('portal_console');
-          if(c) c.textContent += `\nYou: ${q}\nRogers: (thinking...)`;
-          const resp = await rogersRespond(q);
-          if(c){
-            // remove the thinking suffix
-            c.textContent = c.textContent.replace(/\nRogers: \(thinking...\)$/, '');
-            c.textContent += `\nRogers: ${resp}`;
-            c.scrollTop = c.scrollHeight;
-          } else {
-            alert('Rogers: ' + resp);
-          }
-        }catch(e){ logDebug('rogersRespond threw: ' + (e && e.message ? e.message : e)); alert('Rogers error: ' + (e && e.message ? e.message : e)); }
-      } else {
-        // very basic fallback echo
-        const c = document.getElementById('portal_console');
-        if(c) c.textContent += `\nYou: ${q}\nRogers: (no handler available)`;
-        logDebug('rogersRespond not found; fallback echo used.');
-      }
-    });
-    portalSend.dataset._pewpi_fallback_attached = '1';
-    logDebug('Fallback portal send handler attached.');
-  }
+$('load_pat') && $('load_pat').addEventListener('click', ()=>{
+  const t = $('admin_pat').value.trim();
+  if(!t) return alert('Paste PAT first');
+  setToken(t);
+  $('admin_status').textContent = 'PAT loaded (in-memory)';
+  appendLog('PAT loaded in-memory');
+});
+$('clear_pat') && $('clear_pat').addEventListener('click', ()=>{ clearToken(); });
 
-  // main "Run Fix" action: enable buttons, toggle overlays off and attach fallback
-  document.getElementById('dbg_fix_buttons').addEventListener('click', ()=>{
-    try{
-      enableButtonsAndAttachLogging();
-      attachFallbackPortalSend();
-      logDebug('Run Fix executed.');
-      alert('Run Fix executed. Try clicking the buttons now. See debug panel for messages.');
-    }catch(e){ logDebug('Run Fix error: ' + e.message); alert('Run Fix error: ' + e.message); }
-  });
+$('load_token_from_plain') && $('load_token_from_plain').addEventListener('click', ()=>{
+  try{
+    const txt = $('admin_plain').textContent;
+    if(!txt || txt.includes('none')) return alert('Nothing decrypted');
+    const obj = JSON.parse(txt);
+    if(!obj.secrets || !obj.secrets.github_token) return alert('No github_token present');
+    setToken(obj.secrets.github_token);
+    $('admin_status').textContent = 'Token loaded from plaintext';
+    appendLog('Token loaded from plaintext');
+  }catch(e){ $('admin_status').textContent = 'Load failed: ' + (e && e.message); logDebug('Load token from plain failed: ' + e); }
+});
 
-  document.getElementById('dbg_show_errors').addEventListener('click', ()=>{
-    alert(ERRLOGToText());
-  });
-
-  function ERRLOGToText(){ return ERRLOG.map(e=>`[${e.ts}] ${e.msg}`).join('\n'); }
-
-  document.getElementById('dbg_toggle_overlay').addEventListener('click', ()=>{ toggleOverlayCheck(); });
-
-  // On load, automatically attempt a gentle fix (don't be intrusive)
-  window.addEventListener('load', ()=>{ setTimeout(()=>{ try{ enableButtonsAndAttachLogging(); attachFallbackPortalSend(); logDebug('Auto-fix on load ran.'); }catch(e){ logDebug('Auto-fix error: ' + e.message); } }, 400); });
-
-  // small helper to show debug messages to console as well
-  window.addEventListener('error', (e)=>{ console.error('PewPi captured error', e.message, e.filename+':'+e.lineno); });
-  window.addEventListener('unhandledrejection', (ev)=>{ console.error('PewPi captured promise rejection', ev.reason); });
-
-  // expose debug helpers for further manual calls if needed
-  window.PewPiDebug = { logDebug, enableButtonsAndAttachLogging, attachFallbackPortalSend, toggleOverlayCheck, ERRLOG };
-})();
-</script>
-
-<!-- Core logic scripts (kept inline here for single-file convenience).
-     If you installed an external pewpi_core.js you can remove the inline portion and include that instead.
--->
-<script>
-/* Minimal core functions used by the UI (decrypt/encrypt, GitHub ops and simple chat/bots).
-   This code intentionally keeps token in-memory/session and exposes a few helpers on window.PewPi.
-*/
-(function(){
-  const ITER = 250000;
-  function u8FromB64(s){ const bin = atob(s); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
-  function u8ToB64(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
-  async function deriveKey(pass, saltU8, usages=['encrypt','decrypt']){ const enc = new TextEncoder(); const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2', salt: saltU8, iterations: ITER, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, usages); }
-  async function decryptBlob(blob, pass){ if(!blob || !blob.ct) throw new Error('Invalid blob'); const salt=u8FromB64(blob.salt), iv=u8FromB64(blob.iv), ct=u8FromB64(blob.ct); const key=await deriveKey(pass, salt, ['decrypt']); const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct.buffer); return JSON.parse(new TextDecoder().decode(pt)); }
-  async function encryptJSON(obj, pass){ const salt=crypto.getRandomValues(new Uint8Array(16)); const iv=crypto.getRandomValues(new Uint8Array(12)); const key=await deriveKey(pass, salt, ['encrypt']); const ct=await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj))); return { v:1, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at:new Date().toISOString() }; }
-
-  let INMEM_TOKEN = null;
-  function setSessionToken(t){ INMEM_TOKEN = t; try{ sessionStorage.setItem('gh.token', t); }catch(e){}; /* Broadcast to other ta
+/* re-encrypt convenience (change passphrase) */
+$('re_encrypt') && $('re_encrypt').addEventListener('click', async ()=>{
+  try{
+    const plain = window._decrypted_plain;
+    if(!plain) return alert('Decrypt first');
+    const newPass = prompt('Enter NEW passphrase (do N
