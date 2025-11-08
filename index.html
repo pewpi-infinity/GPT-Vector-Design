@@ -249,5 +249,137 @@
   // show short help
   appendBot('Loaded. To use a token: paste it in Token field, then Save (or Save (encrypt) with passphrase). If you Unlock encrypted token it will be loaded into this browser session.');
   </script>
+// pewpi_account_manager.js
+// Client-side account / secret manager.
+// - Create account (username, email), set admin flag.
+// - Encrypt full secrets blob with a passphrase (PBKDF2 -> AES-GCM).
+// - Export ciphertext JSON for copy/paste commit to repo.
+// - Unlock (decrypt) the ciphertext into sessionStorage for use by the UI.
+//
+// Usage: include this <script> in your index.html and wire the UI buttons to the functions below.
+// The exported file is a JSON object with keys: v,salt,iv,ct,created_by,created_at
+
+const PewPiAccountManager = (() => {
+  const ITER = 250000; // PBKDF2 iterations (higher if device tolerates)
+  const KEYLEN = 256;
+  const SALT_BYTES = 16;
+  const IV_BYTES = 12;
+
+  function _b64(u8) {
+    let bin = '';
+    for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+    return btoa(bin);
+  }
+  function _fromB64(s) {
+    const bin = atob(s);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
+
+  async function deriveKey(pass, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({
+      name: 'PBKDF2',
+      salt,
+      iterations: ITER,
+      hash: 'SHA-256'
+    }, keyMaterial, { name: 'AES-GCM', length: KEYLEN }, false, ['encrypt', 'decrypt']);
+  }
+
+  async function encryptJSON(obj, pass) {
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+    const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+    const key = await deriveKey(pass, salt);
+    const enc = new TextEncoder();
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)));
+    return {
+      v: 1,
+      salt: _b64(salt),
+      iv: _b64(iv),
+      ct: _b64(new Uint8Array(ct)),
+      created_at: new Date().toISOString()
+    };
+  }
+
+  async function decryptBlob(blobJson, pass) {
+    if (!blobJson || !blobJson.ct) throw new Error('Invalid blob');
+    const salt = _fromB64(blobJson.salt);
+    const iv = _fromB64(blobJson.iv);
+    const ct = _fromB64(blobJson.ct).buffer;
+    const key = await deriveKey(pass, salt.buffer ? salt.buffer : salt);
+    try {
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      const dec = new TextDecoder().decode(pt);
+      return JSON.parse(dec);
+    } catch (e) {
+      throw new Error('Decrypt failed: wrong passphrase or corrupted blob');
+    }
+  }
+
+  // Build a canonical plaintext object to encrypt
+  function buildPlaintext({ username, email, isAdmin=false, secrets={} }) {
+    return {
+      meta: {
+        created_by: username,
+        created_email: email,
+        is_admin: !!isAdmin,
+        created_at: new Date().toISOString()
+      },
+      accounts: [
+        { username, email, isAdmin: !!isAdmin, created_at: new Date().toISOString() }
+      ],
+      secrets // arbitrary secret bag, e.g. { github_token: "ghp_xxx" }
+    };
+  }
+
+  // Helpers wired to UI usage:
+  async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }) {
+    if (!username || !passphrase) throw new Error('username and passphrase are required');
+    const plain = buildPlaintext({ username, email, isAdmin, secrets });
+    const blob = await encryptJSON(plain, passphrase);
+    // Return JSON string suitable for commit (user should copy/paste)
+    return JSON.stringify(blob, null, 2);
+  }
+
+  // Unlock a committed blob (JSON string) into session for use by the UI
+  async function unlockBlobText(blobText, passphrase) {
+    const blob = JSON.parse(blobText);
+    const plain = await decryptBlob(blob, passphrase);
+    // Save plaintext into sessionStorage for the running browser session only
+    sessionStorage.setItem('pewpi.plain', JSON.stringify(plain));
+    return plain;
+  }
+
+  function getUnlockedPlain() {
+    const s = sessionStorage.getItem('pewpi.plain');
+    return s ? JSON.parse(s) : null;
+  }
+
+  function clearUnlocked() {
+    sessionStorage.removeItem('pewpi.plain');
+  }
+
+  return {
+    createAndExport,    // async -> returns JSON ciphertext string
+    unlockBlobText,     // async -> returns plaintext object
+    getUnlockedPlain,   // sync -> plaintext object or null
+    clearUnlocked
+  };
+})();
+
+// Example usage for UI wiring (you can copy these into your index.html):
+// document.getElementById('create_btn').onclick = async () => {
+//   const username = ...; const email = ...; const pass = ...; const token = ...;
+//   const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin:true, passphrase:pass, secrets:{ github_token: token } });
+//   // show exported in a textarea for copy/paste commit
+// };
+//
+// document.getElementById('unlock_btn').onclick = async () => {
+//   const blobText = ...; const pass = ...;
+//   const plain = await PewPiAccountManager.unlockBlobText(blobText, pass);
+//   // now plain.secrets.github_token is available in sessionStorage
+// };
 </body>
 </html>
