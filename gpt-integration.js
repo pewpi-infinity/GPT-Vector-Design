@@ -201,6 +201,15 @@ async function askGPTAPI(prompt) {
         ) {
             throw new Error('Invalid API response format');
         }
+        if (
+            !data.choices ||
+            !Array.isArray(data.choices) ||
+            !data.choices[0] ||
+            !data.choices[0].message ||
+            typeof data.choices[0].message.content !== 'string'
+        ) {
+            throw new Error('Invalid API response format');
+        }
         return data.choices[0].message.content;
     } catch (error) {
         console.error('GPT API Error:', error);
