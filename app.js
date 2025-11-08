@@ -202,6 +202,11 @@ function stopDrawing(e) {
             // State should be saved for these tools too
             // Drawing is handled in draw function, so just save state
             break;
+        case 'pen':
+        case 'eraser':
+            // State should be saved for these tools too
+            // Drawing is handled in draw function, so just save state
+            break;
     }
     
     app.isDrawing = false;
