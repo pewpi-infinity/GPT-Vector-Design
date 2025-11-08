@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Rogers — Test Frontend</title>
+  <title>Rogers — Test UI</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;max-width:900px}
@@ -68,8 +68,6 @@
       const pathEl = document.getElementById('gh_path');
       const refEl = document.getElementById('gh_ref');
       const serverUrlEl = document.getElementById('server_url');
-      const setUrl = document.getElementById('set_url');
-      const helpBtn = document.getElementById('helpme');
 
       function baseUrl(){
         const v = serverUrlEl.value && serverUrlEl.value.trim();
@@ -98,7 +96,6 @@
             body: JSON.stringify({query: q})
           });
           const j = await res.json();
-          // remove the temporary waiting line
           const nodes = chat.childNodes;
           if(nodes.length) nodes[nodes.length-1].remove();
           if(j && j.response !== undefined){
@@ -107,7 +104,6 @@
             appendBot(JSON.stringify(j, null, 2));
           }
         } catch(err){
-          // replace waiting indicator
           const nodes = chat.childNodes;
           if(nodes.length) nodes[nodes.length-1].remove();
           appendBot('Network error: ' + err.toString() + '. Make sure rogers_http.py is running on ' + baseUrl());
@@ -151,7 +147,6 @@
         alert('Example queries:\\n' + examples.join('\\n'));
       });
 
-      // quick self-test when page loads: check helper reachability
       (async function ping(){
         try{
           const r = await fetch(baseUrl() + '/query?q=hello', {cache:'no-store'});
