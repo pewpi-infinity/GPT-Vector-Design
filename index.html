@@ -3,386 +3,254 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>PewPi · Rogers UI & Account Manager</title>
+  <title>PewPi — Commit to GitHub from Browser</title>
   <style>
-    :root{
-      --bg:#061018; --card:#07202a; --accent:#1fb07a; --muted:#9bb7c2; --panel:#08222b;
-      --text:#e9fbff; --codebg:#071418;
-    }
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#031015 0%, #071420 100%);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
-    .wrap{max-width:980px;margin:20px auto;padding:18px}
-    h1{margin:0 0 8px 0;font-size:1.3rem}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,0.03);border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
-    .row{display:flex;gap:8px;align-items:center}
-    input[type=text], input[type=url], input[type=password], textarea, select{background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:var(--text);padding:8px;border-radius:8px;flex:1}
-    button{background:var(--accent);color:#00221a;border:0;padding:9px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-    button.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
-    .small{font-size:0.9rem;color:var(--muted);margin-top:8px}
-    #chat{border:1px solid rgba(255,255,255,0.03);padding:12px;min-height:180px;background:linear-gradient(90deg,#041016,#071722);border-radius:8px;overflow:auto;white-space:pre-wrap}
-    .msg-user{color:#9be0ff;font-weight:700}
-    .msg-bot{color:#b9ffd9}
-    pre.code{background:var(--codebg);padding:10px;border-radius:8px;color:#dff6f0;overflow:auto;max-height:420px}
-    label{font-size:0.9rem;color:var(--muted)}
-    .flex-col{display:flex;flex-direction:column;gap:8px}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .note{font-size:0.85rem;color:#9ac3b9}
-    .status{margin-top:8px;color:var(--muted)}
-    textarea{resize:vertical}
-    .kbd{background:#00121a;padding:4px 8px;border-radius:6px;font-family:monospace}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
+    .wrap{max-width:980px;margin:0 auto}
+    h1{margin:0 0 10px 0}
+    .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
+    input,textarea,select,button{font:inherit}
+    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+    textarea{min-height:220px;resize:vertical;font-family:monospace}
+    .row{display:flex;gap:8px;margin-top:8px}
+    .col{flex:1}
+    button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
+    .muted{color:#9bb7c2;font-size:0.9rem}
+    label{font-size:0.9rem;color:#9bb7c2;display:block;margin-top:10px}
+    pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto}
+    .status{margin-top:8px;color:#cfeee6}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>PewPi — Rogers UI & Account Manager</h1>
-    <div class="small">This page can: (A) talk to a local/server helper (rogers_http.py) and send a saved GitHub token as Authorization: Bearer &nbsp; (B) encrypt and export a secrets blob (safe to commit), unlock it in-browser (session only), and fetch GitHub files for public or token-authenticated requests.</div>
+    <h1>PewPi — Commit files to GitHub from the browser</h1>
+    <div class="muted">Paste a GitHub token, choose repo/branch/path and file contents, then Commit. WARNING: exposing tokens in the browser is insecure. Use a dedicated PAT and delete it after use.</div>
 
     <div class="card">
-      <div class="grid-2">
-        <div>
-          <label>Helper URL (where rogers_http.py listens)</label>
-          <div class="row" style="margin-top:6px">
-            <input id="helper_url" type="text" placeholder="http://localhost:8765" value="http://localhost:8765" />
-            <button id="test_helper" class="secondary">Ping</button>
-          </div>
-          <div class="status" id="helper_status">Helper status: unknown</div>
-        </div>
+      <label>GitHub Personal Access Token (PAT)</label>
+      <input id="pat" type="password" placeholder="Paste PAT here (scope: repo or public_repo)" />
+      <div class="row">
+        <button id="save_pat" class="secondary">Save in memory (not persistent)</button>
+        <button id="clear_pat" class="secondary">Clear token</button>
+      </div>
+      <div class="muted">The token is kept only in JavaScript memory unless you explicitly store it. If you use the "Save to localStorage" option we will warn you. Prefer to paste each session then clear.</div>
+    </div>
 
-        <div>
-          <label>GitHub token (optional)</label>
-          <div class="row" style="margin-top:6px">
-            <input id="gh_token" type="password" placeholder="Paste GitHub PAT here (optional)" />
-            <button id="save_plain" class="secondary">Save (plain)</button>
-            <button id="save_enc">Save (encrypt)</button>
-          </div>
-          <div class="row" style="margin-top:6px">
-            <input id="enc_pass" type="password" placeholder="Passphrase to encrypt/unlock" />
-            <button id="unlock_enc" class="secondary">Unlock</button>
-            <button id="clear_tokens" class="secondary">Clear</button>
-          </div>
-          <div class="small">Encrypted tokens are stored ciphertext in localStorage. Unlocking loads the token into sessionStorage only for this browser session.</div>
-        </div>
+    <div class="card">
+      <label>Repository and branch</label>
+      <div class="row">
+        <input id="owner" class="col" placeholder="owner (your GitHub username or org)" value="" />
+        <input id="repo" class="col" placeholder="repo name" value="" />
+      </div>
+      <div class="row">
+        <input id="branch" class="col" placeholder="branch (eg. main)" value="main" />
+        <input id="filepath" class="col" placeholder="file path to create/update (eg. rogers_logic.py)" value="rogers_logic.py" />
       </div>
     </div>
 
     <div class="card">
-      <div id="chat" aria-live="polite"></div>
+      <label>Commit message</label>
+      <input id="commit_msg" placeholder="Commit message" value="Update via browser commit" />
+
+      <label>File contents (what you want to write into the repo file)</label>
+      <textarea id="file_content" placeholder="Paste the file contents here (e.g. rogers_logic.py)"></textarea>
 
       <div class="row" style="margin-top:10px">
-        <input id="query" type="text" placeholder='Type "hello" or "fetch github owner repo path [ref]"' />
-        <button id="send">Send</button>
-        <button id="clear" class="secondary">Clear</button>
+        <button id="check_exists">Check file exists</button>
+        <button id="preview_b64" class="secondary">Preview base64</button>
+        <button id="commit_btn">Commit to GitHub</button>
       </div>
 
-      <div style="margin-top:12px" class="flex-col">
-        <label class="note">Fetch GitHub quick form</label>
-        <div class="row">
-          <input id="gh_owner" type="text" placeholder="owner (e.g. octocat)" />
-          <input id="gh_repo" type="text" placeholder="repo (e.g. Hello-World)" />
-          <input id="gh_path" type="text" placeholder="path (README.md)" />
-          <input id="gh_ref" type="text" placeholder="ref (branch/commit, optional)" />
-          <button id="gh_fetch">Fetch</button>
-        </div>
-      </div>
+      <div class="status" id="action_status"></div>
+
+      <label style="margin-top:12px">API result</label>
+      <pre id="api_result">{ no action yet }</pre>
     </div>
 
-    <!-- Account manager UI -->
-    <section id="pewpi-account-manager" class="card">
-      <h3>PewPi Account & Encrypted Secrets</h3>
-      <div class="flex-col">
-        <div class="row">
-          <input id="pm_username" type="text" placeholder="username (eg. kris)" />
-          <input id="pm_email" type="text" placeholder="email (optional)" />
-          <label style="display:flex;align-items:center"><input id="pm_admin" type="checkbox" style="margin-right:6px" /> admin</label>
-        </div>
-
-        <div class="row">
-          <input id="pm_secret_input" type="password" placeholder="secret to encrypt (e.g. GitHub PAT)" />
-          <input id="pm_passphrase" type="password" placeholder="passphrase to encrypt with" />
-        </div>
-
-        <div class="row">
-          <button id="pm_create_export">Create & Export Encrypted Blob</button>
-          <button id="pm_clear_unlocked" class="secondary">Clear Unlocked</button>
-        </div>
-
-        <label>Exported encrypted blob (copy & commit to repo as pewpi_secrets.json):</label>
-        <textarea id="pm_export_out" style="height:120px"></textarea>
-
-        <hr/>
-
-        <label>Unlock committed blob (paste ciphertext here and enter passphrase):</label>
-        <textarea id="pm_import_blob" style="height:120px"></textarea>
-        <div class="row">
-          <input id="pm_import_pass" type="password" placeholder="passphrase to unlock" />
-          <button id="pm_unlock_btn">Unlock Blob into Session</button>
-        </div>
-
-        <div id="pm_status" class="status"></div>
-      </div>
-    </section>
-
-    <div class="small" style="margin-top:12px">Notes: committing only the encrypted blob to GitHub is safe-ish — do NOT commit the passphrase or the raw token. Use a strong unique passphrase.</div>
+    <div class="card muted">
+      After commit: remove or revoke the PAT. If you accidentally exposed it, revoke it immediately at https://github.com/settings/tokens
+    </div>
   </div>
 
-  <!-- ---- PewPi Account Manager & app logic (inline for single-file usage) ---- -->
   <script>
-  // ---- PewPiAccountManager (WebCrypto AES-GCM + PBKDF2) ----
-  const PewPiAccountManager = (() => {
-    const ITER = 250000;
-    const KEYLEN = 256;
-    const SALT_BYTES = 16;
-    const IV_BYTES = 12;
+  // Minimal browser GitHub commit helper
+  (function(){
+    // In-memory token only (unless user stores to localStorage)
+    let token = null;
 
-    const enc = new TextEncoder(), dec = new TextDecoder();
+    const el = id;
+    function id(n){ return document.getElementById(n); }
 
-    function _b64(u8){
-      let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
-      return btoa(bin);
-    }
-    function _fromB64(s){
-      const bin = atob(s); const u8 = new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
-      return u8;
-    }
+    // Save token in memory only
+    el('save_pat').addEventListener('click', ()=>{
+      const t = el('pat').value.trim();
+      if(!t) return alert('Paste PAT first');
+      token = t;
+      el('action_status').textContent = 'Token loaded into memory (not persisted).';
+    });
 
-    async function deriveKey(pass, salt){
-      const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-      return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:ITER, hash:'SHA-256'}, km, {name:'AES-GCM', length:KEYLEN}, false, ['encrypt','decrypt']);
-    }
+    el('clear_pat').addEventListener('click', ()=>{
+      token = null;
+      el('pat').value = '';
+      el('action_status').textContent = 'Token cleared from memory and input.';
+    });
 
-    async function encryptJSON(obj, pass){
-      const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
-      const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-      const key = await deriveKey(pass, salt);
-      const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(obj)));
-      return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
-    }
-
-    async function decryptBlob(blobJson, pass){
-      if(!blobJson || !blobJson.ct) throw new Error('Invalid blob');
-      const salt = _fromB64(blobJson.salt);
-      const iv = _fromB64(blobJson.iv);
-      const ctArr = _fromB64(blobJson.ct);
-      const key = await deriveKey(pass, salt.buffer ? salt.buffer : salt);
-      try{
-        const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ctArr.buffer);
-        return JSON.parse(dec.decode(pt));
+    // Helper: base64 encode file content
+    function toBase64(str){
+      // btoa works on binary string; ensure proper utf8 handling:
+      try {
+        return btoa(unescape(encodeURIComponent(str)));
       } catch(e){
-        throw new Error('Decrypt failed: wrong passphrase or corrupted blob');
+        // fallback: use browser TextEncoder -> array -> btoa
+        const u = new TextEncoder().encode(str);
+        let s = '';
+        for(let i=0;i<u.length;i++) s += String.fromCharCode(u[i]);
+        return btoa(s);
       }
     }
 
-    function buildPlaintext({ username, email, isAdmin=false, secrets={} }){
-      return {
-        meta:{ created_by:username, created_email:email, is_admin:!!isAdmin, created_at:new Date().toISOString() },
-        accounts:[{username,email,isAdmin:!!isAdmin,created_at:new Date().toISOString()}],
-        secrets
-      };
-    }
-
-    async function createAndExport({ username, email, isAdmin=false, passphrase, secrets={} }){
-      if(!username || !passphrase) throw new Error('username and passphrase required');
-      const plain = buildPlaintext({ username, email, isAdmin, secrets });
-      return JSON.stringify(await encryptJSON(plain, passphrase), null, 2);
-    }
-
-    async function unlockBlobText(blobText, passphrase){
-      const blob = JSON.parse(blobText);
-      const plain = await decryptBlob(blob, passphrase);
-      sessionStorage.setItem('pewpi.plain', JSON.stringify(plain));
-      return plain;
-    }
-    function getUnlockedPlain(){ const s = sessionStorage.getItem('pewpi.plain'); return s ? JSON.parse(s) : null; }
-    function clearUnlocked(){ sessionStorage.removeItem('pewpi.plain'); }
-
-    return { createAndExport, unlockBlobText, getUnlockedPlain, clearUnlocked };
-  })();
-
-  // ---- App helpers ----
-  const chat = document.getElementById('chat');
-  const qel = document.getElementById('query');
-  const helperUrlEl = document.getElementById('helper_url');
-
-  function appendUser(text){ chat.innerHTML += `<div><span class="msg-user">You:</span> ${escapeHtml(text)}</div>`; chat.scrollTop = chat.scrollHeight; }
-  function appendBot(text){ chat.innerHTML += `<div><span class="msg-bot">Rogers:</span> ${escapeHtml(text)}</div>`; chat.scrollTop = chat.scrollHeight; }
-  function appendHtml(html){ chat.innerHTML += html; chat.scrollTop = chat.scrollHeight; }
-  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-  function getEffectiveToken(){
-    return sessionStorage.getItem('gh.token') || localStorage.getItem('gh.token') || null;
-  }
-  function savePlainToken(t){ localStorage.setItem('gh.token', t); localStorage.removeItem('gh.token.enc'); appendBot('Token saved as plain (not recommended).'); }
-  function clearTokens(){ localStorage.removeItem('gh.token'); localStorage.removeItem('gh.token.enc'); sessionStorage.removeItem('gh.token'); appendBot('All stored tokens cleared.'); }
-
-  async function fetchGithubRaw(owner, repo, path, ref){
-    const token = getEffectiveToken();
-    const candidates = ref ? [ref] : ['main','master'];
-    for(const r of candidates){
-      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${r}/${path}`;
-      try{
-        const opts = token ? { headers: { 'Authorization': 'token ' + token } } : {};
-        const res = await fetch(url, opts);
-        if(res.ok) return { ok:true, source:url, text: await res.text() };
-      } catch(e){}
-    }
-    const apiRef = ref ? `?ref=${encodeURIComponent(ref)}` : '';
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}${apiRef}`;
-    const headers = token ? { 'Authorization':'token '+token, 'Accept':'application/vnd.github.v3.raw' } : { 'Accept':'application/vnd.github.v3.raw' };
-    try{
-      const res = await fetch(apiUrl, { headers });
-      if(res.ok) return { ok:true, source:apiUrl, text: await res.text() };
-      const err = await res.text();
-      return { ok:false, error:`GitHub API ${res.status}: ${err}` };
-    } catch(e){
-      return { ok:false, error: e.toString() };
-    }
-  }
-
-  async function forwardToHelper(q){
-    const helper = (helperUrlEl.value || 'http://localhost:8765').replace(/\/+$/,'');
-    const token = getEffectiveToken();
-    const headers = { 'Content-Type':'application/json' };
-    if(token) headers['Authorization'] = 'Bearer ' + token;
-    try{
-      const res = await fetch(helper + '/query', { method:'POST', headers, body: JSON.stringify({ query: q }) });
-      if(!res.ok) return { ok:false, error:`helper ${res.status}` };
-      const j = await res.json();
-      return { ok:true, json:j };
-    } catch(e){
-      return { ok:false, error: e.toString() };
-    }
-  }
-
-  async function handleQuery(q){
-    q = (q||'').trim();
-    appendUser(q);
-    if(!q){ appendBot('Type a command.'); return; }
-
-    const fetchMatch = /^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
-    if(fetchMatch){
-      const owner = fetchMatch[1], repo = fetchMatch[2], path = fetchMatch[3], ref = fetchMatch[4] || '';
-      appendBot(`Fetching ${owner}/${repo}/${path} ${ref ? 'ref:'+ref : ''} ...`);
-      const r = await fetchGithubRaw(owner,repo,path,ref);
-      if(r.ok) appendHtml(`<div style="margin-top:8px"><div><em>Source: ${escapeHtml(r.source)}</em></div><pre class="code">${escapeHtml(r.text)}</pre></div>`);
-      else appendBot('Fetch error: '+r.error);
-      return;
-    }
-
-    // otherwise try helper forward
-    const res = await forwardToHelper(q);
-    if(res.ok){
-      const j = res.json;
-      if(j && j.response !== undefined) appendBot(j.response);
-      else appendBot('Helper returned: ' + JSON.stringify(j));
-    } else {
-      appendBot('No helper reachable (' + res.error + '). You can use "fetch github ..." to fetch files directly from GitHub.');
-    }
-  }
-
-  // ---- UI wiring ----
-  document.getElementById('send').addEventListener('click', ()=> handleQuery(qel.value));
-  document.getElementById('clear').addEventListener('click', ()=> { qel.value=''; chat.innerHTML=''; });
-  qel.addEventListener('keydown', (e)=> { if(e.key==='Enter'){ e.preventDefault(); handleQuery(qel.value); } });
-
-  document.getElementById('gh_fetch').addEventListener('click', ()=>{
-    const owner = document.getElementById('gh_owner').value.trim();
-    const repo = document.getElementById('gh_repo').value.trim();
-    const path = document.getElementById('gh_path').value.trim();
-    const ref  = document.getElementById('gh_ref').value.trim();
-    if(!owner || !repo || !path) return alert('owner, repo and path are required');
-    qel.value = ['fetch','github',owner,repo,path].concat(ref ? [ref] : []).join(' ');
-    handleQuery(qel.value);
-  });
-
-  // helper ping
-  document.getElementById('test_helper').addEventListener('click', async ()=>{
-    const url = (helperUrlEl.value||'http://localhost:8765').replace(/\/+$/,'');
-    try{
-      const r = await fetch(url + '/query?q=hello');
+    // Get file SHA if exists (needed for updates). Returns {sha,exists,content}
+    async function getFileSha(owner, repo, path, branch){
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+      const r = await fetch(url, {
+        method: 'GET',
+        headers: token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } : { 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if(r.status === 404) return { exists:false };
       const j = await r.json();
-      document.getElementById('helper_status').textContent = 'Helper reachable: ' + (j.response || JSON.stringify(j));
-    }catch(e){
-      document.getElementById('helper_status').textContent = 'Helper not reachable: ' + e.toString();
+      if(r.ok){
+        return { exists:true, sha: j.sha, content: j.content, download_url: j.download_url };
+      } else {
+        throw new Error('Error checking file: ' + (j && j.message ? j.message : r.status));
+      }
     }
-  });
 
-  // token UI wiring
-  document.getElementById('save_plain').addEventListener('click', ()=> {
-    const t = document.getElementById('gh_token').value.trim();
-    if(!t) return alert('Paste token first');
-    localStorage.setItem('gh.token', t);
-    appendBot('Saved token as plain in localStorage (not recommended).');
-  });
-  document.getElementById('save_enc').addEventListener('click', async ()=>{
-    const t = document.getElementById('gh_token').value.trim();
-    const p = document.getElementById('enc_pass').value;
-    if(!t||!p) return alert('Token and passphrase required');
-    try{
-      const blob = await (async () => {
-        const obj = { github_token: t, created_at: new Date().toISOString() };
-        const salt = crypto.getRandomValues(new Uint8Array(16));
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const key = await (async (pass,salt)=>{
-          const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-          return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
-        })(p, salt);
-        const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
-        return { v:1, salt:_b64(salt), iv:_b64(iv), ct:_b64(new Uint8Array(ct)), created_at:new Date().toISOString() };
-      })();
-      localStorage.setItem('gh.token.enc', JSON.stringify(blob));
-      localStorage.removeItem('gh.token');
-      appendBot('Token encrypted and saved to localStorage (you may export encrypted blob separately below).');
-    }catch(e){ appendBot('Encrypt error: ' + e.toString()); }
-  });
-
-  document.getElementById('unlock_enc').addEventListener('click', async ()=>{
-    const p = document.getElementById('enc_pass').value;
-    if(!p) return alert('Enter passphrase');
-    const s = localStorage.getItem('gh.token.enc');
-    if(!s) return appendBot('No encrypted token in localStorage');
-    try{
-      const blob = JSON.parse(s);
-      const plain = await (async (blob,pass)=>{
-        const salt = _fromB64(blob.salt);
-        const iv = _fromB64(blob.iv);
-        const ctArr = _fromB64(blob.ct);
-        const key = await (async (pass,salt){ const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'}, km, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']); })(pass, salt);
-        const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ctArr.buffer);
-        return JSON.parse(new TextDecoder().decode(pt));
-      })(blob,p);
-      sessionStorage.setItem('gh.token', plain.github_token);
-      appendBot('Encrypted token unlocked into session for this browser session.');
-    }catch(e){ appendBot('Unlock failed: ' + (e.message || e)); }
-  });
-
-  document.getElementById('clear_tokens').addEventListener('click', ()=> {
-    clearTokens();
-  });
-
-  // ---- Account manager UI wiring (uses PewPiAccountManager above) ----
-  document.getElementById('pm_create_export').addEventListener('click', async ()=>{
-    const username = document.getElementById('pm_username').value.trim() || 'kris';
-    const email = document.getElementById('pm_email').value.trim() || '';
-    const isAdmin = document.getElementById('pm_admin').checked;
-    const pass = document.getElementById('pm_passphrase').value;
-    const secret = document.getElementById('pm_secret_input').value.trim();
-    if(!pass) return alert('Choose a passphrase to encrypt with');
-    try{
-      document.getElementById('pm_status').textContent = 'Encrypting…';
-      const exported = await PewPiAccountManager.createAndExport({ username, email, isAdmin, passphrase:pass, secrets: secret ? { github_token: secret } : {} });
-      document.getElementById('pm_export_out').value = exported;
-      document.getElementById('pm_status').textContent = 'Export ready — copy the ciphertext and commit as pewpi_secrets.json';
-    }catch(e){
-      document.getElementById('pm_status').textContent = 'Error: ' + (e.message || e);
+    // Commit (create or update)
+    async function commitFile({ owner, repo, branch, path, message, contentBase64, sha }){
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+      const body = {
+        message: message || 'Update via browser',
+        content: contentBase64,
+        branch: branch || 'main'
+      };
+      if(sha) body.sha = sha;
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const j = await r.json();
+      return { ok: r.ok, status: r.status, json: j };
     }
-  });
 
-  document.getElementById('pm_unlock_btn').addEventListener('click', async ()=>{
-    const blobText = document.getElementById('pm_import_blob').value.trim();
-    const pass = document.getElementById('pm_import_pass').value;
-    if(!blobText || !pass) return alert('Paste blob and enter passphrase');
-    document.getElementById('pm_status').textContent = 'Decrypting…';
-    try{
-      const plain = await PewPiAccountManager.unlockBlobText(blobText, pass);
-      // if secrets.github_token present, place into sessionStorage for use
-      if(plain.secrets && plain.secrets.github_token) session
+    // Click handlers
+    el('check_exists').addEventListener('click', async ()=>{
+      clearResult();
+      try {
+        ensureToken();
+        const owner = el('owner').value.trim();
+        const repo = el('repo').value.trim();
+        const branch = el('branch').value.trim() || 'main';
+        const path = el('filepath').value.trim();
+        if(!owner||!repo||!path) return alert('provide owner, repo and filepath');
+        el('action_status').textContent = 'Checking...';
+        const info = await getFileSha(owner,repo,path,branch);
+        if(!info.exists){
+          el('action_status').textContent = 'File does NOT exist (will be created).';
+          el('api_result').textContent = JSON.stringify(info,null,2);
+        } else {
+          el('action_status').textContent = 'File exists; sha found.';
+          el('api_result').textContent = JSON.stringify({sha:info.sha, download_url: info.download_url},null,2);
+        }
+      } catch(e){
+        el('action_status').textContent = 'Error: ' + e.message;
+        el('api_result').textContent = (e.stack || e.message || String(e));
+      }
+    });
+
+    el('preview_b64').addEventListener('click', ()=>{
+      const content = el('file_content').value || '';
+      el('api_result').textContent = toBase64(content).slice(0,400) + (content.length>200 ? '... (truncated)' : '');
+    });
+
+    el('commit_btn').addEventListener('click', async ()=>{
+      clearResult();
+      try {
+        ensureToken();
+        const owner = el('owner').value.trim();
+        const repo = el('repo').value.trim();
+        const branch = el('branch').value.trim() || 'main';
+        const path = el('filepath').value.trim();
+        const message = el('commit_msg').value.trim() || 'Update via browser commit';
+        const content = el('file_content').value || '';
+        if(!owner||!repo||!path) return alert('set owner, repo and filepath');
+        el('action_status').textContent = 'Checking existing file...';
+        const info = await getFileSha(owner,repo,path,branch);
+        const base64 = toBase64(content);
+        el('action_status').textContent = 'Committing... (may take a few seconds)';
+        let resp;
+        if(info.exists){
+          resp = await commitFile({ owner, repo, branch, path, message, contentBase64: base64, sha: info.sha });
+        } else {
+          resp = await commitFile({ owner, repo, branch, path, message, contentBase64: base64 });
+        }
+        if(resp.ok){
+          el('action_status').textContent = 'Commit successful: ' + (resp.json && resp.json.commit ? resp.json.commit.sha : 'ok');
+          el('api_result').textContent = JSON.stringify(resp.json, null, 2);
+        } else {
+          el('action_status').textContent = 'Commit failed: ' + resp.status;
+          el('api_result').textContent = JSON.stringify(resp.json, null, 2);
+        }
+      } catch(e){
+        el('action_status').textContent = 'Error: ' + (e.message || e);
+        el('api_result').textContent = (e.stack || e.message || String(e));
+      }
+    });
+
+    function clearResult(){
+      el('action_status').textContent = '';
+      el('api_result').textContent = '{ no action yet }';
+    }
+
+    function ensureToken(){
+      if(!token){
+        const t = el('pat').value.trim();
+        if(!t) throw new Error('Token not loaded. Paste your PAT and click Save in memory.');
+        token = t;
+      }
+    }
+
+    // Quick demo helper: prefill basic rogers_logic.py minimal content if user wants a starting file
+    // (You can replace this content with the real code you want to commit.)
+    const sample = `# Minimal rogers_logic.py example
+import requests, re
+
+def handle_query(q, provided_token=None):
+    m = re.match(r'^fetch\\s+github\\s+([^\\s\\/]+)\\s+([^\\s\\/]+)\\s+([^\\s].*?)(?:\\s+([^\\s]+))?$', q, re.I)
+    if m:
+        owner, repo, path, ref = m.group(1), m.group(2), m.group(3), (m.group(4) or None)
+        headers = {}
+        if provided_token:
+            headers['Authorization'] = 'token ' + provided_token
+        # Try raw first
+        for r in ([ref] if ref else ['main','master']):
+            url = f"https://raw.githubusercontent.com/{owner}/{repo}/{r}/{path}"
+            resp = requests.get(url, headers=headers, timeout=10)
+            if resp.status_code == 200:
+                return resp.text
+        # fallback
+        return f"Unable to fetch {owner}/{repo}/{path}"
+    return f"Rogers received: {q}"
+`;
+    // Prefill file_content with sample if empty
+    if(!el('file_content').value) el('file_content').value = sample;
+
+  })();
+  </script>
+</body>
+</html>
