@@ -9,6 +9,92 @@
       --bg:#071722; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --panel:#041016;
       --purple:#b695ff; --green:#75e39a; --red:#ff8b8b; --blue:#8fd1ff; --orange:#ffb06b; --yellow:#fff28f;
     }
+// Delegated nav + portal fallback patch — paste into console or add before </body>
+(function(){
+  // safe guard to not attach twice
+  if(window.__pewpi_delegation_attached) return;
+  window.__pewpi_delegation_attached = true;
+
+  // debug helper (prints to in-page debug area if present)
+  function dbg(m){
+    try{
+      var d = document.getElementById('debug_out') || document.getElementById('pewpi_debug_out');
+      var ts = new Date().toISOString().split('T')[1].slice(0,8);
+      if(d) d.textContent = (d.textContent && d.textContent !== '{ no debug }' ? d.textContent + '\n' : '') + '['+ts+'] ' + m;
+      console.log('[pewpi_delegate] ' + m);
+    }catch(e){ console.log('[pewpi_delegate] ' + m); }
+  }
+
+  // delegated click handler for nav buttons and any element with data-view
+  document.addEventListener('click', function(ev){
+    try{
+      var btn = ev.target.closest && ev.target.closest('[data-view], .nav-btn, .btn[data-view]');
+      if(btn){
+        ev.preventDefault();
+        var view = btn.getAttribute('data-view') || btn.dataset && btn.dataset.view;
+        if(!view && btn.classList.contains('nav-btn')) view = btn.textContent.trim().toLowerCase();
+        if(view){
+          // show/hide views
+          document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+          var el = document.getElementById('view_' + view);
+          if(el) el.style.display = 'block';
+          // set active class
+          document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+          if(btn.classList && btn.classList.add) btn.classList.add('active');
+          dbg('Delegated nav -> ' + view);
+          return;
+        }
+      }
+      // portal send fallback (if send button clicked)
+      var sendBtn = ev.target.closest && ev.target.closest('#portal_send, .action#portal_send, button#send');
+      if(sendBtn){
+        ev.preventDefault();
+        var qEl = document.getElementById('portal_query') || document.getElementById('query');
+        var cEl = document.getElementById('portal_console') || document.getElementById('console');
+        var q = qEl ? (qEl.value || '').trim() : '';
+        if(!q){ dbg('Delegated send: empty query'); return; }
+        dbg('Delegated send: ' + q);
+        // use rogersRespond if available, otherwise echo
+        (async function(){
+          try{
+            if(typeof rogersRespond === 'function'){
+              var r = await rogersRespond(q);
+              if(cEl){ cEl.textContent += '\nYou: ' + q + '\nRogers: ' + r; cEl.scrollTop = cEl.scrollHeight; }
+              else alert('Rogers: ' + r);
+            } else {
+              if(cEl){ cEl.textContent += '\nYou: ' + q + '\nRogers: (no handler)'; cEl.scrollTop = cEl.scrollHeight; }
+              else alert('Rogers: (no handler)');
+            }
+          }catch(err){
+            dbg('Delegated send error: ' + (err && err.message ? err.message : err));
+            alert('Send error: ' + (err && err.message ? err.message : err));
+          }
+        })();
+        return;
+      }
+    }catch(ex){
+      dbg('Delegation outer error: ' + (ex && ex.message ? ex.message : ex));
+    }
+  }, false);
+
+  // also add touchstart to improve mobile responsiveness
+  document.addEventListener('touchstart', function(ev){
+    try{
+      var btn = ev.target.closest && ev.target.closest('[data-view], .nav-btn, .btn[data-view]');
+      if(btn){
+        ev.preventDefault();
+        btn.click();
+      }
+    }catch(e){ /* ignore */ }
+  }, { passive:false });
+
+  // re-enable pointer-events and remove disabled flags globally (non-destructive)
+  document.querySelectorAll('button, .nav-btn, input[type="button"], input[type="submit"]').forEach(function(b){
+    try{ b.disabled = false; b.style.pointerEvents = 'auto'; b.style.opacity = ''; }catch(e){}
+  });
+
+  dbg('Delegated handlers installed.');
+})();
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:var(--bg);color:#e9fbff}
     header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03)}
     h1{margin:0;font-size:1.0rem}
