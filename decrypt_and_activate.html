@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PewPi — Decrypt & Activate</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:18px;background:#071722;color:#e9fbff}
+  .wrap{max-width:880px;margin:0 auto}
+  .card{background:#08242f;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-top:12px}
+  input,textarea,button{font:inherit}
+  input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#03141a;color:#e9fbff}
+  textarea{min-height:160px;resize:vertical;font-family:monospace}
+  .row{display:flex;gap:8px;margin-top:8px}
+  button{background:#16b07a;border:none;padding:8px 12px;border-radius:8px;color:#00221a;cursor:pointer}
+  .secondary{background:transparent;border:1px solid rgba(255,255,255,0.03);color:#bcdadf}
+  .status{margin-top:10px;color:#cfeee6}
+  pre{background:#021418;padding:8px;border-radius:8px;color:#cfeee6;overflow:auto}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>PewPi — Decrypt & Activate (simple)</h1>
+
+    <div class="card">
+      <div class="row">
+        <input id="pass" type="password" placeholder="Enter passphrase (the one you used to encrypt)" />
+        <button id="decryptBtn">Decrypt</button>
+      </div>
+
+      <label style="margin-top:10px">Paste ciphertext JSON here (the exact JSON object you committed, e.g. pewpi_secrets.json)</label>
+      <textarea id="blob" placeholder='Paste the ciphertext JSON here'></textarea>
+
+      <div class="row">
+        <button id="loadPaste" class="secondary">Load from clipboard</button>
+        <button id="clearAll" class="secondary">Clear</button>
+      </div>
+
+      <div id="status" class="status">Ready. Paste the blob and enter passphrase, then click Decrypt.</div>
+
+      <label style="margin-top:10px">Decrypted plaintext (if passphrase is correct)</label>
+      <pre id="plain">{ nothing decrypted yet }</pre>
+
+      <div class="row" style="margin-top:8px">
+        <button id="loadToken" class="secondary">Load github_token into session (if present)</button>
+        <button id="copyPlain" class="secondary">Copy plaintext</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="status"><strong>Notes:</strong> This runs entirely in your browser. The passphrase is never sent anywhere. Do NOT commit passphrases or plaintext tokens. After you load the token into sessionStorage, your Rogers page can use sessionStorage.getItem('gh.token').</div>
+    </div>
+  </div>
+
+<script>
+/* Minimal WebCrypto AES-GCM + PBKDF2 decryption compatible with the blob you already created.
+   Parameters: PBKDF2 iterations = 250000, hash = SHA-256, AES-GCM (256).
+*/
+
+function id(n){ return document.getElementById(n); }
+function setStatus(s){ id('status').textContent = s; }
+function b64ToU8(s){
+  const bin = atob(s);
+  const u = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  return u;
+}
+
+async function deriveKey(pass, saltU8){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: saltU8, iterations: 250000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+}
+
+async function decryptBlobJson(blobJson, pass){
+  if(!blobJson || !blobJson.ct) throw new Error('Invalid ciphertext blob (missing ct)');
+  const saltU8 = b64ToU8(blobJson.salt);
+  const ivU8 = b64ToU8(blobJson.iv);
+  const ctU8 = b64ToU8(blobJson.ct);
+  const key = await deriveKey(pass, saltU8);
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: ivU8 }, key, ctU8.buffer);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+/* UI wiring */
+id('loadPaste').addEventListener('click', async ()=>{
+  try{
+    const text = await navigator.clipboard.readText();
+    id('blob').value = text;
+    setStatus('Loaded clipboard into blob textarea.');
+  }catch(e){
+    setStatus('Clipboard read failed: ' + (e && e.message ? e.message : e));
+  }
+});
+
+id('clearAll').addEventListener('click', ()=>{
+  id('blob').value = '';
+  id('pass').value = '';
+  id('plain').textContent = '{ nothing decrypted yet }';
+  setStatus('Cleared.');
+});
+
+id('decryptBtn').addEventListener('click', async ()=>{
+  const pass = id('pass').value;
+  const txt = id('blob').value.trim();
+  if(!txt) return setStatus('Paste the ciphertext JSON into the box above.');
+  if(!pass) return setStatus('Enter the passphrase used for encryption.');
+  setStatus('Parsing blob JSON...');
+  let blob = null;
+  try{
+    blob = JSON.parse(txt);
+  }catch(e){
+    // try to extract JSON substring
+    const m = txt.match(/\{[\s\S]*\}/);
+    if(m) {
+      try { blob = JSON.parse(m[0]); } catch(err){ blob = null; }
+    }
+  }
+  if(!blob) { setStatus('Invalid JSON. Paste the exact ciphertext JSON you committed.'); return; }
+
+  setStatus('Decrypting (in-browser)...');
+  try{
+    const plain = await decryptBlobJson(blob, pass);
+    id('plain').textContent = JSON.stringify(plain, null, 2);
+    setStatus('Decryption succeeded. Use "Load github_token into session" to enable Rogers.');
+    // store in memory for quick load
+    window._decrypted_plain = plain;
+  }catch(e){
+    setStatus('Decrypt failed: ' + (e && e.message ? e.message : e));
+    id('plain').textContent = '{ decryption failed }';
+  }
+});
+
+id('loadToken').addEventListener('click', ()=>{
+  try{
+    const plain = window._decrypted_plain || JSON.parse(id('plain').textContent);
+    if(!plain || !plain.secrets || !plain.secrets.github_token){
+      setStatus('No secrets.github_token found in decrypted data.');
+      return;
+    }
+    sessionStorage.setItem('gh.token', plain.secrets.github_token);
+    setStatus('github_token loaded into sessionStorage (key: gh.token). Rogers can use it now.');
+  }catch(e){
+    setStatus('Load failed: ' + (e && e.message ? e.message : e));
+  }
+});
+
+id('copyPlain').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(id('plain').textContent);
+    setStatus('Plaintext copied to clipboard (be careful).');
+  }catch(e){ setStatus('Copy failed: '+(e && e.message)); }
+});
+</script>
+</body>
+</html>
