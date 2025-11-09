@@ -48,6 +48,23 @@ def main():
     root = Path(args.root).resolve()
 
     print(f"Scanning repository at {root}")
+    
+    # Check for sensitive files
+    sensitive_files = ['secrets.JSON', 'secrets.json', '.env', '.env.local']
+    found_sensitive = []
+    for sens_file in sensitive_files:
+        candidate = root / sens_file
+        if candidate.exists():
+            found_sensitive.append(str(candidate))
+    
+    if found_sensitive:
+        print("\n⚠️  WARNING: Sensitive files detected in repository!")
+        for f in found_sensitive:
+            print(f"  - {f}")
+        print("  These files should NOT be committed to version control.")
+        print("  Add them to .gitignore and remove from git with: git rm --cached <file>")
+        print()
+    
     html_missing = {}
     js_missing = {}
 
@@ -64,26 +81,29 @@ def main():
 
     if not html_missing and not js_missing:
         print("No missing local references found in HTML/JS scan.")
-        return
+    else:
+        if html_missing:
+            print("\nMissing references found in HTML files:")
+            for f, items in html_missing.items():
+                print(f"- {f}")
+                for ref, cand in items:
+                    print(f"    -> {ref}  (expected file: {cand})")
 
-    if html_missing:
-        print("\nMissing references found in HTML files:")
-        for f, items in html_missing.items():
-            print(f"- {f}")
-            for ref, cand in items:
-                print(f"    -> {ref}  (expected file: {cand})")
+        if js_missing:
+            print("\nMissing imports/requires found in JS files:")
+            for f, items in js_missing.items():
+                print(f"- {f}")
+                for ref, cand in items:
+                    print(f"    -> {ref}  (expected file: {cand})")
 
-    if js_missing:
-        print("\nMissing imports/requires found in JS files:")
-        for f, items in js_missing.items():
-            print(f"- {f}")
-            for ref, cand in items:
-                print(f"    -> {ref}  (expected file: {cand})")
-
-    print("\nTips:")
-    print("- If a reference is to './some/path', verify the file was added and committed.")
-    print("- If references are to built output (dist/), make sure you rebuild from the correct source commit.")
-    print("- Use the find-working-commit.sh script to find the most-recent commit that builds cleanly.")
+        print("\nTips:")
+        print("- If a reference is to './some/path', verify the file was added and committed.")
+        print("- If references are to built output (dist/), make sure you rebuild from the correct source commit.")
+        print("- Use the find-working-commit.sh script to find the most-recent commit that builds cleanly.")
+    
+    # Exit with error if sensitive files are found (for CI)
+    if found_sensitive:
+        exit(1)
 
 if __name__ == '__main__':
     main()

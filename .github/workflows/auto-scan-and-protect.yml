@@ -1,0 +1,197 @@
+name: Auto-Scan and Protect
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  # Guard job - exits early if triggered by GitHub Actions bot to prevent loops
+  check-actor:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if triggered by GitHub Actions
+        id: check
+        run: |
+          ACTOR="${{ github.actor }}"
+          echo "Actor: $ACTOR"
+          if [[ "$ACTOR" == "github-actions" || "$ACTOR" == "github-actions[bot]" ]]; then
+            echo "Triggered by GitHub Actions bot - exiting to prevent loops"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+
+  # Full scan and build for pull requests
+  pr-scan-and-build:
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: github.event_name == 'pull_request' && needs.check-actor.outputs.should_run == 'true'
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run repository scanner
+        run: |
+          echo "Running repository scanner..."
+          python3 scripts/repo-scan.py --root .
+        continue-on-error: true
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+        if: hashFiles('package.json') != ''
+      
+      - name: Install dependencies and build
+        if: hashFiles('package.json') != ''
+        run: |
+          echo "package.json found - installing dependencies..."
+          npm ci
+          echo "Running build..."
+          npm run build
+        continue-on-error: false
+      
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ PR scan and build completed successfully"
+          echo "No auto-commits will be made - artifacts are not pushed to branch"
+
+  # Lightweight scan for pushes to main (no build, no auto-commit)
+  main-scan-only:
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check-actor.outputs.should_run == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run repository scanner (lightweight)
+        run: |
+          echo "Running lightweight scan on main branch..."
+          python3 scripts/repo-scan.py --root .
+        continue-on-error: true
+      
+      - name: Check for forbidden files
+        run: |
+          echo "Checking for forbidden files..."
+          if [ -f "secrets.JSON" ]; then
+            echo "❌ ERROR: secrets.JSON found in repository!"
+            echo "This file should be removed and added to .gitignore"
+            exit 1
+          fi
+          if [ -f "secrets.json" ]; then
+            echo "❌ ERROR: secrets.json found in repository!"
+            echo "This file should be removed and added to .gitignore"
+            exit 1
+          fi
+          echo "✅ No forbidden files found"
+      
+      - name: Verify no auto-commit behavior
+        run: |
+          echo "✅ Main branch scan complete - no build or auto-commit performed"
+
+  # Scheduled scan
+  scheduled-scan:
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: github.event_name == 'schedule' && needs.check-actor.outputs.should_run == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run repository scanner
+        run: |
+          echo "Running scheduled repository scan..."
+          python3 scripts/repo-scan.py --root .
+        continue-on-error: true
+      
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+          FOUND=""
+          for file in secrets.JSON secrets.json .env .env.local; do
+            if [ -f "$file" ]; then
+              echo "⚠️  Found: $file"
+              FOUND="yes"
+            fi
+          done
+          if [ -n "$FOUND" ]; then
+            echo "❌ Sensitive files detected in repository"
+            exit 1
+          fi
+          echo "✅ No sensitive files found"
+
+  # Manual workflow dispatch
+  manual-scan:
+    runs-on: ubuntu-latest
+    needs: check-actor
+    if: github.event_name == 'workflow_dispatch' && needs.check-actor.outputs.should_run == 'true'
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+        if: hashFiles('package.json') != ''
+      
+      - name: Run repository scanner
+        run: |
+          echo "Running manual repository scan..."
+          python3 scripts/repo-scan.py --root .
+        continue-on-error: true
+      
+      - name: Install dependencies and build (if package.json exists)
+        if: hashFiles('package.json') != ''
+        run: |
+          echo "package.json found - installing dependencies..."
+          npm ci
+          echo "Running build..."
+          npm run build
+        continue-on-error: true
+      
+      - name: Manual scan complete
+        run: |
+          echo "✅ Manual scan completed"
+          echo "Note: No auto-commits are performed - all changes must be made via PR"
