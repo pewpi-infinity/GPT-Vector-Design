@@ -153,6 +153,18 @@ document.getElementById('login_btn').onclick=async()=>{
  console.log("Infinity Guardian active. All actions cryptographically logged.");
 };
 
+/* ===== Navigation ===== */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+ btn.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const view=btn.dataset.view;
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  const el=document.getElementById('view_'+view);
+  if(el)el.style.display='block';
+ });
+});
+
 /* ===== Vault Access ===== */
 document.querySelector('[data-view="vault"]').onclick=async()=>{
  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
