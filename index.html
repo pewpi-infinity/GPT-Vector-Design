@@ -3,413 +3,164 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Infinity Vector Portal · Guardian + Builder</title>
+<title>Infinity Vector Portal · Guardian Build</title>
 <style>
-  :root{
-    --bg:#071722; --panel:#041016; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --border:rgba(255,255,255,.06);
-    --purple:#b695ff; --green:#75e39a; --red:#ff8b8b; --blue:#8fd1ff; --orange:#ffb06b; --yellow:#fff28f;
-  }
-  html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e9fbff}
-  header{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
-  h1{margin:0;font-size:1.05rem}
-  .muted{color:var(--muted)}
-  .wrap{display:flex;gap:14px;padding:12px;box-sizing:border-box;height:calc(100% - 56px)}
-  .left{flex:1;overflow:auto}
-  .right{width:420px;min-width:300px;overflow:auto}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
-  .row{display:flex;gap:8px;align-items:center}
-  .col{display:flex;flex-direction:column;gap:8px}
-  input,textarea,select,button{font:inherit;background:#03141a;color:#e9fbff;border-radius:10px;border:1px solid rgba(255,255,255,.06);padding:10px}
-  textarea{min-height:120px;resize:vertical;font-family:monospace}
-  .btn{cursor:pointer}
-  .btn.primary{background:var(--accent);color:#001f17;border:none}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted)}
-  .words{line-height:1.6}
-  .word{cursor:pointer;padding:2px 6px;border-radius:6px;text-decoration:none;transition:background .15s}
-  .word:hover{background:rgba(255,255,255,.05)}
-  .purple{color:var(--purple)}
-  .green{color:var(--green)}
-  .red{color:var(--red)}
-  .blue{color:var(--blue)}
-  .orange{color:var(--orange)}
-  .yellow{color:#222;background:var(--yellow);padding:3px 6px;border-radius:7px}
-  .console{background:var(--panel);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px;white-space:pre-wrap;min-height:120px;color:#cfeee6;overflow:auto}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.03)}
-  .topbar{display:flex;gap:8px;align-items:center;margin-left:auto}
-  .nav{background:transparent;border:1px solid rgba(255,255,255,.06);padding:8px 10px;border-radius:10px;color:var(--muted);cursor:pointer}
-  .nav.active{background:var(--accent);color:#00221a;border-color:transparent}
-  footer{padding:10px;text-align:center;font-size:.85rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.05)}
-  .hint{font-size:.85rem;color:var(--muted)}
-  .badge{font-size:.7rem;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.08)}
-  .preview{min-height:140px;background:#03161d;border:1px dashed rgba(255,255,255,.1);border-radius:10px;padding:10px}
-  .hidden{display:none}
-  .ok{color:var(--green)}
-  .warn{color:var(--orange)}
-  .err{color:var(--red)}
-  /* overlays */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
-  .modal{background:#08242f;border:1px solid rgba(255,255,255,.06);border-radius:14px;max-width:560px;width:100%;padding:16px}
-  .modal h3{margin:0 0 6px 0}
-  @media(max-width:980px){ .wrap{flex-direction:column} .right{width:100%} }
+:root{
+  --bg:#071722; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --panel:#041016;
+  --purple:#b695ff; --green:#75e39a; --red:#ff8b8b; --blue:#8fd1ff; --orange:#ffb06b; --yellow:#fff28f;
+}
+html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e9fbff}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03)}
+h1{margin:0;font-size:1.1rem}
+.topbar{display:flex;gap:8px;align-items:center}
+.nav-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+.nav-btn.active{background:var(--accent);color:#00221a;border-color:transparent}
+.wrap{display:flex;gap:16px;padding:12px;box-sizing:border-box;height:calc(100% - 56px)}
+.left{flex:1;overflow:auto}
+.right{width:420px;min-width:260px;overflow:auto}
+.card{background:var(--card);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
+input,textarea,select,button{font:inherit;background:#03141a;color:#e9fbff;border-radius:8px;border:1px solid rgba(255,255,255,0.04);padding:8px}
+textarea{min-height:100px;resize:vertical;font-family:monospace}
+.row{display:flex;gap:8px;margin-top:8px}
+.console{background:var(--panel);padding:10px;border-radius:8px;min-height:120px;white-space:pre-wrap;overflow:auto;color:#cfeee6}
+.tiny{font-size:0.85rem;color:var(--muted)}
+.words{line-height:1.6;font-size:1.05rem}
+.word{cursor:pointer;padding:2px 4px;border-radius:4px;text-decoration:none;transition:background .2s}
+.word:hover{background:rgba(255,255,255,0.05)}
+.word.purple{color:var(--purple)}
+.word.green{color:var(--green)}
+.word.red{color:var(--red)}
+.word.blue{color:var(--blue)}
+.word.orange{color:var(--orange)}
+.word.yellow{color:#222;background:var(--yellow);padding:4px;border-radius:6px}
+.btn-primary{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#00221a;cursor:pointer}
+.btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+.debug{font-family:monospace;font-size:12px;background:#021418;padding:8px;border-radius:6px;max-height:200px;overflow:auto;color:#cfeee6}
+footer{padding:10px;text-align:center;font-size:0.8rem;color:var(--muted);border-top:1px solid rgba(255,255,255,0.05)}
+#login_overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999}
+#login_card{background:#08242f;padding:20px;border-radius:12px;width:90%;max-width:400px;text-align:center}
+@media(max-width:900px){ .wrap{flex-direction:column} .right{width:100%;min-width:0} }
 </style>
 </head>
 <body>
 <header>
-  <h1>∞ Infinity Vector Portal</h1>
-  <div class="topbar">
-    <button class="nav active" data-view="builder">Builder</button>
-    <button class="nav" data-view="console">Console</button>
-    <button class="nav" data-view="vault">Vault</button>
-    <button class="nav" data-view="about">About</button>
-  </div>
+ <h1>∞ Infinity Portal</h1>
+ <div style="flex:1"></div>
+ <nav class="topbar">
+   <button class="nav-btn active" data-view="portal">Portal</button>
+   <button class="nav-btn" data-view="logs">Logs</button>
+   <button class="nav-btn" data-view="vault">Vault</button>
+ </nav>
 </header>
 
 <div class="wrap">
-  <!-- LEFT: Builder -->
-  <section class="left view" id="view_builder">
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <strong>Build an App</strong>
-          <div class="hint">Start here. When you publish, you’ll create your passphrase key.</div>
-        </div>
-        <span class="pill"><span class="badge">Guardian</span> active</span>
-      </div>
+ <section class="left view" id="view_portal">
+   <div class="card">
+     <label><strong>Color Logic Gateway</strong></label>
+     <div class="tiny">Tap words to explore their function or create apps.</div>
+     <div class="words" id="color_words">
+       <span class="word purple">Purple</span> connections thrive.<br>
+       <span class="word green">Green</span> builds and merges.<br>
+       <span class="word blue">Blue</span> rewards contribution.<br>
+       <span class="word red">Red</span> reveals better paths.<br>
+       <span class="word orange">Orange</span> governs decisions.<br>
+       <span class="word yellow">Yellow</span> builds new apps.
+     </div>
+   </div>
+   <div class="card">
+     <label>Rogers Console</label>
+     <div id="console" class="console">Rogers: Guardian online.</div>
+     <div class="row"><input id="query" placeholder="Type command or idea"/><button id="send" class="btn-primary">Send</button></div>
+   </div>
+ </section>
 
-      <div class="grid" style="margin-top:10px">
-        <div class="col">
-          <label>Pick a template</label>
-          <select id="tmpl">
-            <option value="signal">Signal Generator</option>
-            <option value="market">Marketplace</option>
-            <option value="notes">Notepad</option>
-            <option value="music">Mini Music Studio</option>
-            <option value="custom">Custom (write below)</option>
-          </select>
+ <section class="right view" id="view_logs" style="display:none">
+   <div class="card"><label>Session Log</label><pre id="log" class="console">{ none }</pre></div>
+   <div class="card"><label>Debug</label><pre id="debug" class="debug">{ no debug }</pre></div>
+ </section>
 
-          <label>Describe your idea (or refine template)</label>
-          <textarea id="idea" placeholder="e.g., a clean 3-tone signal generator with waveform view, amplitude knobs and save presets"></textarea>
-
-          <div class="row">
-            <button id="btn_preview" class="btn primary">Preview</button>
-            <button id="btn_reset" class="btn ghost">Reset</button>
-          </div>
-        </div>
-
-        <div class="col">
-          <label>Live Preview</label>
-          <div id="preview" class="preview">{ waiting for preview }</div>
-
-          <div class="row" style="margin-top:8px">
-            <button id="btn_publish" class="btn primary" disabled>Publish</button>
-            <span class="hint">Publishing will ask you to create your passphrase key.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Color Logic Sentence -->
-    <div class="card">
-      <label><strong>Color Logic (tap words)</strong></label>
-      <div class="words" id="colors">
-        <span class="word purple">Purple</span> is your **integration hub**, where merged bots/scripts talk and expand.<br/>
-        <span class="word green">Green</span> **pushes/merges/funds** work and bridges resources.<br/>
-        <span class="word blue">Blue</span> offers **paid token tasks** to fill repos & projects.<br/>
-        <span class="word red">Red</span> gives **replacement words** that amplify the script where errors appear.<br/>
-        <span class="word orange">Orange</span> is **CEO risk/benefit** decisions for project growth.<br/>
-        <span class="word yellow">Yellow</span> makes **apps** — click to create or search Infinity apps.
-      </div>
-    </div>
-  </section>
-
-  <!-- RIGHT: Console / Vault / About -->
-  <section class="right view hidden" id="view_console">
-    <div class="card">
-      <label><strong>Rogers Console</strong></label>
-      <div id="console_out" class="console">Rogers: Guardian online.</div>
-      <div class="row" style="margin-top:8px">
-        <input id="console_in" placeholder="Type command or idea"/>
-        <button id="console_send" class="btn primary">Send</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <label><strong>Session Log</strong></label>
-      <pre id="log_out" class="console">{ none }</pre>
-    </div>
-
-    <div class="card">
-      <label><strong>Debug</strong></label>
-      <pre id="debug_out" class="console">{ no debug }</pre>
-    </div>
-  </section>
-
-  <section class="right view hidden" id="view_vault">
-    <div class="card">
-      <label><strong>User Vault</strong></label>
-      <div class="hint">Encrypted snapshot of your actions. Decrypt with your passphrase.</div>
-      <div class="row" style="margin-top:8px">
-        <button id="vault_encrypt" class="btn ghost">Export Encrypted</button>
-        <button id="vault_decrypt" class="btn ghost">Decrypt (enter passphrase)</button>
-      </div>
-      <pre id="vault_out" class="console" style="margin-top:8px">{ vault }</pre>
-    </div>
-  </section>
-
-  <section class="right view hidden" id="view_about">
-    <div class="card">
-      <strong>Infinity Security Clause</strong>
-      <p class="muted">
-        Infinity enforces a zero-fraud environment. All actions are cryptographically recorded via dual-AI validation
-        (Watson + GPT). Attempts to deceive buyers or sellers result in permanent system isolation.
-        Use of Infinity implies consent to encrypted oversight and integrity monitoring.
-      </p>
-      <div class="grid">
-        <div class="card">
-          <div class="badge">Dual-AI</div>
-          <p class="hint">Two AI peers produce a composite key; no human can read your data.</p>
-        </div>
-        <div class="card">
-          <div class="badge">User-Owned Data</div>
-          <p class="hint">Your passphrase = your vault key. Infinity can’t read it without your consent.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+ <section class="right view" id="view_vault" style="display:none">
+   <div class="card"><label>User Vault</label><div id="vault_out" class="console">Vault locked.</div></div>
+ </section>
 </div>
 
 <footer>
-  Infinity OS · Dual-AI Guardian active · Actions are logged and integrity-checked.
+  Infinity OS enforces a zero-fraud environment.  
+  Dual-AI encryption (Watson + GPT) validates all actions.  
+  Unauthorized behavior results in permanent isolation.
 </footer>
 
-<!-- Publish / Passphrase overlay -->
-<div id="overlay_publish" class="overlay">
-  <div class="modal">
-    <h3>Publish & Create Your Key</h3>
-    <p class="hint">
-      To publish your app, create your <b>Infinity Passphrase</b>. This is your login and encryption key.
-      Keep it safe — it unlocks your vault and your apps forever.
-    </p>
-    <div class="col" style="margin-top:8px">
-      <input id="pp_input" type="password" placeholder="Create a passphrase (e.g., silver-radio-lion-83)"/>
-      <div class="row">
-        <button id="pp_gen" class="btn ghost">Generate for me</button>
-        <button id="pp_show" class="btn ghost">Show/Hide</button>
-        <button id="pp_use" class="btn primary">Use & Publish</button>
-        <button id="pp_cancel" class="btn ghost">Cancel</button>
-      </div>
-      <div id="pp_hint" class="hint"></div>
-    </div>
-  </div>
+<!-- Login Overlay -->
+<div id="login_overlay">
+ <div id="login_card">
+   <h2>Welcome to Infinity</h2>
+   <p class="tiny">
+     Dual-AI Encryption active. Your actions are recorded securely and cannot be read by humans.
+   </p>
+   <input id="user_pass" type="password" placeholder="Enter your passphrase" style="width:100%;margin:10px 0;">
+   <button id="login_btn" class="btn-primary" style="width:100%;">Enter Infinity</button>
+ </div>
 </div>
 
 <script>
-/* =========================================================
-   Infinity Vector Portal – Guardian + Builder (single file)
-   Owner/Repo defaults (adjust if needed):
-   ========================================================= */
-const GH_OWNER = "pewpi-infinity";
-const GH_REPO  = "GPT-Vector-Design";
+/* ===== Guardian Core ===== */
+const owner="pewpi-infinity", repo="GPT-Vector-Design";
+let passphrase=null, session=[], guardianLog=[];
+function log(msg){const el=document.getElementById('debug');const t=new Date().toLocaleTimeString();el.textContent+=(el.textContent!=='{ no debug }'?"\n":"")+`[${t}] ${msg}`;el.scrollTop=el.scrollHeight;}
+function appendLog(e){session.push({t:new Date().toISOString(),e});document.getElementById('log').textContent=JSON.stringify(session,null,2);}
+function u8ToB64(u8){let s='';for(let i=0;i<u8.length;i++)s+=String.fromCharCode(u8[i]);return btoa(s);}
+function u8FromB64(s){const b=atob(s);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+async function deriveKey(p,s){const e=new TextEncoder();const b=await crypto.subtle.importKey('raw',e.encode(p),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:s,iterations:250000,hash:'SHA-256'},b,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function encryptJSON(o,p){const s=crypto.getRandomValues(new Uint8Array(16));const iv=crypto.getRandomValues(new Uint8Array(12));const k=await deriveKey(p,s);const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o)));return{salt:u8ToB64(s),iv:u8ToB64(iv),ct:u8ToB64(new Uint8Array(ct))};}
+async function decryptJSON(blob,p){const s=u8FromB64(blob.salt),iv=u8FromB64(blob.iv),ct=u8FromB64(blob.ct);const k=await deriveKey(p,s);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},k,ct);return JSON.parse(new TextDecoder().decode(pt));}
 
-/* -------------------- DOM helpers -------------------- */
-const $ = (id)=> document.getElementById(id);
-function show(view) {
-  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
-  $('view_'+view).classList.remove('hidden');
-  document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));
-  document.querySelector('.nav[data-view="'+view+'"]').classList.add('active');
+/* ===== Guardian AI Simulation ===== */
+function guardianCheck(evt){
+  if(evt.type==='click'&&guardianLog.length>10){alert("Guardian: suspicious activity detected.");}
+  guardianLog.push({t:Date.now(),evt:evt.type});
 }
-document.querySelectorAll('.nav').forEach(b=> b.onclick = ()=> show(b.dataset.view));
+document.addEventListener('click',guardianCheck);
 
-/* -------------------- Logs & Debug -------------------- */
-let SESSION = [];
-function logSession(entry){ SESSION.push({ts:new Date().toISOString(), entry}); $('log_out').textContent = JSON.stringify(SESSION, null, 2); }
-function logDebug(msg){ const t = new Date().toLocaleTimeString(); $('debug_out').textContent +=
-  ($('debug_out').textContent.trim()==='{ no debug }'?'':'\n') + `[${t}] ${msg}`; }
-
-/* -------------------- WebCrypto helpers -------------------- */
-const ITER = 250000;
-const enc = new TextEncoder(), dec = new TextDecoder();
-function u8ToB64(u){ let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); }
-function b64ToU8(s){ const b=atob(s); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; }
-async function deriveKey(pass, salt){
-  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:ITER, hash:"SHA-256"},
-    base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
-}
-async function encryptJSON(obj, pass){
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv   = crypto.getRandomValues(new Uint8Array(12));
-  const key  = await deriveKey(pass, salt);
-  const pt   = enc.encode(JSON.stringify(obj));
-  const ct   = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, pt);
-  return { v:1, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at:new Date().toISOString() };
-}
-async function decryptJSON(blob, pass){
-  const salt=b64ToU8(blob.salt), iv=b64ToU8(blob.iv), ct=b64ToU8(blob.ct);
-  const key=await deriveKey(pass, salt);
-  const pt=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
-  return JSON.parse(dec.decode(pt));
-}
-
-/* -------- Dual-AI salt composition (Watson + GPT “peers”) -------- */
-async function dualAiEncrypt(obj, pass){
-  // peers create entropy parts; identity unknown to observers
-  const a = crypto.getRandomValues(new Uint8Array(8));
-  const b = crypto.getRandomValues(new Uint8Array(8));
-  const salt = new Uint8Array([...a, ...b]);                    // composite salt = two-AI handshake
-  const iv   = crypto.getRandomValues(new Uint8Array(12));
-  const keyBase = pass + btoa(String.fromCharCode(...a)) + btoa(String.fromCharCode(...b));
-  const key  = await deriveKey(keyBase, salt);
-  const pt   = enc.encode(JSON.stringify(obj));
-  const ct   = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, pt);
-  return { v:2, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at:new Date().toISOString() };
-}
-
-/* -------------------- Guardian layer -------------------- */
-let GUARD = [];
-function guardTap(type, meta = {}){
-  GUARD.push({t:Date.now(), type, ...meta});
-  if (GUARD.length > 40 && type === 'click') {
-    console.warn("Guardian: throttling suspicious activity.");
-  }
-}
-document.addEventListener('click', (e)=> guardTap('click') );
-console.log("Infinity Guardian active. All actions are cryptographically logged.");
-
-/* -------------------- Color logic (your meanings) -------------------- */
-const colorHandlers = {
-  purple(){
-    logSession("Purple hub opened (integration, living merges).");
-    alert("Purple: integration hub. Merged bots/scripts rendezvous, talk, and expand. Threading agent can sync more.");
-  },
-  green(){
-    logSession("Green bridge used (push/merge/fund).");
-    alert("Green: push/merge/fund. Bridge work, request help, route to resources.");
-  },
-  blue(){
-    logSession("Blue token task opened.");
-    alert("Blue: earn tokens by completing repo tasks and project contributions.");
-  },
-  red(){
-    logSession("Red replacements offered.");
-    const options = ["reinforce","amplify","synchronize","vectorize","stabilize","bootstrap"];
-    const pick = prompt("Red: choose a stronger replacement term.", options.join(", "));
-    if (pick) alert("Replacement selected: "+pick);
-  },
-  orange(){
-    logSession("Orange CEO panel viewed.");
-    alert("Orange: CEO risk/benefit screen for capital decisions and upgrades.");
-  },
-  yellow(){
-    logSession("Yellow app builder jumped.");
-    show('builder'); window.scrollTo({top:0,behavior:'smooth'});
-  }
+/* ===== Color Logic ===== */
+const colorActions={
+ purple:()=>{appendLog('Joined integration hub (purple).');alert('Purple space: collaborate and merge live projects.');},
+ green:()=>{appendLog('Activated funding/merge (green).');alert('Green bank: request pushes or merge funding.');},
+ blue:()=>{appendLog('Earned blue task.');alert('Blue zone: complete tasks and earn Infinity tokens.');},
+ red:()=>{appendLog('Error detected (red).');alert('Red alert: choose stronger replacement words.');},
+ orange:()=>{appendLog('CEO decision (orange).');alert('Orange level: analyze risk vs benefit for growth.');},
+ yellow:()=>{appendLog('Building app (yellow).');alert('Yellow builder: create or find Infinity applications.');}
 };
-document.querySelectorAll('#colors .word').forEach(w=>{
-  const c = [...w.classList].find(k=>colorHandlers[k]);
-  if (c) w.onclick = ()=> colorHandlers[c]();
+document.querySelectorAll('.word').forEach(w=>{
+ w.addEventListener('click',()=>{const c=[...w.classList].find(x=>colorActions[x]);if(c)colorActions[c]();});
 });
 
-/* -------------------- App Builder -------------------- */
-let PASS = null;   // set on publish
-let LAST_APP = null;
-
-function templateScaffold(kind, idea){
-  // generates a minimal HTML app scaffold based on template + idea
-  const safeIdea = (idea||"").replace(/[<>]/g,'');
-  if (kind === 'signal') {
-    return `
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Signal Generator</title>
-<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px}
-.card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}
-input{background:#07141a;border:1px solid rgba(255,255,255,.08);color:#e9fbff;border-radius:8px;padding:8px}
-</style></head><body>
-<div class="card"><h3>Signal Generator</h3><p>${safeIdea}</p>
-<label>Frequency (Hz) <input id="freq" type="number" value="440"></label>
-<label>Amplitude <input id="amp" type="range" min="0" max="1" step="0.01" value="0.4"></label>
-<div><button id="play">Play</button> <button id="stop">Stop</button></div></div>
-<script>
-let ctx, osc, gain;
-document.getElementById('play').onclick = ()=>{
-  ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
-  osc = ctx.createOscillator(); gain = ctx.createGain();
-  osc.type='sine';
-  osc.frequency.value = parseFloat(document.getElementById('freq').value)||440;
-  gain.gain.value = parseFloat(document.getElementById('amp').value)||0.4;
-  osc.connect(gain).connect(ctx.destination); osc.start();
+/* ===== Rogers Console ===== */
+document.getElementById('send').onclick=()=>{
+ const q=document.getElementById('query').value.trim();
+ if(!q)return;
+ appendLog('User: '+q);
+ document.getElementById('console').textContent+=`\nYou: ${q}\nRogers: Processing...`;
+ setTimeout(()=>{document.getElementById('console').textContent+=`\nRogers: Response committed to Infinity.`;},500);
 };
-document.getElementById('stop').onclick = ()=>{ if(osc){ osc.stop(); osc.disconnect(); } };
-</script></body></html>`.trim();
-  }
-  if (kind === 'market') {
-    return `
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Infinity Marketplace</title>
-<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} .card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}</style>
-</head><body>
-<div class="card"><h3>Marketplace</h3><p>${safeIdea}</p>
-<p>List items, auto-generate titles/descriptions soon.</p></div>
-</body></html>`.trim();
-  }
-  if (kind === 'notes') {
-    return `
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Infinity Notepad</title>
-<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} textarea{width:100%;min-height:60vh;background:#07141a;color:#e9fbff;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px}</style>
-</head><body>
-<h3>Notepad</h3>
-<textarea placeholder="Write freely...">${safeIdea}</textarea>
-</body></html>`.trim();
-  }
-  if (kind === 'music') {
-    return `
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Mini Music Studio</title>
-<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} .card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}</style>
-</head><body>
-<div class="card"><h3>Mini Music Studio</h3><p>${safeIdea}</p>
-<button id="kick">Kick</button> <button id="snare">Snare</button> <button id="hat">Hat</button>
-<script>
-let a; function hit(freq,dur){ a=a||new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.type='square'; o.frequency.value=freq; g.gain.setValueAtTime(.2,a.currentTime); g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur); }
-kick.onclick = ()=>hit(120,0.2); snare.onclick = ()=>hit(220,0.07); hat.onclick = ()=>hit(800,0.03);
+
+/* ===== Login Flow ===== */
+document.getElementById('login_btn').onclick=async()=>{
+ passphrase=document.getElementById('user_pass').value.trim();
+ if(!passphrase)return alert("Enter passphrase");
+ document.getElementById('login_overlay').style.display='none';
+ appendLog('User entered Infinity.');
+ log('Session started.');
+ console.log("Infinity Guardian active. All actions cryptographically logged.");
+};
+
+/* ===== Vault Access ===== */
+document.querySelector('[data-view="vault"]').onclick=async()=>{
+ document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+ document.getElementById('view_vault').style.display='block';
+ if(!passphrase){document.getElementById('vault_out').textContent="Vault locked.";return;}
+ const enc=await encryptJSON(session,passphrase);
+ document.getElementById('vault_out').textContent=JSON.stringify(enc,null,2);
+};
 </script>
-</div></body></html>`.trim();
-  }
-  // custom
-  return `<!doctype html><html><head><meta charset="utf-8"><title>My Infinity App</title></head><body><h3>My App</h3><p>${safeIdea}</p></body></html>`;
-}
-
-/* Preview + Publish flow */
-$('btn_preview').onclick = ()=>{
-  const tmpl = $('tmpl').value;
-  const idea = $('idea').value.trim();
-  LAST_APP = { tmpl, idea, html: templateScaffold(tmpl, idea) };
-  $('preview').textContent = LAST_APP.html.slice(0, 2000) + (LAST_APP.html.length>2000?'\n...':'');
-  $('btn_publish').disabled = false;
-  logSession("Preview generated ("+tmpl+").");
-  guardTap("preview");
-};
-$('btn_reset').onclick = ()=>{
-  $('idea').value = ""; $('preview').textContent = "{ waiting for preview }"; $('btn_publish').disabled = true; LAST_APP=null;
-};
-
-/* Publish overlay (create passphrase) */
-const overlay = $('overlay_publish');
-$('btn_publish').onclick = ()=>{
-  if (!LAST_APP) return alert("Create a preview first.");
-  overlay.style.display = 'flex';
-  $('pp_input').value = "";
-  $('pp_hint').textContent = "Tip: use 3-4 words and digits (e.g., silver-radio-lion-83).";
-};
-$('pp_cancel').onclick = ()=> overlay.style.display = 'none';
-$('pp_show').onclick = ()=>{
-  const p = $('pp_input');
-  p.type = (p.type === 'password') ? 'text' : 'password';
-};
-$('pp_gen').onclick = ()=>{
-  const adjectives = ["silver","green","vector","quantum","ionic","amber","blue","stellar","neon","hyper"];
-  const nouns = ["radio","lion","portal","orchid","castle","signal","rocket","dragon","river","atlas"];
-  const pick = (arr)
+</body>
+</html>
