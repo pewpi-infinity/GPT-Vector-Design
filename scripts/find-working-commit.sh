@@ -8,6 +8,17 @@ MAX_COMMITS=${1:-50}
 BUILD_CMD=${2:-"npm ci && npm run build"}
 CHECK_PATH=${3:-"dist/index.html"}
 
+# Run protection checks first
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/protect.sh" ]; then
+    echo "Running pre-flight safety checks..."
+    if ! bash "${SCRIPT_DIR}/protect.sh" "find-working-commit"; then
+        echo "Pre-flight checks failed. Aborting."
+        exit 1
+    fi
+    echo ""
+fi
+
 ORIG_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
 BACKUP_BRANCH="backup-before-restore-${TIMESTAMP}"

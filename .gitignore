@@ -1,0 +1,38 @@
+# Recovery tool backups (stored in .git directory)
+.git/repo-backups/
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Test outputs
+coverage/
+.nyc_output/
