@@ -1,0 +1,31 @@
+{
+  "name": "gpt-vector-design",
+  "version": "1.0.0",
+  "description": "Infinity Portal - GPT Vector Design application with dual-AI encryption",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8080 -o",
+    "lint": "npm run lint:html && npm run lint:js",
+    "lint:html": "npx html-validate '*.html'",
+    "lint:js": "npx eslint '*.js' --no-eslintrc --parser-options=ecmaVersion:2022,sourceType:module --env browser,es2022",
+    "test": "echo 'No tests defined yet' && exit 0",
+    "validate": "npm run lint && npm test"
+  },
+  "keywords": [
+    "infinity-portal",
+    "vector-design",
+    "encryption",
+    "gpt"
+  ],
+  "author": "pewpi-infinity",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "html-validate": "^8.11.1",
+    "http-server": "^14.1.1"
+  }
+}
