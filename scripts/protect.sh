@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # protect.sh
 # Pre-flight safety checks and protection before any recovery operation
-# Usage: ./scripts/protect.sh [operation_name]
+# Usage: ./scripts/protect.sh [operation_name] [--non-interactive]
 set -euo pipefail
 
 OPERATION=${1:-"unknown"}
 TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+NON_INTERACTIVE=false
+
+# Check for non-interactive flag
+if [ "${2:-}" == "--non-interactive" ] || [ "${2:-}" == "-y" ]; then
+    NON_INTERACTIVE=true
+fi
 
 echo "=== Repository Protection Pre-flight Checks ==="
 echo "Operation: ${OPERATION}"
@@ -26,10 +32,14 @@ if ! git diff-index --quiet HEAD -- 2>/dev/null; then
     git status --short
     echo ""
     echo "   Recommendation: Commit or stash your changes before proceeding"
-    read -p "   Continue anyway? (yes/no): " -r
-    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-        echo "   Operation cancelled by user"
-        exit 1
+    if [ "$NON_INTERACTIVE" = false ]; then
+        read -p "   Continue anyway? (yes/no): " -r
+        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+            echo "   Operation cancelled by user"
+            exit 1
+        fi
+    else
+        echo "   Non-interactive mode: Continuing anyway"
     fi
 else
     echo "✓ No uncommitted changes"

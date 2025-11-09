@@ -46,7 +46,7 @@ run_test "repo-scan.py execution" \
 
 # Test 4: protect.sh runs successfully (non-interactive)
 run_test "protect.sh execution" \
-    "cd '${SCRIPT_DIR}/..' && ./scripts/protect.sh test-run"
+    "cd '${SCRIPT_DIR}/..' && ./scripts/protect.sh test-run --non-interactive"
 
 # Test 5: backup-restore.sh list works
 run_test "backup-restore.sh list" \
@@ -73,9 +73,8 @@ run_test "CI workflow YAML syntax" \
     "python3 -c \"import yaml; yaml.safe_load(open('${SCRIPT_DIR}/../.github/workflows/repair-ci.yml'))\""
 
 # Test 11: Create and list a backup with unique name
-UNIQUE_BACKUP="test-backup-\$(date +%s)-\$\$"
 run_test "backup creation" \
-    "cd '${SCRIPT_DIR}/..' && ./scripts/backup-restore.sh backup \${UNIQUE_BACKUP}"
+    "cd '${SCRIPT_DIR}/..' && UNIQUE_NAME=\"test-backup-\$(date +%s)-\$\$\" && ./scripts/backup-restore.sh backup \"\$UNIQUE_NAME\""
 
 # Test 12: Verify backup was created
 run_test "backup verification" \
