@@ -17,6 +17,7 @@ jobs:
   # Guard job - exits early if triggered by GitHub Actions bot to prevent loops
   check-actor:
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
@@ -35,6 +36,8 @@ jobs:
   # Full scan and build for pull requests
   pr-scan-and-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: check-actor
     if: github.event_name == 'pull_request' && needs.check-actor.outputs.should_run == 'true'
     steps:
@@ -78,6 +81,8 @@ jobs:
   # Lightweight scan for pushes to main (no build, no auto-commit)
   main-scan-only:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: check-actor
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check-actor.outputs.should_run == 'true'
     steps:
@@ -119,6 +124,8 @@ jobs:
   # Scheduled scan
   scheduled-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: check-actor
     if: github.event_name == 'schedule' && needs.check-actor.outputs.should_run == 'true'
     steps:
@@ -157,6 +164,8 @@ jobs:
   # Manual workflow dispatch
   manual-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: check-actor
     if: github.event_name == 'workflow_dispatch' && needs.check-actor.outputs.should_run == 'true'
     steps:
