@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-# repo-scan.py
-# Scans HTML/JS files for referenced local files that do not exist and reports them.
-# Usage: python3 scripts/repo-scan.py --root . --extensions ".html,.js,.py"
-
+"""
+repo-scan.py
+Scans HTML/JS files for referenced local files that do not exist and warns about sensitive files.
+Usage: python3 scripts/repo-scan.py --root .
+"""
 import os
 import re
 import argparse
@@ -33,10 +34,10 @@ def scan_js(path: Path):
     text = path.read_text(encoding='utf-8', errors='ignore')
     for m in JS_IMPORT_RE.findall(text):
         ref = m[0] or m[1]
-        if not ref: continue
+        if not ref:
+            continue
         if is_local(ref) and not os.path.isabs(ref) and not ref.startswith('node:'):
             candidate = (path.parent / ref).resolve()
-            # Try adding .js or index.js if missing
             if not (candidate.exists() or (candidate.with_suffix('.js').exists()) or (candidate / 'index.js').exists()):
                 missing.append((ref, str(candidate)))
     return missing
@@ -61,6 +62,13 @@ def main():
                 m = scan_js(filepath)
                 if m:
                     js_missing[str(filepath)] = m
+
+    # Check for obvious secret files
+    for secret_name in ("secrets.JSON", "secrets.json", "secrets.yml"):
+        if (root / secret_name).exists():
+            print(f"ERROR: Found potential secret file in repo root: {secret_name}")
+            print("Please remove secrets from the repo and add them to GitHub Secrets.")
+            # do not exit; report everything
 
     if not html_missing and not js_missing:
         print("No missing local references found in HTML/JS scan.")
