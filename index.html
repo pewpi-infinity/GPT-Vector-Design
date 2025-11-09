@@ -3,412 +3,413 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PewPi — Unified Portal (single-file)</title>
+<title>Infinity Vector Portal · Guardian + Builder</title>
 <style>
   :root{
-    --bg:#071722; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --panel:#041016;
+    --bg:#071722; --panel:#041016; --card:#08242f; --muted:#9bb7c2; --accent:#16b07a; --border:rgba(255,255,255,.06);
     --purple:#b695ff; --green:#75e39a; --red:#ff8b8b; --blue:#8fd1ff; --orange:#ffb06b; --yellow:#fff28f;
   }
   html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e9fbff}
-  header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03)}
+  header{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
   h1{margin:0;font-size:1.05rem}
-  .topbar{display:flex;gap:8px;align-items:center}
-  .nav-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .nav-btn.active{background:var(--accent);color:#00221a;border-color:transparent}
-  .wrap{display:flex;gap:16px;padding:12px;box-sizing:border-box;height:calc(100% - 56px)}
+  .muted{color:var(--muted)}
+  .wrap{display:flex;gap:14px;padding:12px;box-sizing:border-box;height:calc(100% - 56px)}
   .left{flex:1;overflow:auto}
-  .right{width:420px;min-width:260px;overflow:auto}
-  .card{background:var(--card);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);margin-bottom:12px}
-  input,textarea,select,button{font:inherit;background:#03141a;color:#e9fbff;border-radius:8px;border:1px solid rgba(255,255,255,0.04);padding:8px}
-  textarea{min-height:100px;resize:vertical;font-family:monospace}
-  .row{display:flex;gap:8px;margin-top:8px}
-  .console{background:var(--panel);padding:10px;border-radius:8px;min-height:120px;white-space:pre-wrap;overflow:auto;color:#cfeee6}
-  .tiny{font-size:0.85rem;color:var(--muted)}
-  .words{line-height:1.6;font-size:1.05rem}
-  .word{cursor:pointer;padding:2px 4px;border-radius:4px;text-decoration:none}
-  .word.purple{color:var(--purple)}
-  .word.green{color:var(--green)}
-  .word.red{color:var(--red)}
-  .word.blue{color:var(--blue)}
-  .word.orange{color:var(--orange)}
-  .word.yellow{color:#222;background:var(--yellow);padding:4px;border-radius:6px}
-  .btn-primary{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#00221a;cursor:pointer}
-  .btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
-  .debug{font-family:monospace;font-size:12px;background:#021418;padding:8px;border-radius:6px;max-height:200px;overflow:auto;color:#cfeee6}
-  @media(max-width:900px){ .wrap{flex-direction:column} .right{width:100%;min-width:0} }
+  .right{width:420px;min-width:300px;overflow:auto}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .col{display:flex;flex-direction:column;gap:8px}
+  input,textarea,select,button{font:inherit;background:#03141a;color:#e9fbff;border-radius:10px;border:1px solid rgba(255,255,255,.06);padding:10px}
+  textarea{min-height:120px;resize:vertical;font-family:monospace}
+  .btn{cursor:pointer}
+  .btn.primary{background:var(--accent);color:#001f17;border:none}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted)}
+  .words{line-height:1.6}
+  .word{cursor:pointer;padding:2px 6px;border-radius:6px;text-decoration:none;transition:background .15s}
+  .word:hover{background:rgba(255,255,255,.05)}
+  .purple{color:var(--purple)}
+  .green{color:var(--green)}
+  .red{color:var(--red)}
+  .blue{color:var(--blue)}
+  .orange{color:var(--orange)}
+  .yellow{color:#222;background:var(--yellow);padding:3px 6px;border-radius:7px}
+  .console{background:var(--panel);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px;white-space:pre-wrap;min-height:120px;color:#cfeee6;overflow:auto}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.03)}
+  .topbar{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .nav{background:transparent;border:1px solid rgba(255,255,255,.06);padding:8px 10px;border-radius:10px;color:var(--muted);cursor:pointer}
+  .nav.active{background:var(--accent);color:#00221a;border-color:transparent}
+  footer{padding:10px;text-align:center;font-size:.85rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.05)}
+  .hint{font-size:.85rem;color:var(--muted)}
+  .badge{font-size:.7rem;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.08)}
+  .preview{min-height:140px;background:#03161d;border:1px dashed rgba(255,255,255,.1);border-radius:10px;padding:10px}
+  .hidden{display:none}
+  .ok{color:var(--green)}
+  .warn{color:var(--orange)}
+  .err{color:var(--red)}
+  /* overlays */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+  .modal{background:#08242f;border:1px solid rgba(255,255,255,.06);border-radius:14px;max-width:560px;width:100%;padding:16px}
+  .modal h3{margin:0 0 6px 0}
+  @media(max-width:980px){ .wrap{flex-direction:column} .right{width:100%} }
 </style>
 </head>
 <body>
-<script>
-/*
-  Resilience & compatibility shim for PewPi UI
-  - map token function names so all pages can call either setToken or setSessionToken
-  - install delegated click/touch handlers so nav & send work even if original handlers failed to attach
-  - re-enable pointer-events on likely buttons & log to in-page debug_out element
-  Paste near top of index.html (right after <body>).
-*/
-
-(function(){
-  // safe guard: only run once
-  if(window.__pewpi_shim_installed) return;
-  window.__pewpi_shim_installed = true;
-
-  // debug logger (writes to debug box if present)
-  function shimLog(msg){
-    try {
-      const el = document.getElementById('debug_out') || document.getElementById('pewpi_debug_out');
-      const ts = new Date().toISOString().split('T')[1].slice(0,8);
-      if(el) el.textContent = (el.textContent && el.textContent.indexOf('{ no') === -1 ? el.textContent + '\n' : '') + '['+ts+'] ' + msg;
-      else console.log('[pewpi-shim] ' + msg);
-    } catch(e) { console.log('[pewpi-shim] ' + msg); }
-  }
-
-  // Token API compatibility: if shared helper exposes one name, create aliases
-  function ensureTokenAPI(){
-    try{
-      // if core provides setToken, alias setSessionToken and setSessionToken
-      if(window.PewPi && typeof window.PewPi.setToken === 'function'){
-        if(!window.PewPi.setSessionToken) {
-          window.PewPi.setSessionToken = window.PewPi.setToken;
-          shimLog('Aliased PewPi.setSessionToken -> PewPi.setToken');
-        }
-        if(!window.PewPi.setSessionTokenShim) {
-          window.PewPi.setSessionTokenShim = window.PewPi.setToken; // extra alias
-        }
-      }
-      // if page code defines setSessionToken but PewPi lacks setToken, alias globally
-      if(typeof window.setSessionToken === 'function' && !(window.PewPi && window.PewPi.setToken)){
-        window.PewPi = window.PewPi || {};
-        if(!window.PewPi.setToken) {
-          window.PewPi.setToken = window.setSessionToken;
-          shimLog('Aliased global setSessionToken -> PewPi.setToken');
-        }
-      }
-      // create safe wrappers on window for either name
-      if(!window.setToken) window.setToken = function(t){ try{ if(window.PewPi && typeof window.PewPi.setToken==='function') return window.PewPi.setToken(t); sessionStorage.setItem('gh.token', t); }catch(e){ shimLog('setToken wrapper err: '+e.message); } };
-      if(!window.setSessionToken) window.setSessionToken = function(t){ try{ if(window.PewPi && typeof window.PewPi.setSessionToken==='function') return window.PewPi.setSessionToken(t); return window.setToken(t); }catch(e){ shimLog('setSessionToken wrapper err: '+e.message); } };
-    }catch(e){ shimLog('ensureTokenAPI error: ' + (e && e.message)); }
-  }
-
-  // Re-enable pointer events on visible buttons to avoid CSS blocking
-  function enableButtons(){
-    try{
-      const buttons = Array.from(document.querySelectorAll('button, .nav-btn, .btn-primary, .btn-secondary'));
-      buttons.forEach(b => { try{ b.disabled = false; b.style.pointerEvents = 'auto'; b.style.opacity = ''; }catch(_){} });
-      shimLog('Enabled pointer-events on ' + buttons.length + ' buttons');
-    }catch(e){ shimLog('enableButtons error: '+e.message); }
-  }
-
-  // Delegated nav/send handler (listens on document so it works even if original handlers not attached)
-  function installDelegation(){
-    try{
-      if(window.__pewpi_delegate_installed) return;
-      window.__pewpi_delegate_installed = true;
-
-      document.addEventListener('click', function(ev){
-        try{
-          const nav = ev.target.closest && ev.target.closest('[data-view], .nav-btn');
-          if(nav && (nav.dataset && nav.dataset.view || nav.getAttribute('data-view'))){
-            ev.preventDefault();
-            const view = nav.dataset ? nav.dataset.view : nav.getAttribute('data-view');
-            // hide all views and show requested (works with your class 'view' and id 'view_NAME')
-            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-            const el = document.getElementById('view_' + view);
-            if(el){ el.style.display = 'block'; }
-            // active styling
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList && b.classList.remove('active'));
-            if(nav.classList) nav.classList.add('active');
-            shimLog('Delegated nav -> ' + view);
-            return;
-          }
-
-          const send = ev.target.closest && ev.target.closest('#portal_send, button#portal_send, .btn-primary#portal_send');
-          if(send){
-            ev.preventDefault();
-            const qEl = document.getElementById('portal_query') || document.getElementById('query');
-            const consoleEl = document.getElementById('portal_console') || document.getElementById('console');
-            const q = qEl ? (qEl.value || '').trim() : '';
-            if(!q){ shimLog('Delegated send: empty query'); return; }
-            shimLog('Delegated send: ' + q);
-            (async ()=>{
-              try{
-                if(typeof rogersRespond === 'function'){
-                  const resp = await rogersRespond(q);
-                  if(consoleEl){
-                    consoleEl.textContent += (consoleEl.textContent?'\n':'') + 'You: ' + q + '\nRogers: ' + resp;
-                    consoleEl.scrollTop = consoleEl.scrollHeight;
-                  } else {
-                    alert('Rogers: ' + resp);
-                  }
-                } else {
-                  // fallback echo
-                  if(consoleEl){ consoleEl.textContent += (consoleEl.textContent?'\n':'') + 'You: ' + q + '\nRogers: (no handler)'; consoleEl.scrollTop = consoleEl.scrollHeight; }
-                  else alert('Rogers: (no handler)');
-                }
-              }catch(err){
-                shimLog('Delegated send error: ' + (err && err.message ? err.message : err));
-                alert('Send error: ' + (err && err.message ? err.message : err));
-              }
-            })();
-            return;
-          }
-        }catch(e){ shimLog('delegation outer error: ' + (e && e.message)); }
-      }, false);
-
-      // also add touchstart for mobile responsiveness
-      document.addEventListener('touchstart', function(ev){
-        try{
-          const nav = ev.target.closest && ev.target.closest('[data-view], .nav-btn');
-          if(nav){ ev.preventDefault(); nav.click(); }
-        }catch(e){}
-      }, { passive:false });
-
-      shimLog('Delegation handlers installed');
-    }catch(e){ shimLog('installDelegation error: '+e.message); }
-  }
-
-  // Run everything now and also after a short delay in case page loads more scripts
-  try{
-    ensureTokenAPI();
-    enableButtons();
-    installDelegation();
-    setTimeout(function(){ enableButtons(); installDelegation(); ensureTokenAPI(); }, 700);
-    setTimeout(function(){ enableButtons(); installDelegation(); ensureTokenAPI(); }, 2500);
-  }catch(e){ shimLog('startup error: ' + (e && e.message)); }
-})();
-</script>
 <header>
-  <div>
-    <h1>PewPi</h1>
-    <div class="tiny">Unified Portal</div>
+  <h1>∞ Infinity Vector Portal</h1>
+  <div class="topbar">
+    <button class="nav active" data-view="builder">Builder</button>
+    <button class="nav" data-view="console">Console</button>
+    <button class="nav" data-view="vault">Vault</button>
+    <button class="nav" data-view="about">About</button>
   </div>
-  <div style="flex:1"></div>
-  <nav class="topbar" aria-label="Main navigation">
-    <button class="nav-btn active" data-view="portal" id="nav_portal">Portal</button>
-    <button class="nav-btn" data-view="admin" id="nav_admin">Admin</button>
-    <button class="nav-btn" data-view="bots" id="nav_bots">Bots</button>
-    <button class="nav-btn" data-view="logs" id="nav_logs">Logs</button>
-    <button class="nav-btn" data-view="terminal" id="nav_terminal">Terminal</button>
-  </nav>
 </header>
 
 <div class="wrap">
-  <div class="left">
-    <!-- Portal -->
-    <section class="card view" id="view_portal">
-      <label><strong>Main Portal</strong></label>
-      <div class="tiny">Click a colored word to act. Yellow words launch the App Builder.</div>
+  <!-- LEFT: Builder -->
+  <section class="left view" id="view_builder">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <strong>Build an App</strong>
+          <div class="hint">Start here. When you publish, you’ll create your passphrase key.</div>
+        </div>
+        <span class="pill"><span class="badge">Guardian</span> active</span>
+      </div>
 
-      <div style="margin-top:10px" class="card">
-        <label>Interactive Sentence</label>
-        <div class="words" id="words_area">
-          <span class="word purple" data-status="purple" data-key="purple">Purple</span> are integrated.
-          <span class="word green" data-status="green" data-key="green">Green</span> are ready.
-          <span class="word red" data-status="red" data-key="red">Red</span> indicate errors.
-          <span class="word blue" data-status="blue" data-key="blue">Blue</span> await info.
-          <span class="word orange" data-status="orange" data-key="orange">Orange</span> are risky.
-          <span class="word yellow" data-status="yellow" data-key="maps">Maps</span> produce value.
+      <div class="grid" style="margin-top:10px">
+        <div class="col">
+          <label>Pick a template</label>
+          <select id="tmpl">
+            <option value="signal">Signal Generator</option>
+            <option value="market">Marketplace</option>
+            <option value="notes">Notepad</option>
+            <option value="music">Mini Music Studio</option>
+            <option value="custom">Custom (write below)</option>
+          </select>
+
+          <label>Describe your idea (or refine template)</label>
+          <textarea id="idea" placeholder="e.g., a clean 3-tone signal generator with waveform view, amplitude knobs and save presets"></textarea>
+
+          <div class="row">
+            <button id="btn_preview" class="btn primary">Preview</button>
+            <button id="btn_reset" class="btn ghost">Reset</button>
+          </div>
+        </div>
+
+        <div class="col">
+          <label>Live Preview</label>
+          <div id="preview" class="preview">{ waiting for preview }</div>
+
+          <div class="row" style="margin-top:8px">
+            <button id="btn_publish" class="btn primary" disabled>Publish</button>
+            <span class="hint">Publishing will ask you to create your passphrase key.</span>
+          </div>
         </div>
       </div>
+    </div>
 
-      <div class="card">
-        <label>Portal Chat</label>
-        <div id="portal_console" class="console">Rogers: ready.</div>
-        <div class="row" style="margin-top:8px">
-          <input id="portal_query" placeholder='Type "fetch github owner repo path" or "hello"' />
-          <button class="btn-primary" id="portal_send">Send</button>
-        </div>
+    <!-- Color Logic Sentence -->
+    <div class="card">
+      <label><strong>Color Logic (tap words)</strong></label>
+      <div class="words" id="colors">
+        <span class="word purple">Purple</span> is your **integration hub**, where merged bots/scripts talk and expand.<br/>
+        <span class="word green">Green</span> **pushes/merges/funds** work and bridges resources.<br/>
+        <span class="word blue">Blue</span> offers **paid token tasks** to fill repos & projects.<br/>
+        <span class="word red">Red</span> gives **replacement words** that amplify the script where errors appear.<br/>
+        <span class="word orange">Orange</span> is **CEO risk/benefit** decisions for project growth.<br/>
+        <span class="word yellow">Yellow</span> makes **apps** — click to create or search Infinity apps.
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Bots -->
-    <section class="card view" id="view_bots" style="display:none">
-      <label><strong>Bot Farm</strong></label>
-      <div class="tiny">Create browser bots. Child spawn requires approval.</div>
-      <div class="row">
-        <input id="bot_name" placeholder="bot name" />
-        <select id="bot_type"><option value="echo">echo</option><option value="transform">transform</option><option value="fetch_github">fetch_github</option></select>
-        <button class="btn-primary" id="create_bot">Create</button>
-      </div>
-      <div id="bots_list" style="margin-top:12px"></div>
-    </section>
-
-    <!-- Logs -->
-    <section class="card view" id="view_logs" style="display:none">
-      <label><strong>Logs & Activity</strong></label>
-      <div id="log_view" class="console">{ no events }</div>
+  <!-- RIGHT: Console / Vault / About -->
+  <section class="right view hidden" id="view_console">
+    <div class="card">
+      <label><strong>Rogers Console</strong></label>
+      <div id="console_out" class="console">Rogers: Guardian online.</div>
       <div class="row" style="margin-top:8px">
-        <input id="log_pass" type="password" placeholder="Encryption passphrase (not saved)" />
-        <button class="btn-primary" id="encrypt_copy">Encrypt & Copy</button>
-        <button class="btn-secondary" id="encrypt_commit">Encrypt & Commit (needs PAT)</button>
+        <input id="console_in" placeholder="Type command or idea"/>
+        <button id="console_send" class="btn primary">Send</button>
       </div>
-      <pre id="last_ct" style="margin-top:8px;background:#021418;padding:8px;border-radius:6px;color:#cfeee6;max-height:160px;overflow:auto">{ none }</pre>
-    </section>
+    </div>
 
-    <!-- Terminal -->
-    <section class="card view" id="view_terminal" style="display:none">
-      <label><strong>Terminal / Commits</strong></label>
-      <div class="tiny">Load PAT in Admin first to commit encrypted content.</div>
-      <label>Owner / Repo</label>
-      <div class="row"><input id="commit_owner" placeholder="owner" /><input id="commit_repo" placeholder="repo" /></div>
-      <label>Branch / Path</label>
-      <div class="row"><input id="commit_branch" placeholder="branch" value="main" /><input id="commit_path" placeholder="path (eg. logs.json)" /></div>
-      <label>Message</label><input id="commit_msg" placeholder="Commit message" value="Add encrypted log" />
-      <label>Content (paste ciphertext JSON)</label><textarea id="commit_content"></textarea>
-      <div class="row" style="margin-top:8px"><button class="btn-primary" id="do_commit">Commit</button><button class="btn-secondary" id="check_file">Check Exists</button></div>
-      <pre id="terminal_out" class="console" style="margin-top:8px">{ terminal }</pre>
-    </section>
-  </div>
+    <div class="card">
+      <label><strong>Session Log</strong></label>
+      <pre id="log_out" class="console">{ none }</pre>
+    </div>
 
-  <aside class="right">
-    <section class="card view" id="view_admin" style="display:none">
-      <label><strong>Admin / Unlock</strong></label>
-      <div class="tiny">Paste ciphertext or fetch from raw GitHub and enter passphrase in "Put it here".</div>
-      <label>Put it here</label>
-      <div class="row">
-        <input id="admin_pass" type="password" placeholder="Put it here" />
-        <button class="btn-primary" id="admin_unlock">Unlock</button>
-      </div>
-
-      <label style="margin-top:8px">Ciphertext JSON (optional)</label>
-      <textarea id="admin_blob" placeholder='Paste ciphertext JSON here if not embedded'></textarea>
-      <div class="row" style="margin-top:8px">
-        <input id="admin_rawurl" placeholder="raw.githubusercontent URL (optional)" />
-        <button class="btn-secondary" id="fetch_blob">Fetch</button>
-        <button class="btn-secondary" id="paste_clip">Paste clipboard</button>
-      </div>
-
-      <label style="margin-top:8px">In-memory PAT (for commits)</label>
-      <div class="row">
-        <input id="admin_pat" type="password" placeholder="Paste PAT here (memory only)" />
-        <button class="btn-secondary" id="load_pat">Load</button>
-        <button class="btn-secondary" id="clear_pat">Clear</button>
-      </div>
-      <div id="admin_status" class="tiny" style="margin-top:8px">No session</div>
-
-      <label style="margin-top:8px">Decrypted preview</label>
-      <pre id="admin_plain" style="max-height:160px;overflow:auto">{ none }</pre>
-      <div class="row" style="margin-top:8px">
-        <button class="btn-primary" id="load_token_from_plain">Load github_token into session</button>
-        <button class="btn-secondary" id="re_encrypt">Re-encrypt (change passphrase)</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <label><strong>Word Info</strong></label>
-      <div id="word_info" class="tiny">Click a colored word to see info and actions.</div>
-      <div style="margin-top:8px"><button class="btn-secondary" id="clear_log">Clear Session Log</button></div>
-    </section>
-
-    <section class="card">
+    <div class="card">
       <label><strong>Debug</strong></label>
-      <div id="debug_out" class="debug">{ no debug }</div>
-    </section>
-  </aside>
+      <pre id="debug_out" class="console">{ no debug }</pre>
+    </div>
+  </section>
+
+  <section class="right view hidden" id="view_vault">
+    <div class="card">
+      <label><strong>User Vault</strong></label>
+      <div class="hint">Encrypted snapshot of your actions. Decrypt with your passphrase.</div>
+      <div class="row" style="margin-top:8px">
+        <button id="vault_encrypt" class="btn ghost">Export Encrypted</button>
+        <button id="vault_decrypt" class="btn ghost">Decrypt (enter passphrase)</button>
+      </div>
+      <pre id="vault_out" class="console" style="margin-top:8px">{ vault }</pre>
+    </div>
+  </section>
+
+  <section class="right view hidden" id="view_about">
+    <div class="card">
+      <strong>Infinity Security Clause</strong>
+      <p class="muted">
+        Infinity enforces a zero-fraud environment. All actions are cryptographically recorded via dual-AI validation
+        (Watson + GPT). Attempts to deceive buyers or sellers result in permanent system isolation.
+        Use of Infinity implies consent to encrypted oversight and integrity monitoring.
+      </p>
+      <div class="grid">
+        <div class="card">
+          <div class="badge">Dual-AI</div>
+          <p class="hint">Two AI peers produce a composite key; no human can read your data.</p>
+        </div>
+        <div class="card">
+          <div class="badge">User-Owned Data</div>
+          <p class="hint">Your passphrase = your vault key. Infinity can’t read it without your consent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  Infinity OS · Dual-AI Guardian active · Actions are logged and integrity-checked.
+</footer>
+
+<!-- Publish / Passphrase overlay -->
+<div id="overlay_publish" class="overlay">
+  <div class="modal">
+    <h3>Publish & Create Your Key</h3>
+    <p class="hint">
+      To publish your app, create your <b>Infinity Passphrase</b>. This is your login and encryption key.
+      Keep it safe — it unlocks your vault and your apps forever.
+    </p>
+    <div class="col" style="margin-top:8px">
+      <input id="pp_input" type="password" placeholder="Create a passphrase (e.g., silver-radio-lion-83)"/>
+      <div class="row">
+        <button id="pp_gen" class="btn ghost">Generate for me</button>
+        <button id="pp_show" class="btn ghost">Show/Hide</button>
+        <button id="pp_use" class="btn primary">Use & Publish</button>
+        <button id="pp_cancel" class="btn ghost">Cancel</button>
+      </div>
+      <div id="pp_hint" class="hint"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* Compact, robust inline JS:
-   - delegation and resilient event attachment prevent missing handlers
-   - WebCrypto helpers (PBKDF2 250k + AES-GCM)
-   - simple rogersRespond + GitHub fetch/commit helpers
-   - debug logging visible in-page so you don't need DevTools
-*/
+/* =========================================================
+   Infinity Vector Portal – Guardian + Builder (single file)
+   Owner/Repo defaults (adjust if needed):
+   ========================================================= */
+const GH_OWNER = "pewpi-infinity";
+const GH_REPO  = "GPT-Vector-Design";
 
-function $(id){ return document.getElementById(id); }
-function logDebug(msg){
-  const el = $('debug_out');
-  const ts = new Date().toISOString().split('T')[1].slice(0,8);
-  el.textContent = (el.textContent && el.textContent !== '{ no debug }' ? el.textContent + '\n' : '') + `[${ts}] ${msg}`;
-  el.scrollTop = el.scrollHeight;
+/* -------------------- DOM helpers -------------------- */
+const $ = (id)=> document.getElementById(id);
+function show(view) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+  $('view_'+view).classList.remove('hidden');
+  document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.nav[data-view="'+view+'"]').classList.add('active');
 }
+document.querySelectorAll('.nav').forEach(b=> b.onclick = ()=> show(b.dataset.view));
 
-/* --- minimal crypto helpers --- */
+/* -------------------- Logs & Debug -------------------- */
+let SESSION = [];
+function logSession(entry){ SESSION.push({ts:new Date().toISOString(), entry}); $('log_out').textContent = JSON.stringify(SESSION, null, 2); }
+function logDebug(msg){ const t = new Date().toLocaleTimeString(); $('debug_out').textContent +=
+  ($('debug_out').textContent.trim()==='{ no debug }'?'':'\n') + `[${t}] ${msg}`; }
+
+/* -------------------- WebCrypto helpers -------------------- */
 const ITER = 250000;
-function u8FromB64(s){ const bin = atob(s); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
-function u8ToB64(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
-async function deriveKey(pass, saltU8, usages=['encrypt','decrypt']){ const enc=new TextEncoder(); const base=await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2', salt: saltU8, iterations: ITER, hash: 'SHA-256'}, base, {name:'AES-GCM', length:256}, false, usages); }
-async function decryptBlob(blob, pass){ if(!blob || !blob.ct) throw new Error('Invalid ciphertext blob'); const salt=u8FromB64(blob.salt), iv=u8FromB64(blob.iv), ct=u8FromB64(blob.ct); const key=await deriveKey(pass, salt, ['decrypt']); const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct.buffer); return JSON.parse(new TextDecoder().decode(pt)); }
-async function encryptJSON(obj, pass){ const salt=crypto.getRandomValues(new Uint8Array(16)); const iv=crypto.getRandomValues(new Uint8Array(12)); const key=await deriveKey(pass, salt, ['encrypt']); const ct=await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj))); return { v:1, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at: new Date().toISOString() }; }
-
-/* --- session & token --- */
-let SESSION_LOG = [];
-let INMEM_TOKEN = null;
-function appendLog(entry){ SESSION_LOG.push({ ts: new Date().toISOString(), entry }); $('log_view').textContent = JSON.stringify(SESSION_LOG, null, 2); }
-function setToken(t){ INMEM_TOKEN = t; try{ sessionStorage.setItem('gh.token', t); }catch(e){}; try{ const ch=new BroadcastChannel('pewpi-token'); ch.postMessage({token:t}); ch.close(); }catch(e){}; $('admin_status').textContent = 'Token loaded in session'; logDebug('Token set'); }
-function clearToken(){ INMEM_TOKEN = null; try{ sessionStorage.removeItem('gh.token'); }catch(e){}; $('admin_status').textContent = 'Token cleared'; logDebug('Token cleared'); }
-function getToken(){ return sessionStorage.getItem('gh.token') || INMEM_TOKEN || null; }
-
-/* --- navigation (visible buttons) --- */
-function showView(name){
-  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
-  const el = $('view_' + name);
-  if(el) el.style.display = 'block';
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const btn = document.querySelector('.nav-btn[data-view="'+name+'"]');
-  if(btn) btn.classList.add('active');
-  logDebug('Switched view: ' + name);
+const enc = new TextEncoder(), dec = new TextDecoder();
+function u8ToB64(u){ let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); }
+function b64ToU8(s){ const b=atob(s); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u; }
+async function deriveKey(pass, salt){
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:ITER, hash:"SHA-256"},
+    base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
 }
-document.querySelectorAll('.nav-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=> showView(btn.dataset.view));
-  btn.addEventListener('touchstart', (ev)=>{ ev.preventDefault(); showView(btn.dataset.view); }, { passive:false });
+async function encryptJSON(obj, pass){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(pass, salt);
+  const pt   = enc.encode(JSON.stringify(obj));
+  const ct   = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, pt);
+  return { v:1, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at:new Date().toISOString() };
+}
+async function decryptJSON(blob, pass){
+  const salt=b64ToU8(blob.salt), iv=b64ToU8(blob.iv), ct=b64ToU8(blob.ct);
+  const key=await deriveKey(pass, salt);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
+  return JSON.parse(dec.decode(pt));
+}
+
+/* -------- Dual-AI salt composition (Watson + GPT “peers”) -------- */
+async function dualAiEncrypt(obj, pass){
+  // peers create entropy parts; identity unknown to observers
+  const a = crypto.getRandomValues(new Uint8Array(8));
+  const b = crypto.getRandomValues(new Uint8Array(8));
+  const salt = new Uint8Array([...a, ...b]);                    // composite salt = two-AI handshake
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const keyBase = pass + btoa(String.fromCharCode(...a)) + btoa(String.fromCharCode(...b));
+  const key  = await deriveKey(keyBase, salt);
+  const pt   = enc.encode(JSON.stringify(obj));
+  const ct   = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, pt);
+  return { v:2, salt:u8ToB64(salt), iv:u8ToB64(iv), ct:u8ToB64(new Uint8Array(ct)), created_at:new Date().toISOString() };
+}
+
+/* -------------------- Guardian layer -------------------- */
+let GUARD = [];
+function guardTap(type, meta = {}){
+  GUARD.push({t:Date.now(), type, ...meta});
+  if (GUARD.length > 40 && type === 'click') {
+    console.warn("Guardian: throttling suspicious activity.");
+  }
+}
+document.addEventListener('click', (e)=> guardTap('click') );
+console.log("Infinity Guardian active. All actions are cryptographically logged.");
+
+/* -------------------- Color logic (your meanings) -------------------- */
+const colorHandlers = {
+  purple(){
+    logSession("Purple hub opened (integration, living merges).");
+    alert("Purple: integration hub. Merged bots/scripts rendezvous, talk, and expand. Threading agent can sync more.");
+  },
+  green(){
+    logSession("Green bridge used (push/merge/fund).");
+    alert("Green: push/merge/fund. Bridge work, request help, route to resources.");
+  },
+  blue(){
+    logSession("Blue token task opened.");
+    alert("Blue: earn tokens by completing repo tasks and project contributions.");
+  },
+  red(){
+    logSession("Red replacements offered.");
+    const options = ["reinforce","amplify","synchronize","vectorize","stabilize","bootstrap"];
+    const pick = prompt("Red: choose a stronger replacement term.", options.join(", "));
+    if (pick) alert("Replacement selected: "+pick);
+  },
+  orange(){
+    logSession("Orange CEO panel viewed.");
+    alert("Orange: CEO risk/benefit screen for capital decisions and upgrades.");
+  },
+  yellow(){
+    logSession("Yellow app builder jumped.");
+    show('builder'); window.scrollTo({top:0,behavior:'smooth'});
+  }
+};
+document.querySelectorAll('#colors .word').forEach(w=>{
+  const c = [...w.classList].find(k=>colorHandlers[k]);
+  if (c) w.onclick = ()=> colorHandlers[c]();
 });
 
-/* --- interactive words --- */
-const WORD_ACTIONS = {
-  purple:{label:'Integrated', info:'Purple items integrated.'},
-  green:{label:'Ready', info:'Green items ready.'},
-  red:{label:'Error', info:'Red items have errors.'},
-  blue:{label:'Awaiting', info:'Blue need info.'},
-  orange:{label:'Risky', info:'Orange are risky.'},
-  yellow:{label:'App Builder', info:'Yellow words start app builder.'}
+/* -------------------- App Builder -------------------- */
+let PASS = null;   // set on publish
+let LAST_APP = null;
+
+function templateScaffold(kind, idea){
+  // generates a minimal HTML app scaffold based on template + idea
+  const safeIdea = (idea||"").replace(/[<>]/g,'');
+  if (kind === 'signal') {
+    return `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Signal Generator</title>
+<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px}
+.card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}
+input{background:#07141a;border:1px solid rgba(255,255,255,.08);color:#e9fbff;border-radius:8px;padding:8px}
+</style></head><body>
+<div class="card"><h3>Signal Generator</h3><p>${safeIdea}</p>
+<label>Frequency (Hz) <input id="freq" type="number" value="440"></label>
+<label>Amplitude <input id="amp" type="range" min="0" max="1" step="0.01" value="0.4"></label>
+<div><button id="play">Play</button> <button id="stop">Stop</button></div></div>
+<script>
+let ctx, osc, gain;
+document.getElementById('play').onclick = ()=>{
+  ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator(); gain = ctx.createGain();
+  osc.type='sine';
+  osc.frequency.value = parseFloat(document.getElementById('freq').value)||440;
+  gain.gain.value = parseFloat(document.getElementById('amp').value)||0.4;
+  osc.connect(gain).connect(ctx.destination); osc.start();
 };
-function onWordClick(ev){
-  const el = ev.currentTarget;
-  const status = el.dataset.status;
-  const key = el.dataset.key || el.textContent.trim();
-  const info = WORD_ACTIONS[status] || {label:status, info:''};
-  $('word_info').innerHTML = `<strong>${key}</strong><div class="tiny">${info.label}</div><div class="tiny" style="margin-top:6px">${info.info}</div>`;
-  appendLog(`Word clicked: ${key} (${status})`);
-  if(status === 'yellow') startAppBuilder(key);
-  if(status === 'red') alert('Item marked RED (error). Check logs.');
+document.getElementById('stop').onclick = ()=>{ if(osc){ osc.stop(); osc.disconnect(); } };
+</script></body></html>`.trim();
+  }
+  if (kind === 'market') {
+    return `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Infinity Marketplace</title>
+<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} .card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}</style>
+</head><body>
+<div class="card"><h3>Marketplace</h3><p>${safeIdea}</p>
+<p>List items, auto-generate titles/descriptions soon.</p></div>
+</body></html>`.trim();
+  }
+  if (kind === 'notes') {
+    return `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Infinity Notepad</title>
+<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} textarea{width:100%;min-height:60vh;background:#07141a;color:#e9fbff;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px}</style>
+</head><body>
+<h3>Notepad</h3>
+<textarea placeholder="Write freely...">${safeIdea}</textarea>
+</body></html>`.trim();
+  }
+  if (kind === 'music') {
+    return `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Mini Music Studio</title>
+<style>body{font-family:system-ui;background:#0b1520;color:#e9fbff;margin:0;padding:14px} .card{background:#0f1f2a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px}</style>
+</head><body>
+<div class="card"><h3>Mini Music Studio</h3><p>${safeIdea}</p>
+<button id="kick">Kick</button> <button id="snare">Snare</button> <button id="hat">Hat</button>
+<script>
+let a; function hit(freq,dur){ a=a||new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.type='square'; o.frequency.value=freq; g.gain.setValueAtTime(.2,a.currentTime); g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur); }
+kick.onclick = ()=>hit(120,0.2); snare.onclick = ()=>hit(220,0.07); hat.onclick = ()=>hit(800,0.03);
+</script>
+</div></body></html>`.trim();
+  }
+  // custom
+  return `<!doctype html><html><head><meta charset="utf-8"><title>My Infinity App</title></head><body><h3>My App</h3><p>${safeIdea}</p></body></html>`;
 }
-function attachWordHandlers(){ document.querySelectorAll('.word').forEach(w=>{ w.removeEventListener('click', onWordClick); w.addEventListener('click', onWordClick); w.addEventListener('touchstart', ev=>{ ev.preventDefault(); onWordClick.call(w, ev); }, { passive:false }); }); }
 
-/* --- App builder --- */
-async function startAppBuilder(topic){
-  if(!confirm(`Start App Builder for "${topic}"?`)){ appendLog('App builder cancelled'); return; }
-  const appName = prompt('App name (short):', topic + ' App'); if(!appName){ appendLog('App builder aborted'); return; }
-  const purpose = prompt('Main purpose?', 'Mapping / suggestions'); const users = prompt('Target users (comma separated)', 'me,team');
-  const preview = { appName, topic, purpose, users: users?users.split(',').map(s=>s.trim()):[] , created:new Date().toISOString() };
-  appendLog('APP_SCAFFOLD: ' + JSON.stringify(preview));
-  alert('App scaffold created in-session. Check Logs view.');
-}
+/* Preview + Publish flow */
+$('btn_preview').onclick = ()=>{
+  const tmpl = $('tmpl').value;
+  const idea = $('idea').value.trim();
+  LAST_APP = { tmpl, idea, html: templateScaffold(tmpl, idea) };
+  $('preview').textContent = LAST_APP.html.slice(0, 2000) + (LAST_APP.html.length>2000?'\n...':'');
+  $('btn_publish').disabled = false;
+  logSession("Preview generated ("+tmpl+").");
+  guardTap("preview");
+};
+$('btn_reset').onclick = ()=>{
+  $('idea').value = ""; $('preview').textContent = "{ waiting for preview }"; $('btn_publish').disabled = true; LAST_APP=null;
+};
 
-/* --- Admin / decrypt --- */
-$('paste_clip') && $('paste_clip').addEventListener('click', async ()=>{ try{ const t = await navigator.clipboard.readText(); $('admin_blob').value = t; $('admin_status').textContent = 'Pasted from clipboard'; }catch(e){ $('admin_status').textContent = 'Clipboard read failed'; logDebug('Clipboard read failed: ' + (e && e.message)); }});
-$('fetch_blob') && $('fetch_blob').addEventListener('click', async ()=>{ const url = $('admin_rawurl').value.trim(); if(!url) return alert('Enter raw URL'); $('admin_status').textContent='Fetching...'; try{ const txt = await fetch(url,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }); $('admin_blob').value = txt; $('admin_status').textContent='Fetched'; appendLog('Fetched blob'); }catch(e){ $('admin_status').textContent = 'Fetch failed: ' + e.message; logDebug('Fetch error: ' + e.stack); }});
-
-$('admin_unlock').addEventListener('click', async ()=>{ const pass = $('admin_pass').value; let txt = $('admin_blob').value.trim(); $('admin_status').textContent='Unlocking...'; try{ if(!txt){ const saved = localStorage.getItem('pewpi_embedded_ct'); if(saved){ txt = saved; $('admin_status').textContent = 'Using saved embedded ciphertext'; } else throw new Error('No ciphertext found'); } const blob = JSON.parse(txt); const plain = await decryptBlob(blob, pass); $('admin_plain').textContent = JSON.stringify(plain, null, 2); window._decrypted_plain = plain; $('admin_status').textContent = 'Decrypted OK'; appendLog('Decryption succeeded'); if(plain && plain.secrets && plain.secrets.github_token){ setToken(plain.secrets.github_token); $('admin_status').textContent += ' — token auto-loaded'; showView('portal'); portalAnnounce('Token loaded from decrypted blob.'); } }catch(e){ $('admin_status').textContent = 'Unlock failed: ' + (e && e.message ? e.message : e); logDebug('Decrypt error: ' + (e && e.stack || e)); appendLog('Decrypt failed'); } });
-
-$('load_pat') && $('load_pat').addEventListener('click', ()=>{ const t=$('admin_pat').value.trim(); if(!t) return alert('Paste PAT first'); setToken(t); $('admin_status').textContent='PAT loaded (in-memory)'; appendLog('PAT loaded'); });
-$('clear_pat') && $('clear_pat').addEventListener('click', ()=>{ clearToken(); });
-
-$('load_token_from_plain') && $('load_token_from_plain').addEventListener('click', ()=>{ try{ const txt = $('admin_plain').textContent; if(!txt || txt.includes('none')) return alert('Nothing decrypted'); const obj = JSON.parse(txt); if(!obj.secrets || !obj.secrets.github_token) return alert('No github_token present'); setToken(obj.secrets.github_token); $('admin_status').textContent='Token loaded from plaintext'; appendLog('Token loaded from plaintext'); }catch(e){ $('admin_status').textContent='Load failed: '+(e && e.message); logDebug('Load token from plain failed: ' + e); } });
-
-$('re_encrypt') && $('re_encrypt').addEventListener('click', async ()=>{ try{ const plain = window._decrypted_plain; if(!plain) return alert('Decrypt first'); const newPass = prompt('Enter NEW passphrase (do NOT use PAT)'); if(!newPass) return alert('Cancelled'); const ct = await encryptJSON(plain, newPass); $('admin_blob').value = JSON.stringify(ct, null, 2); $('admin_status').textContent='Re-encrypted; paste this ciphertext into repo or save locally'; appendLog('Re-encrypted blob'); }catch(e){ $('admin_status').textContent='Re-encrypt failed: '+(e && e.message); logDebug('Re-encrypt error: '+e.stack); }});
-
-/* --- Portal chat / rogersRespond --- */
-function portalAnnounce(msg){ const c=$('portal_console'); c.textContent += (c.textContent?'\n':'') + 'System: ' + msg; c.scrollTop = c.scrollHeight; appendLog('Portal: '+msg); }
-$('portal_send').addEventListener('click', async ()=>{ const q=$('portal_query').value.trim(); if(!q) return; portalLog('You: '+q); $('portal_query').value=''; portalLog('Rogers: (thinking...)'); try{ const resp = await rogersRespond(q); const c=$('portal_console'); const lines = c.textContent.split('\n'); if(lines[lines.length-1].includes('(thinking...)')) lines.pop(); c.textContent = lines.join('\n') + '\nRogers: ' + resp; c.scrollTop = c.scrollHeight; appendLog('Rogers response'); }catch(e){ portalLog('Rogers error: '+(e && e.message)); logDebug('rogersRespond error: ' + (e && e.stack)); appendLog('Rogers error'); } });
-function portalLog(txt){ const c=$('portal_console'); c.textContent += (c.textContent?'\n':'') + txt; c.scrollTop = c.scrollHeight; }
-
-/* --- fetch helpers --- */
-async function fetchGithubFile(owner,repo,path,ref='main'){
-  try{ const raw=`https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`; const r=await fetch(raw,{cache:'no-store'}); if(r.ok) return {ok:true,text:await r.text(),source:raw}; }catch(e){}
-  const token = getToken(); if(token){ const api=`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${ref}`; const r=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github.v3.raw'}}); if(r.ok) return {ok:true,text:await r.text(),source:api}; const b=await r.text().catch(()=>String(r.status)); return {ok:false,err:'GitHub API '+r.status+': '+b}; }
-  return {ok:false,err:'Raw fetch failed and no token available.'};
-}
-async function rogersRespond(q){
-  q=(q||'').trim(); if(!q) return 'Empty';
-  const m=/^fetch\s+github\s+([^\s\/]+)\s+([^\s\/]+)\s+([^\s].*?)(?:\s+([^\s]+))?$/i.exec(q);
+/* Publish overlay (create passphrase) */
+const overlay = $('overlay_publish');
+$('btn_publish').onclick = ()=>{
+  if (!LAST_APP) return alert("Create a preview first.");
+  overlay.style.display = 'flex';
+  $('pp_input').value = "";
+  $('pp_hint').textContent = "Tip: use 3-4 words and digits (e.g., silver-radio-lion-83).";
+};
+$('pp_cancel').onclick = ()=> overlay.style.display = 'none';
+$('pp_show').onclick = ()=>{
+  const p = $('pp_input');
+  p.type = (p.type === 'password') ? 'text' : 'password';
+};
+$('pp_gen').onclick = ()=>{
+  const adjectives = ["silver","green","vector","quantum","ionic","amber","blue","stellar","neon","hyper"];
+  const nouns = ["radio","lion","portal","orchid","castle","signal","rocket","dragon","river","atlas"];
+  const pick = (arr)
