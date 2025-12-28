@@ -41,3 +41,29 @@ Two next build paths with reasoning.
 
 ### 🟧 Decisions
 Immediate next step and why.
+
+---
+
+## 🧱🤖🧱 MACHINE_DESCRIPTOR (C13B0)
+
+machine_name: $(basename "$(pwd)")
+machine_role: machine
+inputs:
+  - type: query
+  - type: image
+  - type: script
+outputs:
+  - type: index
+  - type: token
+  - type: commit
+dependencies:
+  - mongoose.os
+  - infinity-brain-111
+execution:
+  trigger: github_action | termux_import
+token_behavior:
+  mint_on_success: true
+  token_type: bronze
+notes:
+  - auto-appended by C13B0, safe to edit
+
