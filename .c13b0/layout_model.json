@@ -1,0 +1,5 @@
+{
+  "layout_family": ["canvas-centric","overlay-controls","data-layers"],
+  "strategy": "reference-blended",
+  "mutation_allowed": false
+}
