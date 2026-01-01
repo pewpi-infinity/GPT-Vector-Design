@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎨 GPT-Vector-Design Gallery</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      font-size: 3em;
+      color: #667eea;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .subtitle {
+      font-size: 1.2em;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .theme-selector {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .theme-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 25px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .theme-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .theme-btn.active {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .card h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 3px solid #f093fb;
+      padding-bottom: 10px;
+    }
+
+    .svg-container {
+      width: 100%;
+      min-height: 300px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .svg-container svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .info-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      margin: 30px 0;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .info-section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 2em;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .feature-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .feature-card h4 {
+      font-size: 1.3em;
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+
+    .control-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #667eea;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      background: #764ba2;
+      transform: scale(1.05);
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: white;
+      margin-top: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 1.5em;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎨 GPT-Vector-Design Gallery</h1>
+      <p class="subtitle">Dynamic SVG Generation System with 11 Themes</p>
+      <div class="theme-selector">
+        <button class="theme-btn active" data-theme="all">All Themes</button>
+        <button class="theme-btn" data-theme="mario">🍄 Mario</button>
+        <button class="theme-btn" data-theme="electronics">🔌 Electronics</button>
+        <button class="theme-btn" data-theme="chemistry">🧪 Chemistry</button>
+        <button class="theme-btn" data-theme="mathematics">📐 Mathematics</button>
+        <button class="theme-btn" data-theme="robotics">🤖 Robotics</button>
+        <button class="theme-btn" data-theme="construction">🏗️ Construction</button>
+        <button class="theme-btn" data-theme="pixelart">🎮 Pixel Art</button>
+        <button class="theme-btn" data-theme="space">🚀 Space</button>
+        <button class="theme-btn" data-theme="nature">🌿 Nature</button>
+        <button class="theme-btn" data-theme="music">🎵 Music</button>
+        <button class="theme-btn" data-theme="sports">⚽ Sports</button>
+      </div>
+    </header>
+
+    <div class="info-section">
+      <h2>🚀 Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>✨ Real-time Generation</h4>
+          <p>Dynamic SVG creation on demand</p>
+        </div>
+        <div class="feature-card">
+          <h4>🎭 11 Unique Themes</h4>
+          <p>From Mario to Mathematics</p>
+        </div>
+        <div class="feature-card">
+          <h4>🎮 Interactive Elements</h4>
+          <p>Clickable & draggable components</p>
+        </div>
+        <div class="feature-card">
+          <h4>🎬 Animated Vectors</h4>
+          <p>Smooth SVG animations</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="gallery" class="gallery">
+      <div class="loading">Loading vector graphics...</div>
+    </div>
+
+    <div class="info-section">
+      <h2>🧱 Token Visualization</h2>
+      <p>Special visualizations for 🧱Kris🔑 token networks and formula flow diagrams</p>
+      <div class="gallery" style="margin-top: 20px;">
+        <div class="card">
+          <h3>Token Network</h3>
+          <div class="svg-container" id="token-network"></div>
+        </div>
+        <div class="card">
+          <h3>Formula Flow</h3>
+          <div class="svg-container" id="formula-flow"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>🧱 Powered by GPT-Vector-Design Engine</p>
+      <p>© 2025 Infinity • All themes supported</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    // Note: In production, you would import from actual modules
+    // For this demo, we'll display placeholder content
+    
+    const themes = {
+      mario: {
+        title: '🍄 Mario Theme',
+        description: 'Pixel-art style with blocks, power-ups, and pipes',
+        examples: ['Question Block', 'Mushroom', 'Star', 'Pipe']
+      },
+      electronics: {
+        title: '🔌 Electronics Theme',
+        description: 'Circuit boards, components, and waveforms',
+        examples: ['Resistor', 'IC Chip', 'LED', 'Waveform']
+      },
+      chemistry: {
+        title: '🧪 Chemistry Theme',
+        description: 'Molecular structures and lab equipment',
+        examples: ['H₂O Molecule', 'Beaker', 'Test Tube', 'Orbitals']
+      },
+      mathematics: {
+        title: '📐 Mathematics Theme',
+        description: '3D graphs, fractals, and geometric constructions',
+        examples: ['3D Graph', 'Sierpinski Triangle', 'Unit Circle', 'Symbols']
+      },
+      robotics: {
+        title: '🤖 Robotics Theme',
+        description: 'Robot schematics and mechanical systems',
+        examples: ['Robot', 'Gears', 'Linkage', 'Sensors']
+      },
+      construction: {
+        title: '🏗️ Construction Theme',
+        description: 'Blueprints, equipment, and architectural elements',
+        examples: ['Blueprint', 'Crane', 'Bulldozer', 'Tools']
+      },
+      pixelart: {
+        title: '🎮 Pixel Art Theme',
+        description: 'Retro gaming style pixel graphics',
+        examples: ['Heart Sprite', 'Coin', 'Gem', 'Pixel Text']
+      },
+      space: {
+        title: '🚀 Space Theme',
+        description: 'Planets, rockets, and cosmic elements',
+        examples: ['Planets', 'Rocket', 'Stars', 'Nebula']
+      },
+      nature: {
+        title: '🌿 Nature Theme',
+        description: 'Trees, flowers, and natural elements',
+        examples: ['Trees', 'Flowers', 'Butterfly', 'Sun']
+      },
+      music: {
+        title: '🎵 Music Theme',
+        description: 'Musical instruments and notes',
+        examples: ['Guitar', 'Piano', 'Notes', 'Drums']
+      },
+      sports: {
+        title: '⚽ Sports Theme',
+        description: 'Sports equipment and fields',
+        examples: ['Soccer Ball', 'Basketball', 'Trophy', 'Field']
+      }
+    };
+
+    function createCard(themeKey, themeData) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.theme = themeKey;
+      
+      card.innerHTML = `
+        <h3>${themeData.title}</h3>
+        <p style="color: #666; margin-bottom: 15px;">${themeData.description}</p>
+        <div class="svg-container">
+          <div style="padding: 20px; text-align: center; color: #999;">
+            <p>SVG Preview</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Examples: ${themeData.examples.join(', ')}</p>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="control-btn" onclick="regenerate('${themeKey}')">🔄 Regenerate</button>
+          <button class="control-btn" onclick="download('${themeKey}')">💾 Download</button>
+        </div>
+      `;
+      
+      return card;
+    }
+
+    function renderGallery(filterTheme = 'all') {
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+      
+      Object.entries(themes).forEach(([key, data]) => {
+        if (filterTheme === 'all' || filterTheme === key) {
+          gallery.appendChild(createCard(key, data));
+        }
+      });
+    }
+
+    // Theme selector buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderGallery(btn.dataset.theme);
+      });
+    });
+
+    // Display token visualizations
+    document.getElementById('token-network').innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #999;">
+        <p>🧱Kris🔑 Token Network Visualization</p>
+        <p style="font-size: 0.9em; margin-top: 10px;">Interactive token connections and flows</p>
+      </div>
+    `;
+
+    document.getElementById('formula-flow').innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #999;">
+        <p>Formula Flow Diagram</p>
+        <p style="font-size: 0.9em; margin-top: 10px;">Semantic connection maps and processing flow</p>
+      </div>
+    `;
+
+    // Global functions for controls
+    window.regenerate = (theme) => {
+      console.log('Regenerating', theme);
+      alert(`Regenerating ${theme} theme vectors`);
+    };
+
+    window.download = (theme) => {
+      console.log('Downloading', theme);
+      alert(`Downloading ${theme} theme as SVG`);
+    };
+
+    // Initial render
+    renderGallery('all');
+  </script>
+</body>
+</html>
