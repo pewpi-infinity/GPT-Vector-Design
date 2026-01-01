@@ -1,0 +1,120 @@
+{
+  "backgrounds": {
+    "sky": {
+      "type": "gradient",
+      "colors": ["#5C94FC", "#92CDFF"],
+      "direction": "vertical",
+      "elements": ["clouds", "sun"]
+    },
+    "space": {
+      "type": "solid",
+      "color": "#0A0E27",
+      "elements": ["stars", "nebula"]
+    },
+    "lab": {
+      "type": "solid",
+      "color": "#F5F5F5",
+      "elements": ["bench", "shelves"]
+    },
+    "blueprint": {
+      "type": "grid",
+      "baseColor": "#0A4C8C",
+      "gridColor": "#FFFFFF",
+      "gridSize": 20,
+      "opacity": 0.15
+    },
+    "field": {
+      "type": "gradient",
+      "colors": ["#2ECC71", "#27AE60"],
+      "direction": "vertical",
+      "elements": ["grass", "lines"]
+    },
+    "stage": {
+      "type": "gradient",
+      "colors": ["#2C2C54", "#1A1A2E"],
+      "direction": "vertical",
+      "elements": ["lights", "floor"]
+    },
+    "circuit": {
+      "type": "solid",
+      "color": "#0A4D2E",
+      "elements": ["traces", "vias"]
+    },
+    "pixelart": {
+      "type": "solid",
+      "color": "#1A1A2E",
+      "elements": ["grid", "pixels"]
+    },
+    "nature": {
+      "type": "gradient",
+      "colors": ["#87CEEB", "#B0E0E6"],
+      "direction": "vertical",
+      "elements": ["ground", "trees"]
+    },
+    "math": {
+      "type": "solid",
+      "color": "#0A0E27",
+      "elements": ["grid", "axes"]
+    },
+    "sports": {
+      "type": "solid",
+      "color": "#34495E",
+      "elements": ["field", "lines"]
+    }
+  },
+  "decorativeElements": {
+    "clouds": {
+      "count": 3,
+      "sizes": [80, 100, 70],
+      "positions": "random",
+      "opacity": 0.8
+    },
+    "stars": {
+      "count": 150,
+      "minSize": 0.5,
+      "maxSize": 2,
+      "distribution": "random",
+      "twinkle": true
+    },
+    "grid": {
+      "majorLines": 5,
+      "minorLines": 1,
+      "color": "#FFFFFF",
+      "opacity": 0.15
+    },
+    "particles": {
+      "count": 50,
+      "colors": ["#FF6B6B", "#4ECDC4", "#45B7D1"],
+      "animation": "float"
+    }
+  },
+  "presets": {
+    "marioLevel": {
+      "background": "sky",
+      "ground": "#C84C0C",
+      "decorations": ["clouds", "hills"]
+    },
+    "spaceExploration": {
+      "background": "space",
+      "decorations": ["stars", "nebula", "planets"]
+    },
+    "chemLab": {
+      "background": "lab",
+      "elements": ["bench", "equipment"]
+    },
+    "constructionSite": {
+      "background": "blueprint",
+      "decorations": ["grid", "measurements"]
+    },
+    "sportsArena": {
+      "background": "sports",
+      "elements": ["field", "scoreboard"]
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "totalBackgrounds": 11,
+    "totalPresets": 5,
+    "description": "Background templates for theme-specific scenes"
+  }
+}

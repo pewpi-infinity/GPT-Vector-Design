@@ -1,0 +1,110 @@
+{
+  "componentLibrary": {
+    "electronics": {
+      "resistor": {
+        "type": "passive",
+        "pins": 2,
+        "defaultValue": "1kΩ",
+        "size": { "width": 80, "height": 40 },
+        "colorBands": ["brown", "black", "red", "gold"]
+      },
+      "capacitor": {
+        "type": "passive",
+        "pins": 2,
+        "defaultValue": "100μF",
+        "size": { "width": 60, "height": 60 },
+        "polarity": true
+      },
+      "led": {
+        "type": "active",
+        "pins": 2,
+        "defaultColor": "#FF0000",
+        "size": { "width": 60, "height": 60 },
+        "polarity": true
+      },
+      "ic": {
+        "type": "integrated",
+        "pins": 8,
+        "defaultLabel": "555",
+        "size": { "width": 100, "height": 60 }
+      }
+    },
+    "chemistry": {
+      "beaker": {
+        "type": "glassware",
+        "capacity": "500mL",
+        "size": { "width": 100, "height": 150 },
+        "fillable": true
+      },
+      "testTube": {
+        "type": "glassware",
+        "capacity": "25mL",
+        "size": { "width": 40, "height": 120 },
+        "fillable": true
+      },
+      "flask": {
+        "type": "glassware",
+        "capacity": "250mL",
+        "size": { "width": 120, "height": 150 },
+        "fillable": true
+      },
+      "molecule": {
+        "type": "structure",
+        "defaultFormula": "H2O",
+        "bondTypes": ["single", "double", "triple"],
+        "atomColors": {
+          "H": "#FFFFFF",
+          "C": "#333333",
+          "N": "#0000FF",
+          "O": "#FF0000",
+          "S": "#FFFF00"
+        }
+      }
+    },
+    "robotics": {
+      "gear": {
+        "type": "mechanical",
+        "defaultTeeth": 12,
+        "defaultRadius": 50,
+        "rotatable": true
+      },
+      "sensor": {
+        "type": "electronic",
+        "sensorTypes": ["ultrasonic", "infrared", "camera"],
+        "size": { "width": 60, "height": 60 }
+      },
+      "servo": {
+        "type": "actuator",
+        "angleRange": [0, 180],
+        "size": { "width": 40, "height": 60 }
+      }
+    },
+    "construction": {
+      "crane": {
+        "type": "equipment",
+        "size": { "width": 250, "height": 300 },
+        "animated": true
+      },
+      "bulldozer": {
+        "type": "equipment",
+        "size": { "width": 150, "height": 100 },
+        "animated": false
+      },
+      "tool": {
+        "types": ["hammer", "wrench", "screwdriver"],
+        "size": { "width": 80, "height": 80 }
+      }
+    }
+  },
+  "interactionTypes": {
+    "clickable": ["bounce", "pulse", "spin", "grow"],
+    "draggable": ["free", "constrained", "snap-to-grid"],
+    "animated": ["rotate", "float", "pulse", "morph", "color-cycle"]
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "totalComponents": 24,
+    "categories": 4,
+    "description": "Reusable component templates for all themes"
+  }
+}
