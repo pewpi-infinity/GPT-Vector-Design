@@ -1,0 +1,72 @@
+{
+  "characterTemplates": {
+    "mario": {
+      "name": "Mario",
+      "type": "platform_hero",
+      "actions": ["standing", "jumping", "running", "waving"],
+      "size": 100,
+      "colors": {
+        "cap": "#FF0000",
+        "overalls": "#0000FF",
+        "skin": "#FFD7B5",
+        "shoes": "#8B4513"
+      }
+    },
+    "luigi": {
+      "name": "Luigi",
+      "type": "platform_hero",
+      "actions": ["standing", "jumping", "running", "waving"],
+      "size": 100,
+      "colors": {
+        "cap": "#00AA00",
+        "overalls": "#0000FF",
+        "skin": "#FFD7B5",
+        "shoes": "#8B4513"
+      }
+    },
+    "robot": {
+      "name": "Robot",
+      "type": "mechanical",
+      "actions": ["standing", "moving", "waving"],
+      "size": 120,
+      "colors": {
+        "body": "#78909C",
+        "head": "#607D8B",
+        "eyes": "#00E5FF",
+        "details": "#263238"
+      }
+    },
+    "scientist": {
+      "name": "Scientist",
+      "type": "human",
+      "actions": ["standing", "examining", "holding"],
+      "size": 110,
+      "colors": {
+        "labcoat": "#FFFFFF",
+        "pants": "#333333",
+        "skin": "#FFD7B5",
+        "hair": "#8B4513"
+      }
+    }
+  },
+  "actionModifiers": {
+    "jumping": {
+      "offsetY": -30,
+      "rotation": -15,
+      "effects": ["motion_lines"]
+    },
+    "running": {
+      "legRotation": 20,
+      "effects": ["speed_lines"]
+    },
+    "waving": {
+      "armRotation": -45,
+      "armOffsetY": -30
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-01-01",
+    "description": "Character templates for GPT-Vector-Design system"
+  }
+}
