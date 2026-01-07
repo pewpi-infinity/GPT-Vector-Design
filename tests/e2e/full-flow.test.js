@@ -55,14 +55,19 @@ global.localStorage = {
 };
 
 global.sessionStorage = global.localStorage;
-global.crypto = {
-  getRandomValues: (arr) => {
+
+// Augment crypto instead of replacing it
+if (!global.crypto) {
+  global.crypto = {};
+}
+if (!global.crypto.getRandomValues) {
+  global.crypto.getRandomValues = (arr) => {
     for (let i = 0; i < arr.length; i++) {
       arr[i] = Math.floor(Math.random() * 256);
     }
     return arr;
-  }
-};
+  };
+}
 
 describe('E2E: Login + Token + Wallet Flow', () => {
   let LoginComponent, tokenService, WalletComponent;
