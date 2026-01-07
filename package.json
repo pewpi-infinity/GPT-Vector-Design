@@ -1,0 +1,21 @@
+{
+  "name": "gpt-vector-design",
+  "version": "1.0.0",
+  "description": "GPT Vector Design Engine with production-grade login, wallet, and token sync",
+  "type": "module",
+  "main": "gpt-vector-design.js",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "test:unit": "node --test tests/unit/**/*.test.js",
+    "test:e2e": "node --test tests/e2e/**/*.test.js",
+    "dev": "python3 -m http.server 8080"
+  },
+  "keywords": ["vector", "design", "pewpi", "wallet", "token", "infinity"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dexie": "^3.2.4",
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {}
+}
