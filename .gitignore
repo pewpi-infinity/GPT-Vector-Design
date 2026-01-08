@@ -7,6 +7,16 @@ node_modules/
 dist/
 .venv/
 .env
+package-lock.json
 
 # OS files
 .DS_Store
+
+# Test artifacts
+.nyc_output/
+coverage/
+
+# Temporary files
+*.tmp
+*.log
+.tmp/
