@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐶 Pewpi Token Wallet Demo</title>
+  <link rel="stylesheet" href="src/shared/theme.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--pewpi-bg-dark);
+      color: var(--pewpi-text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .demo-header {
+      background: linear-gradient(135deg, var(--pewpi-primary) 0%, var(--pewpi-secondary) 100%);
+      padding: var(--pewpi-space-xl);
+      text-align: center;
+      box-shadow: var(--pewpi-shadow-lg);
+    }
+
+    .demo-header h1 {
+      margin: 0 0 var(--pewpi-space-sm) 0;
+      font-size: 48px;
+    }
+
+    .demo-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 18px;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--pewpi-space-xl);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--pewpi-space-lg);
+      margin-bottom: var(--pewpi-space-xl);
+    }
+
+    @media (max-width: 768px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .demo-section {
+      background: var(--pewpi-bg-card);
+      border: 1px solid var(--pewpi-border);
+      border-radius: var(--pewpi-radius-lg);
+      padding: var(--pewpi-space-lg);
+    }
+
+    .demo-section h2 {
+      margin-top: 0;
+      color: var(--pewpi-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--pewpi-space-sm);
+    }
+
+    .demo-footer {
+      text-align: center;
+      padding: var(--pewpi-space-xl);
+      color: var(--pewpi-text-muted);
+      border-top: 1px solid var(--pewpi-border);
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--pewpi-success);
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .code-block {
+      background: var(--pewpi-bg-dark);
+      padding: var(--pewpi-space-md);
+      border-radius: var(--pewpi-radius-sm);
+      font-family: monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: var(--pewpi-space-md) 0;
+    }
+
+    .integration-events {
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--pewpi-bg-dark);
+      padding: var(--pewpi-space-md);
+      border-radius: var(--pewpi-radius-sm);
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .event-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .event-time {
+      color: var(--pewpi-text-muted);
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-header">
+    <h1>🐶 Pewpi Token Wallet</h1>
+    <p>Production-grade login, wallet, and token sync system</p>
+  </div>
+
+  <div class="demo-container">
+    <!-- Login Section -->
+    <div id="login-section" class="demo-section" style="margin-bottom: var(--pewpi-space-lg);">
+      <h2>🔐 Authentication</h2>
+      <div id="login-container"></div>
+      <div id="login-status" style="margin-top: var(--pewpi-space-md); display: none;">
+        <div class="pewpi-badge pewpi-badge-success">
+          <span class="status-indicator"></span>
+          Logged In
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Wallet Section -->
+      <div class="demo-section">
+        <h2>💼 Wallet</h2>
+        <div id="wallet-container"></div>
+      </div>
+
+      <!-- Integration Events Section -->
+      <div class="demo-section">
+        <h2>📡 Live Integration Events</h2>
+        <p style="color: var(--pewpi-text-muted); font-size: 14px; margin-bottom: var(--pewpi-space-md);">
+          Real-time events for cross-repo synchronization
+        </p>
+        <div id="integration-events" class="integration-events">
+          <div class="event-entry">
+            <span class="event-time">[--:--:--]</span>
+            <span>Waiting for events...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Example Section -->
+    <div class="demo-section">
+      <h2>💻 Integration Example</h2>
+      <p style="color: var(--pewpi-text-muted); margin-bottom: var(--pewpi-space-md);">
+        Use this code in other repositories to integrate with the token/wallet system:
+      </p>
+      <div class="code-block">
+<pre style="margin: 0;">import { setupIntegration } from './pewpi-shared/integration-listener.js';
+import { tokenService } from './pewpi-shared/token-service.js';
+
+// Setup event listeners
+const listener = setupIntegration({
+  onTokenCreated: (token) => {
+    console.log('New token:', token);
+    updateYourAppState(token);
+  },
+  onLoginChanged: (data) => {
+    console.log('Login changed:', data.loggedIn);
+    updateAuthState(data.user);
+  }
+});
+
+// Create tokens
+await tokenService.createToken({
+  type: 'bronze',
+  value: 1,
+  userId: getCurrentUserId()
+});</pre>
+      </div>
+      <p style="color: var(--pewpi-text-muted); font-size: 14px; margin-top: var(--pewpi-space-md);">
+        See <a href="docs/INTEGRATION.md" style="color: var(--pewpi-primary);">docs/INTEGRATION.md</a> for complete guide.
+      </p>
+    </div>
+  </div>
+
+  <div class="demo-footer">
+    <p>Part of the pewpi infinity ecosystem</p>
+    <p style="font-size: 12px; margin-top: 8px;">
+      Repos: banksy • v • infinity-brain-searc • repo-dashboard-hub • GPT-Vector-Design
+    </p>
+  </div>
+
+  <script type="module">
+    // Use CDN for dependencies in demo (in production, use npm install)
+    import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.mjs';
+    import CryptoJS from 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js';
+
+    // Make available globally for our modules
+    window.Dexie = Dexie;
+    window.CryptoJS = CryptoJS;
+
+    import { LoginComponent } from './src/shared/auth/login-component.js';
+    import { WalletComponent } from './src/shared/wallet/wallet-component.js';
+    import { tokenService } from './src/shared/token-service.js';
+    import { setupIntegration } from './src/shared/integration-listener.js';
+
+    let wallet = null;
+
+    // Initialize login
+    const login = new LoginComponent({
+      devMode: true, // No SMTP required for demo
+      githubClientId: null, // Set your GitHub OAuth client ID here to enable GitHub login
+      onLoginSuccess: (user) => {
+        console.log('User logged in:', user);
+        document.getElementById('login-status').style.display = 'block';
+        initializeWallet(user.userId);
+        addIntegrationEvent('login', `User logged in: ${user.email}`);
+      }
+    });
+    login.render('login-container');
+
+    // Check if already logged in
+    if (login.isLoggedIn()) {
+      document.getElementById('login-status').style.display = 'block';
+      initializeWallet(login.getCurrentUser().userId);
+    }
+
+    // Initialize wallet
+    function initializeWallet(userId) {
+      if (wallet) return;
+      
+      wallet = new WalletComponent({ userId });
+      wallet.render('wallet-container');
+      addIntegrationEvent('wallet', 'Wallet initialized');
+    }
+
+    // Setup integration listener
+    const listener = setupIntegration({
+      onTokenCreated: (token) => {
+        console.log('Integration: Token created', token);
+        addIntegrationEvent('token', `Token created: ${token.type} (value: ${token.value})`);
+      },
+      onTokensCleared: () => {
+        console.log('Integration: Tokens cleared');
+        addIntegrationEvent('token', 'All tokens cleared');
+      },
+      onLoginChanged: (data) => {
+        console.log('Integration: Login changed', data);
+        const status = data.loggedIn ? `Logged in: ${data.user.email}` : 'Logged out';
+        addIntegrationEvent('login', status);
+      },
+      onP2PMessage: (data) => {
+        console.log('Integration: P2P message', data);
+        addIntegrationEvent('p2p', `P2P message: ${data.type}`);
+      },
+      debug: true
+    });
+
+    // Add event to integration events log
+    function addIntegrationEvent(type, message) {
+      const eventsDiv = document.getElementById('integration-events');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'event-entry';
+      
+      const emoji = {
+        token: '🪙',
+        login: '👤',
+        wallet: '💼',
+        p2p: '🔄'
+      }[type] || '📡';
+      
+      entry.innerHTML = `
+        <span class="event-time">[${time}]</span>
+        <span>${emoji} ${message}</span>
+      `;
+      
+      // Remove placeholder if exists
+      if (eventsDiv.textContent.includes('Waiting for events')) {
+        eventsDiv.innerHTML = '';
+      }
+      
+      eventsDiv.insertBefore(entry, eventsDiv.firstChild);
+      
+      // Limit to 50 entries
+      while (eventsDiv.children.length > 50) {
+        eventsDiv.removeChild(eventsDiv.lastChild);
+      }
+    }
+
+    // Initial event
+    addIntegrationEvent('wallet', 'Demo initialized - ready to receive events');
+
+    console.log('✅ Pewpi Token Wallet Demo Ready');
+    console.log('Try logging in and creating tokens to see the integration in action!');
+  </script>
+</body>
+</html>
